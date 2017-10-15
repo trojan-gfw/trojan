@@ -1,4 +1,5 @@
 #include "log.h"
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <boost/date_time/posix_time/posix_time.hpp>

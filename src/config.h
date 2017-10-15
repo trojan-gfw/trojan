@@ -4,7 +4,8 @@
 #include <string>
 #include <cstdint>
 
-struct Config {
+class Config {
+public:
     enum RunType {
         SERVER,
         CLIENT

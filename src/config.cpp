@@ -24,7 +24,7 @@ bool Config::load(const string &filename) {
     } catch (const std::exception&) {
         return false;
     }
-    run_type = (tree.get("run_type", string("client")) == "client") ? CLIENT : SERVER;
+    run_type = (tree.get("run_type", string("client")) == "server") ? SERVER : CLIENT;
     local_addr = tree.get("local_addr", string("127.0.0.1"));
     local_port = tree.get("local_port", uint16_t(1080));
     remote_addr = tree.get("remote_addr", string());

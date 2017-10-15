@@ -2,6 +2,9 @@
 #include <string>
 #include "log.h"
 #include "config.h"
+#include "service.h"
+#include "server.h"
+#include "client.h"
 using namespace std;
 
 int main(int argc, char const *argv[]) {
@@ -15,5 +18,14 @@ int main(int argc, char const *argv[]) {
         Log::log_with_date_time("exiting. . . ");
         exit(1);
     }
-    return 0;
+    Service *service = nullptr;
+    if (config.run_type == Config::SERVER) {
+        service = new Server(config);
+    } else {
+        service = new Client(config);
+    }
+    int ret = service->run();
+    delete service;
+    service = nullptr;
+    return ret;
 }
