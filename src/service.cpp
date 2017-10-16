@@ -27,7 +27,7 @@ void Service::async_accept() {
     } else {
         session = new ClientSession(config, io_service);
     }
-    socket_acceptor.async_accept(session->socket(), [this, session](boost::system::error_code error) {
+    socket_acceptor.async_accept(session->accept_socket(), [this, session](boost::system::error_code error) {
         if (!error) {
             session->start();
         } else {

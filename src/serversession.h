@@ -7,7 +7,7 @@
 class ServerSession : public Session {
 public:
     ServerSession(const Config &config, boost::asio::io_service &io_service);
-    boost::asio::ip::tcp::socket& socket();
+    boost::asio::ip::tcp::socket& accept_socket();
     void start();
 };
 

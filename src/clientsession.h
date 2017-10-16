@@ -12,7 +12,7 @@ private:
     void in_async_write(std::size_t length);
 public:
     ClientSession(const Config &config, boost::asio::io_service &io_service);
-    boost::asio::ip::tcp::socket& socket();
+    boost::asio::ip::tcp::socket& accept_socket();
     void start();
 };
 

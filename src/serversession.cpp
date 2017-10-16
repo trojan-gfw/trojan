@@ -5,7 +5,7 @@ using boost::asio::ip::tcp;
 
 ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service) : Session(config, io_service) {}
 
-tcp::socket& ServerSession::socket() {
+tcp::socket& ServerSession::accept_socket() {
 
 }
 

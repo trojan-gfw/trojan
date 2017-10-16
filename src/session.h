@@ -14,7 +14,7 @@ protected:
     boost::asio::io_service &io_service;
 public:
     Session(const Config &config, boost::asio::io_service &io_service);
-    virtual boost::asio::ip::tcp::socket &socket() = 0;
+    virtual boost::asio::ip::tcp::socket &accept_socket() = 0;
     virtual void start() = 0;
 };
 

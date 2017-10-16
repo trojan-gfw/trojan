@@ -8,7 +8,7 @@ using namespace std;
 
 ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service) : Session(config, io_service), in_socket(io_service) {}
 
-tcp::socket& ClientSession::socket() {
+tcp::socket& ClientSession::accept_socket() {
     return in_socket;
 }
 
