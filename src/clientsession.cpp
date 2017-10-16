@@ -1,12 +1,14 @@
 #include "clientsession.h"
 #include <string>
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include "log.h"
 using namespace boost::asio::ip;
 using boost::asio::ip::tcp;
+using namespace boost::asio::ssl;
 using namespace std;
 
-ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service) : Session(config, io_service), in_socket(io_service) {}
+ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) : Session(config, io_service), in_socket(io_service) {}
 
 tcp::socket& ClientSession::accept_socket() {
     return in_socket;

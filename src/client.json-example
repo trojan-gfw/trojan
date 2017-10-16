@@ -5,7 +5,6 @@
     "remote_addr": "example.com",
     "remote_port": 443,
     "password": "password",
-    "ca_certs": "",
-    "keyfile": "",
-    "certfile": ""
+    "ssl_verify": true,
+    "ca_certs": ""
 }

@@ -14,9 +14,11 @@ Config::Config() : run_type(CLIENT),
                    remote_addr("example.com"),
                    remote_port(443),
                    password("password"),
-                   ca_certs(),
                    keyfile(),
-                   certfile() {}
+                   keyfile_password(),
+                   certfile(),
+                   ssl_verify(true),
+                   ca_certs() {}
 
 void Config::load(const string &filename) {
     ptree tree;
@@ -28,9 +30,11 @@ void Config::load(const string &filename) {
     remote_port = tree.get("remote_port", uint16_t(443));
     password = tree.get("password", string("password"));
     password = Config::SHA224(password);
-    ca_certs = tree.get("ca_certs", string());
     keyfile = tree.get("keyfile", string());
+    keyfile_password = tree.get("keyfile_password", string());
     certfile = tree.get("certfile", string());
+    ssl_verify = tree.get("ssl_verify", true);
+    ca_certs = tree.get("ca_certs", string());
 }
 
 string Config::SHA224(const string &message) {

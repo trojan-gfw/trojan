@@ -3,6 +3,7 @@
 
 #include "session.h"
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 
 class ClientSession : public Session {
 private:
@@ -11,7 +12,7 @@ private:
     void in_async_read();
     void in_async_write(std::size_t length);
 public:
-    ClientSession(const Config &config, boost::asio::io_service &io_service);
+    ClientSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
 };

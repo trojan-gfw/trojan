@@ -5,7 +5,7 @@
     "remote_addr": "127.0.0.1",
     "remote_port": 80,
     "password": "password",
-    "ca_certs": "",
     "keyfile": "key.pem",
+    "keyfile_password": "",
     "certfile": "cert.pem"
 }
