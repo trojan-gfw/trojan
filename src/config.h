@@ -21,6 +21,7 @@ public:
     std::string certfile;
     Config();
     void load(const std::string &filename);
+    static std::string SHA224(const std::string &message);
 };
 
 #endif // _CONFIG_H_

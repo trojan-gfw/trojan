@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <openssl/sha.h>
 #include "log.h"
 using namespace std;
 using namespace boost::property_tree;
@@ -26,7 +27,21 @@ void Config::load(const string &filename) {
     remote_addr = tree.get("remote_addr", string("example.com"));
     remote_port = tree.get("remote_port", uint16_t(443));
     password = tree.get("password", string("password"));
+    password = Config::SHA224(password);
     ca_certs = tree.get("ca_certs", string());
     keyfile = tree.get("keyfile", string());
     certfile = tree.get("certfile", string());
+}
+
+string Config::SHA224(const string &message) {
+    uint8_t digest[SHA224_DIGEST_LENGTH];
+    SHA256_CTX ctx;
+    SHA224_Init(&ctx);
+    SHA224_Update(&ctx, message.c_str(), message.length());
+    SHA224_Final(digest, &ctx);
+    char mdString[(SHA224_DIGEST_LENGTH << 1) + 1];
+    for (int i = 0; i < SHA224_DIGEST_LENGTH; ++i) {
+        sprintf(mdString + (i << 1), "%02x", (unsigned int)digest[i]);
+    }
+    return string(mdString);
 }
