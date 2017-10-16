@@ -7,17 +7,16 @@
 #include "session.h"
 #include "serversession.h"
 #include "clientsession.h"
-using namespace boost::asio::ip;
-using boost::asio::ip::tcp;
-using namespace boost::asio::ssl;
 using namespace std;
+using namespace boost::asio::ip;
+using namespace boost::asio::ssl;
 
-Service::Service(const Config &config) : config(config),
-                                         socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
-                                         ssl_context(context::sslv23) {
+Service::Service(const Config &config) :
+    config(config),
+    socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
+    ssl_context(context::sslv23) {
     if (config.run_type == Config::SERVER) {
-        ssl_context.set_options(context::default_workarounds |
-                                context::no_sslv2);
+        ssl_context.set_options(context::default_workarounds | context::no_sslv2);
         ssl_context.set_password_callback([this](size_t, context_base::password_purpose) {
             return this->config.keyfile_password;
         });

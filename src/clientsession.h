@@ -8,9 +8,6 @@
 class ClientSession : public Session {
 private:
     boost::asio::ip::tcp::socket in_socket;
-    char in_buffer[MAX_LENGTH];
-    void in_async_read();
-    void in_async_write(std::size_t length);
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
 public:
     ClientSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context);
