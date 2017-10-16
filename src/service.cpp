@@ -52,6 +52,8 @@ void Service::async_accept() {
     }
     socket_acceptor.async_accept(session->accept_socket(), [this, session](boost::system::error_code error) {
         if (!error) {
+            auto endpoint = session->accept_socket().remote_endpoint();
+            Log::log_with_date_time("incoming connection from " + endpoint.address().to_string() + ':' + to_string(endpoint.port()));
             session->start();
         } else {
             delete session;

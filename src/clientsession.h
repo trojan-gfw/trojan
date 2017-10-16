@@ -11,9 +11,10 @@ private:
     char in_buffer[MAX_LENGTH];
     void in_async_read();
     void in_async_write(std::size_t length);
+    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
 public:
     ClientSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context);
-    boost::asio::ip::tcp::socket& accept_socket();
+    boost::asio::basic_socket<boost::asio::ip::tcp, boost::asio::stream_socket_service<boost::asio::ip::tcp> >& accept_socket();
     void start();
 };
 

@@ -8,14 +8,15 @@ using boost::asio::ip::tcp;
 using namespace boost::asio::ssl;
 using namespace std;
 
-ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) : Session(config, io_service), in_socket(io_service) {}
+ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) : Session(config, io_service),
+                                     in_socket(io_service),
+                                     out_socket(io_service, ssl_context) {}
 
-tcp::socket& ClientSession::accept_socket() {
+boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& ClientSession::accept_socket() {
     return in_socket;
 }
 
 void ClientSession::start() {
-    Log::log_with_date_time("incoming connection from " + in_socket.remote_endpoint().address().to_string() + ':' + to_string(in_socket.remote_endpoint().port()));
     in_async_read();
 }
 
@@ -24,7 +25,8 @@ void ClientSession::in_async_read() {
         if (!error) {
             in_async_write(length);
         } else {
-            Log::log_with_date_time(in_socket.remote_endpoint().address().to_string() + ':' + to_string(in_socket.remote_endpoint().port()) + " closed the connection");
+            auto endpoint = in_socket.remote_endpoint();
+            Log::log_with_date_time(endpoint.address().to_string() + ':' + to_string(endpoint.port()) + " closed the connection");
             in_socket.close();
             delete this;
         }
