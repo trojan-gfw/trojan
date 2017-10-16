@@ -22,6 +22,7 @@ void ClientSession::in_async_read() {
         if (!error) {
             in_async_write(length);
         } else {
+            Log::log_with_date_time(in_socket.remote_endpoint().address().to_string() + ':' + to_string(in_socket.remote_endpoint().port()) + " closed the connection");
             in_socket.close();
             delete this;
         }
