@@ -20,7 +20,7 @@ public:
     std::string keyfile;
     std::string certfile;
     Config();
-    bool load(const std::string &filename);
+    void load(const std::string &filename);
 };
 
 #endif // _CONFIG_H_

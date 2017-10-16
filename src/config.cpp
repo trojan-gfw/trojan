@@ -17,13 +17,9 @@ Config::Config() : run_type(CLIENT),
                    keyfile(),
                    certfile() {}
 
-bool Config::load(const string &filename) {
+void Config::load(const string &filename) {
     ptree tree;
-    try {
-        read_json(filename, tree);
-    } catch (const std::exception&) {
-        return false;
-    }
+    read_json(filename, tree);
     run_type = (tree.get("run_type", string("client")) == "server") ? SERVER : CLIENT;
     local_addr = tree.get("local_addr", string("127.0.0.1"));
     local_port = tree.get("local_port", uint16_t(1080));
@@ -33,5 +29,4 @@ bool Config::load(const string &filename) {
     ca_certs = tree.get("ca_certs", string());
     keyfile = tree.get("keyfile", string());
     certfile = tree.get("certfile", string());
-    return true;
 }
