@@ -8,7 +8,7 @@ using boost::asio::ip::tcp;
 using namespace boost::asio::ssl;
 using namespace std;
 
-ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) : Session(config, io_service),
+ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) : Session(config),
                                      in_socket(io_service),
                                      out_socket(io_service, ssl_context) {}
 
