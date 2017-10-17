@@ -1,6 +1,8 @@
 #ifndef _SESSION_H_
 #define _SESSION_H_
 
+#include <cstdint>
+#include <queue>
 #include <boost/asio.hpp>
 
 class Config;
@@ -11,6 +13,11 @@ protected:
         MAX_LENGTH = 8192
     };
     const Config &config;
+    uint8_t in_read_buf[MAX_LENGTH];
+    std::queue<std::string>in_write_queue;
+    uint8_t out_read_buf[MAX_LENGTH];
+    std::queue<std::string>out_write_queue;
+    bool closing, destroying;
 public:
     Session(const Config &config);
     virtual boost::asio::basic_socket<boost::asio::ip::tcp, boost::asio::stream_socket_service<boost::asio::ip::tcp> >& accept_socket() = 0;
