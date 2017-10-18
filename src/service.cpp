@@ -25,9 +25,10 @@ Service::Service(const Config &config) :
     } else {
         if (config.ssl_verify) {
             ssl_context.set_verify_mode(verify_peer);
-            ssl_context.set_default_verify_paths();
-            ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
-            if (config.ca_certs != "") {
+            if (config.ca_certs == "") {
+                ssl_context.set_default_verify_paths();
+                ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
+            } else {
                 ssl_context.load_verify_file(config.ca_certs);
             }
         } else {
