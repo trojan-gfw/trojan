@@ -19,6 +19,7 @@ protected:
     std::queue<std::string>out_write_queue;
     bool closing, destroying;
     boost::asio::ip::tcp::resolver resolver;
+    boost::asio::ip::tcp::endpoint in_endpoint;
 public:
     Session(const Config &config, boost::asio::io_service &io_service);
     virtual boost::asio::basic_socket<boost::asio::ip::tcp, boost::asio::stream_socket_service<boost::asio::ip::tcp> >& accept_socket() = 0;

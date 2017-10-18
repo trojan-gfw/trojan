@@ -2,6 +2,8 @@
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include "trojanrequest.h"
+#include "log.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -17,6 +19,7 @@ boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& Client
 }
 
 void ClientSession::start() {
+    in_endpoint = in_socket.remote_endpoint();
     in_async_read();
 }
 
@@ -54,6 +57,7 @@ void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
             if (data[0] != 5) {
+                Log::log_with_endpoint(in_endpoint, "unknown protocol");
                 destroy();
                 return;
             }
@@ -66,6 +70,7 @@ void ClientSession::in_recv(const string &data) {
             }
             if (!ok) {
                 closing = true;
+                Log::log_with_endpoint(in_endpoint, "unsupported auth method");
                 in_send(string("\x05\xff", 2));
                 return;
             }
@@ -76,12 +81,20 @@ void ClientSession::in_recv(const string &data) {
         case REQUEST: {
             if (data[0] != 5 or data[1] != 1 or data[2] != 0) {
                 closing = true;
+                Log::log_with_endpoint(in_endpoint, "unsupported command");
                 in_send(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 return;
             }
             in_send(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
-            string req = data[1] + data.substr(3);
-            out_write_queue.push(config.password + "\r\n" + req + "\r\n");
+            string req_str = data[1] + data.substr(3);
+            TrojanRequest req;
+            if (!req.parse(req_str)) {
+                Log::log_with_endpoint(in_endpoint, "bad request");
+                destroy();
+                return;
+            }
+            Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
+            out_write_queue.push(config.password + "\r\n" + req_str + "\r\n");
             status = CONNECTING_REMOTE;
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
             resolver.async_resolve(query, [this](const boost::system::error_code error, tcp::resolver::iterator iterator) {
@@ -90,18 +103,22 @@ void ClientSession::in_recv(const string &data) {
                         if (!error) {
                             out_socket.async_handshake(boost::asio::ssl::stream_base::client, [this](const boost::system::error_code error) {
                                 if (!error) {
+                                    Log::log_with_endpoint(in_endpoint, "tunnel established");
                                     status = FORWARD;
                                     out_async_read();
                                     out_async_write();
                                 } else {
+                                    Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port));
                                     destroy();
                                 }
                             });
                         } else {
+                            Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
                             destroy();
                         }
                     });
                 } else {
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
                     destroy();
                 }
             });
@@ -171,6 +188,7 @@ void ClientSession::destroy() {
         return;
     }
     destroying = true;
+    Log::log_with_endpoint(in_endpoint, "disconnected");
     resolver.cancel();
     if (in_socket.is_open()) {
         in_socket.cancel();

@@ -3,6 +3,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include "trojanrequest.h"
+#include "log.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -18,10 +19,12 @@ boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& Server
 }
 
 void ServerSession::start() {
+    in_endpoint = in_socket.lowest_layer().remote_endpoint();
     in_socket.async_handshake(boost::asio::ssl::stream_base::server, [this](const boost::system::error_code error) {
         if (!error) {
             in_async_read();
         } else {
+            Log::log_with_endpoint(in_endpoint, "SSL handshake failed");
             destroy();
         }
     });
@@ -68,9 +71,11 @@ void ServerSession::in_recv(const string &data) {
                         string req_str = data.substr(first + 2, second - first - 2);
                         TrojanRequest req;
                         if (!req.parse(req_str)) {
+                            Log::log_with_endpoint(in_endpoint, "bad request");
                             destroy();
                             return;
                         };
+                        Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
                         out_write_queue.push(data.substr(second + 2));
                         status = CONNECTING_REMOTE;
                         tcp::resolver::query query(req.address, to_string(req.port));
@@ -78,14 +83,17 @@ void ServerSession::in_recv(const string &data) {
                             if (!error) {
                                 out_socket.async_connect(*iterator, [this](const boost::system::error_code error) {
                                     if (!error) {
+                                        Log::log_with_endpoint(in_endpoint, "tunnel established");
                                         status = FORWARD;
                                         out_async_read();
                                         out_async_write();
                                     } else {
+                                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server");
                                         destroy();
                                     }
                                 });
                             } else {
+                                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname");
                                 destroy();
                             }
                         });
@@ -93,6 +101,7 @@ void ServerSession::in_recv(const string &data) {
                     }
                 }
             }
+            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port));
             out_write_queue.push(data);
             status = CONNECTING_REMOTE;
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
@@ -100,14 +109,17 @@ void ServerSession::in_recv(const string &data) {
                 if (!error) {
                     out_socket.async_connect(*iterator, [this](const boost::system::error_code error) {
                         if (!error) {
+                            Log::log_with_endpoint(in_endpoint, "tunnel established");
                             status = FORWARD;
                             out_async_read();
                             out_async_write();
                         } else {
+                            Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
                             destroy();
                         }
                     });
                 } else {
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
                     destroy();
                 }
             });
@@ -177,6 +189,7 @@ void ServerSession::destroy() {
         return;
     }
     destroying = true;
+    Log::log_with_endpoint(in_endpoint, "disconnected");
     resolver.cancel();
     if (out_socket.is_open()) {
         out_socket.cancel();
