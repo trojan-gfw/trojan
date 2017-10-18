@@ -65,16 +65,11 @@ void ServerSession::in_recv(const string &data) {
                     size_t second = data.find("\r\n", first + 2);
                     if (second != string::npos) {
                         string req = data.substr(first + 2, second - first - 2);
-                        for (int i = 0; i < req.length(); ++i) {
-                            putchar(req[i]);
-                        }
-                        putchar('\n');
                         destroy();
                         return;
                     }
                 }
             }
-            puts("standard");
             destroy();
             break;
         }
