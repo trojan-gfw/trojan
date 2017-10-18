@@ -2,7 +2,6 @@
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-#include "log.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -172,8 +171,10 @@ void ClientSession::destroy() {
         return;
     }
     destroying = true;
-    in_socket.shutdown(tcp::socket::shutdown_both);
-    in_socket.close();
+    if (in_socket.is_open()) {
+        in_socket.shutdown(tcp::socket::shutdown_both);
+        in_socket.close();
+    }
     out_socket.async_shutdown([this](boost::system::error_code error) {
         delete this;
     });
