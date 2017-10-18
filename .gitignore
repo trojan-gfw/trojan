@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Config files
+*.json
+
+# Key and certificate files
+*.pem
