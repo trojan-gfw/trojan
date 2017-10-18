@@ -80,8 +80,8 @@ void ClientSession::in_recv(const string &data) {
                 return;
             }
             in_send(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
-            string req = string("\r\n") + data[1] + data.substr(3) + "\r\n";
-            out_write_queue.push(config.password + req);
+            string req = data[1] + data.substr(3);
+            out_write_queue.push(config.password + "\r\n" + req + "\r\n");
             status = CONNECTING_REMOTE;
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
             resolver.async_resolve(query, [this](const boost::system::error_code error, tcp::resolver::iterator iterator) {

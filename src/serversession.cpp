@@ -2,6 +2,7 @@
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include "trojanrequest.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -64,13 +65,52 @@ void ServerSession::in_recv(const string &data) {
                 if (config.password == data.substr(0, first)) {
                     size_t second = data.find("\r\n", first + 2);
                     if (second != string::npos) {
-                        string req = data.substr(first + 2, second - first - 2);
-                        destroy();
+                        string req_str = data.substr(first + 2, second - first - 2);
+                        TrojanRequest req;
+                        if (!req.parse(req_str)) {
+                            destroy();
+                            return;
+                        };
+                        out_write_queue.push(data.substr(second + 2));
+                        status = CONNECTING_REMOTE;
+                        tcp::resolver::query query(req.address, to_string(req.port));
+                        resolver.async_resolve(query, [this](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+                            if (!error) {
+                                out_socket.async_connect(*iterator, [this](const boost::system::error_code error) {
+                                    if (!error) {
+                                        status = FORWARD;
+                                        out_async_read();
+                                        out_async_write();
+                                    } else {
+                                        destroy();
+                                    }
+                                });
+                            } else {
+                                destroy();
+                            }
+                        });
                         return;
                     }
                 }
             }
-            destroy();
+            out_write_queue.push(data);
+            status = CONNECTING_REMOTE;
+            tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
+            resolver.async_resolve(query, [this](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+                if (!error) {
+                    out_socket.async_connect(*iterator, [this](const boost::system::error_code error) {
+                        if (!error) {
+                            status = FORWARD;
+                            out_async_read();
+                            out_async_write();
+                        } else {
+                            destroy();
+                        }
+                    });
+                } else {
+                    destroy();
+                }
+            });
             break;
         }
         case CONNECTING_REMOTE: {
