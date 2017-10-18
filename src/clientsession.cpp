@@ -171,10 +171,12 @@ void ClientSession::destroy() {
         return;
     }
     destroying = true;
-    if (in_socket.is_open()) {
-        in_socket.shutdown(tcp::socket::shutdown_both);
-        in_socket.close();
-    }
+    resolver.cancel();
+    in_socket.cancel();
+    out_socket.lowest_layer().cancel();
+    boost::system::error_code error;
+    in_socket.shutdown(tcp::socket::shutdown_both, error);
+    in_socket.close();
     out_socket.async_shutdown([this](boost::system::error_code error) {
         delete this;
     });

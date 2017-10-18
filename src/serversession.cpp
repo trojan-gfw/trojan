@@ -126,10 +126,12 @@ void ServerSession::destroy() {
         return;
     }
     destroying = true;
-    if (out_socket.is_open()) {
-        out_socket.shutdown(tcp::socket::shutdown_both);
-        out_socket.close();
-    }
+    resolver.cancel();
+    in_socket.lowest_layer().cancel();
+    out_socket.cancel();
+    boost::system::error_code error;
+    out_socket.shutdown(tcp::socket::shutdown_both, error);
+    out_socket.close();
     in_socket.async_shutdown([this](boost::system::error_code error) {
         delete this;
     });
