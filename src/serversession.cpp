@@ -59,11 +59,27 @@ void ServerSession::in_async_write() {
 void ServerSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
-            in_send(data);
+            size_t first = data.find("\r\n");
+            if (first != string::npos) {
+                if (config.password == data.substr(0, first)) {
+                    size_t second = data.find("\r\n", first + 2);
+                    if (second != string::npos) {
+                        string req = data.substr(first + 2, second - first - 2);
+                        for (int i = 0; i < req.length(); ++i) {
+                            putchar(req[i]);
+                        }
+                        putchar('\n');
+                        destroy();
+                        return;
+                    }
+                }
+            }
+            puts("standard");
+            destroy();
             break;
         }
         case CONNECTING_REMOTE: {
-            in_write_queue.push(data);
+            out_write_queue.push(data);
             break;
         }
         case FORWARD: {
@@ -127,12 +143,18 @@ void ServerSession::destroy() {
     }
     destroying = true;
     resolver.cancel();
-    in_socket.lowest_layer().cancel();
-    out_socket.cancel();
-    boost::system::error_code error;
-    out_socket.shutdown(tcp::socket::shutdown_both, error);
-    out_socket.close();
-    in_socket.async_shutdown([this](boost::system::error_code error) {
-        delete this;
-    });
+    if (out_socket.is_open()) {
+        out_socket.cancel();
+        boost::system::error_code error;
+        out_socket.shutdown(tcp::socket::shutdown_both, error);
+        out_socket.close();
+    }
+    if (in_socket.lowest_layer().is_open()) {
+        in_socket.lowest_layer().cancel();
+        in_socket.async_shutdown([this](boost::system::error_code error) {
+            delete this;
+        });
+        return;
+    }
+    delete this;
 }

@@ -58,7 +58,7 @@ void ClientSession::in_recv(const string &data) {
                 return;
             }
             bool ok = false;
-            for (char i = 0; i < data[1] && i < data.length(); ++i) {
+            for (char i = 0; i < data[1]; ++i) {
                 if (data[i + 2] == 0) {
                     ok = true;
                     break;
@@ -172,12 +172,18 @@ void ClientSession::destroy() {
     }
     destroying = true;
     resolver.cancel();
-    in_socket.cancel();
-    out_socket.lowest_layer().cancel();
-    boost::system::error_code error;
-    in_socket.shutdown(tcp::socket::shutdown_both, error);
-    in_socket.close();
-    out_socket.async_shutdown([this](boost::system::error_code error) {
-        delete this;
-    });
+    if (in_socket.is_open()) {
+        in_socket.cancel();
+        boost::system::error_code error;
+        in_socket.shutdown(tcp::socket::shutdown_both, error);
+        in_socket.close();
+    }
+    if (out_socket.lowest_layer().is_open()) {
+        out_socket.lowest_layer().cancel();
+        out_socket.async_shutdown([this](boost::system::error_code error) {
+            delete this;
+        });
+        return;
+    }
+    delete this;
 }
