@@ -83,6 +83,7 @@ void ClientSession::in_recv(const string &data) {
             in_send(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
             string req = string("\r\n") + data[1] + data.substr(3) + "\r\n";
             out_write_queue.push(config.password + req);
+            status = CONNECTING_REMOTE;
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
             resolver.async_resolve(query, [this](const boost::system::error_code error, tcp::resolver::iterator iterator) {
                 if (!error) {
@@ -105,7 +106,6 @@ void ClientSession::in_recv(const string &data) {
                     destroy();
                 }
             });
-            status = CONNECTING_REMOTE;
             break;
         }
         case CONNECTING_REMOTE: {
