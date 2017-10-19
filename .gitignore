@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+trojan*
 
 # Config files
 *.json
