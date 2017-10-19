@@ -1,6 +1,6 @@
 language: cpp
 before_script:
   - sudo apt-get update -qq
-  - sudo apt-get install cmake3 libssl-dev libboost-dev -y
+  - sudo apt-get install cmake3 libssl-dev libboost-all-dev -y
 script:
   - cmake . && make
