@@ -6,3 +6,6 @@ Trojan is an unidentifiable mechanism to bypass GFW. In this documentation you w
 
 - [Overview](overview)
 - [The Trojan Protocol](protocol)
+- [Config](config)
+- [How to Build Trojan](build)
+- [How to Use Trojan](use)

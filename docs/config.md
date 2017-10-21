@@ -1,3 +1,3 @@
 # Config
 
-[Homepage](.) | [Prev Page](protocol)
+[Homepage](.) | [Prev Page](protocol) | [Next Page](build)
