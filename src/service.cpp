@@ -19,6 +19,7 @@
 
 #include "service.h"
 #include <string>
+#include <memory>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include "config.h"
@@ -64,18 +65,16 @@ int Service::run() {
 }
 
 void Service::async_accept() {
-    Session *session = nullptr;
+    shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = new ServerSession(config, io_service, ssl_context);
+        session = make_shared<ServerSession>(config, io_service, ssl_context);
     } else {
-        session = new ClientSession(config, io_service, ssl_context);
+        session = make_shared<ClientSession>(config, io_service, ssl_context);
     }
     socket_acceptor.async_accept(session->accept_socket(), [this, session](boost::system::error_code error) {
         if (!error) {
             Log::log_with_endpoint(session->accept_socket().remote_endpoint(), "incoming connection");
             session->start();
-        } else {
-            delete session;
         }
         async_accept();
     });

@@ -22,11 +22,12 @@
 
 #include <cstdint>
 #include <queue>
+#include <memory>
 #include <boost/asio.hpp>
 
 class Config;
 
-class Session {
+class Session : public std::enable_shared_from_this<Session> {
 protected:
     enum {
         MAX_LENGTH = 8192
