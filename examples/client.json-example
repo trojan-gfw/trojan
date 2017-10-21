@@ -6,5 +6,5 @@
     "remote_port": 443,
     "password": "password",
     "ssl_verify": true,
-    "ca_certs": ""
+    "ca_certs": "cert.pem"
 }
