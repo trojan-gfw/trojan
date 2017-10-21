@@ -101,7 +101,7 @@ void ClientSession::in_recv(const string &data) {
             break;
         }
         case REQUEST: {
-            if (data[0] != 5 or data[1] != 1 or data[2] != 0) {
+            if (data[0] != 5 || data[1] != 1 || data[2] != 0) {
                 closing = true;
                 Log::log_with_endpoint(in_endpoint, "unsupported command");
                 in_send(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
