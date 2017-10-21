@@ -19,6 +19,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <iostream>
 #include "log.h"
 #include "config.h"
 #include "service.h"
@@ -27,13 +28,19 @@ using namespace std;
 
 int main(int argc, const char *argv[]) {
     puts(("Welcome to trojan " + Version::get_version()).c_str());
-    if (argc != 2) {
-        Log::log(string("usage: ") + argv[0] + " config_file");
+    string filename;
+    if (argc == 1) {
+        cout << "Enter config filename: ";
+        getline(cin, filename);
+    } else if (argc == 2) {
+        filename = argv[1];
+    } else {
+        Log::log(string("usage: ") + argv[0] + " [config_file]");
         exit(1);
     }
     Config config;
     try {
-        config.load(argv[1]);
+        config.load(filename);
         Service service(config);
         return service.run();
     } catch (const exception &e) {
