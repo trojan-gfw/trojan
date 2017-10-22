@@ -4,7 +4,7 @@ We will now show how a trojan server will react to a **valid Trojan Protocol**, 
 
 ## Valid Trojan Protocol
 
-Basically, when a trojan client connects to a trojan server, they perform **real** TLS handshake first. If handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server closes the connection immediately like any `HTTPS` servers would do when handshake fails. Afterwards, the trojan client sends the following structure:
+When a trojan client connects to a server, it first performs a **real** TLS handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately, as any `HTTPS` server would do on handshake failure. Then the client sends the following structure:
 
 ```
 +-----------------------+---------+----------------+---------+----------+
@@ -13,7 +13,7 @@ Basically, when a trojan client connects to a trojan server, they perform **real
 |          56           | X'0D0A' |    Variable    | X'0D0A' | Variable |
 +-----------------------+---------+----------------+---------+----------+
 
-in which Trojan Request is a SOCKS5-like request:
+where Trojan Request is a SOCKS5-like request:
 
 +-----+------+----------+----------+
 | CMD | ATYP | DST.ADDR | DST.PORT |
@@ -34,15 +34,15 @@ where:
     o  DST.PORT desired destination port in network octet order
 ```
 
-More information about `SOCKS5` requests can be found [here](https://tools.ietf.org/html/rfc1928).
+More information on `SOCKS5` requests can be found [here](https://tools.ietf.org/html/rfc1928).
 
-**Note that `UDP ASSOCIATE` is not implemented in current version of trojan. The `CMD` field is reserved for future implementation if demanded.**
+**Note that a `UDP ASSOCIATE` has not been implemented in version 0.1.0. The `CMD` field may be extended in future implementation (if needed).**
 
-When the server receives the first data packet, it looks for the two `CRLF`s; then, it extracts the hashed password and Trojan Request to check the validity (password is correct and Trojan Request is well-formed). If any steps of the procedure fail, the protocol is considered "other protocols" which will be explained in the next section. Note that in the first packet, there is already payload appended to avoid length pattern detection and to reduce number of packets to be sent.
+When the server receives the first data packet, it unwraps the TLS packet and looks for the two `CRLF`s. Then it checks if the hashed password is correct and the Trojan Request is valid.On failure at any step, the protocol is considered "other protocols" (see next section). Note that the first packet will have payload (ApplicationData) appened. This avoids length pattern detection and may reduce the number of packets to be sent.
 
 If the request is valid, the trojan server connects to the endpoint indicated by the `DST.ADDR` and `DST.PORT` field and opens a direct tunnel between the endpoint and trojan client.
 
-(Trojan client is simply a `SOCKS5`-Trojan Protocol converter. There is no detail worth illustrating.)
+(Trojan client is simply a Trojan Protocol-`SOCKS5` converter. There is no detail worth illustrating.)
 
 ## Other Protocols
 

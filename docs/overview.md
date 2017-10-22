@@ -1,7 +1,7 @@
 # Overview
 
-To penetrate the block of information caused by GFW, people are constantly trying to design unidentifiable protocols with strong encryption and obfuscation to cheat GFW's filter. As it turns out, the best practice is to mimic other protocols, such as` HTTPS`. Trojan, however, has taken a huge step forward: it just "is" `HTTPS`, or at least GFW will think it only just "is" an `HTTPS` server.
+On penetrating GFW, people assume that strong encryption and obfuscation may cheat GFW's ever-evolving filtration mechanism. However, imho, the best camouflage is to mimic other protocols, such as the well-known `HTTPS`. Trojan implements this idea: it "is" `HTTPS`, or at least tries trick GFW into thinking so.
 
-In the [next page](protocol), we'll see how trojan protocol works and why it can defend itself from being detected both actively and passively.
+The [next page](protocol) introduces the trojan protocol, and how it hides itself from active and passive detections.
 
 [Homepage](.) | [Next Page](protocol)
