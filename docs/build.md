@@ -10,7 +10,7 @@ Install these dependencies before you build:
 - [Boost](http://www.boost.org/) >= 1.54.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.1f
 
-If you are using Ubuntu (>= 14.04), you can type in
+For example, if you are using Ubuntu 14.04, you can type in
 
 ```bash
 sudo apt-get install cmake3 libssl-dev libboost-all-dev

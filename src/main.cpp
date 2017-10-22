@@ -28,19 +28,13 @@ using namespace std;
 
 int main(int argc, const char *argv[]) {
     puts(("Welcome to trojan " + Version::get_version()).c_str());
-    string filename;
-    if (argc == 1) {
-        cout << "Enter config file path: ";
-        getline(cin, filename);
-    } else if (argc == 2) {
-        filename = argv[1];
-    } else {
-        Log::log(string("usage: ") + argv[0] + " [config_file]");
+    if (argc != 2) {
+        Log::log(string("usage: ") + argv[0] + " config_file");
         exit(1);
     }
     Config config;
     try {
-        config.load(filename);
+        config.load(argv[1]);
         Service service(config);
         return service.run();
     } catch (const exception &e) {

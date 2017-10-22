@@ -15,7 +15,7 @@ Example:
     "remote_port": 443,
     "password": "password",
     "ssl_verify": true,
-    "ca_certs": "cert.pem"
+    "ca_certs": "/path/to/ca_certs.pem"
 }
 ```
 
@@ -40,9 +40,9 @@ Example:
     "remote_addr": "127.0.0.1",
     "remote_port": 80,
     "password": "password",
-    "keyfile": "key.pem",
-    "keyfile_password": "",
-    "certfile": "cert.pem"
+    "keyfile": "/path/to/private.key",
+    "keyfile_password": "keyfile_password",
+    "certfile": "/path/to/cert_chain.crt"
 }
 ```
 

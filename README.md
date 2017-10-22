@@ -4,4 +4,4 @@
 
 An unidentifiable mechanism that helps you bypass GFW.
 
-[Documentation](https://greaterfire.github.io/trojan)
+Online documentation can be found [here](https://greaterfire.github.io/trojan).
