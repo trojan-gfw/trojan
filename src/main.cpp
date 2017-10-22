@@ -30,7 +30,7 @@ int main(int argc, const char *argv[]) {
     puts(("Welcome to trojan " + Version::get_version()).c_str());
     string filename;
     if (argc == 1) {
-        cout << "Enter config filename: ";
+        cout << "Enter config file path: ";
         getline(cin, filename);
     } else if (argc == 2) {
         filename = argv[1];
