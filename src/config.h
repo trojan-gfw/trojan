@@ -40,6 +40,7 @@ public:
     std::string keyfile_password;
     std::string certfile;
     bool ssl_verify;
+    bool ssl_verify_hostname;
     std::string ca_certs;
     Config();
     void load(const std::string &filename);

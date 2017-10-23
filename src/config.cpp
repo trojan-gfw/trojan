@@ -37,6 +37,7 @@ Config::Config() : run_type(CLIENT),
                    keyfile_password("keyfile_password"),
                    certfile("/path/to/cert_chain.crt"),
                    ssl_verify(true),
+                   ssl_verify_hostname(true),
                    ca_certs("/path/to/ca_certs.pem") {}
 
 void Config::load(const string &filename) {
@@ -53,6 +54,7 @@ void Config::load(const string &filename) {
     keyfile_password = tree.get("keyfile_password", string("keyfile_password"));
     certfile = tree.get("certfile", string("/path/to/cert_chain.crt"));
     ssl_verify = tree.get("ssl_verify", true);
+    ssl_verify_hostname = tree.get("ssl_verify_hostname", true);
     ca_certs = tree.get("ca_certs", string("/path/to/ca_certs.pem"));
 }
 

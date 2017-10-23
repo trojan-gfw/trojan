@@ -50,7 +50,9 @@ Service::Service(const Config &config) :
             } else {
                 ssl_context.load_verify_file(config.ca_certs);
             }
-            ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
+            if (config.ssl_verify_hostname) {
+                ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
+            }
         } else {
             ssl_context.set_verify_mode(verify_none);
         }

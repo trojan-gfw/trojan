@@ -15,6 +15,7 @@ Example:
     "remote_port": 443,
     "password": "password",
     "ssl_verify": true,
+    "ssl_verify_hostname": true,
     "ca_certs": "/path/to/ca_certs.pem"
 }
 ```
@@ -26,6 +27,7 @@ Example:
 - `remote_port`: the trojan server port.
 - `password`: the trojan server password.
 - `ssl_verify`: whether to verify `SSL` certificate. **STRONGLY RECOMMENDED**
+- `ssl_verify_hostname`: whether to verify `SSL` hostname. **STRONGLY RECOMMENDED**
 - `ca_certs`: if you choose to verify `SSL` certificate, which `CA` are you using? You can also choose the server certificate directly. Note that if you leave this field blank, `OpenSSL` will try to look for system `CA` and will usually fail.
 
 ## Server
