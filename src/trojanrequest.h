@@ -27,7 +27,7 @@ class TrojanRequest {
 public:
     enum Command {
         CONNECT = 1,
-        UDP_ASSOCIATE = 3
+        UDP_ASSOCIATE = 3 // NOT IMPLEMENTED
     } command;
     enum AddressType {
         IPv4 = 1,
