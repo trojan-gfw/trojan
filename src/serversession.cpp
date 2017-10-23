@@ -45,6 +45,7 @@ void ServerSession::start() {
         if (!error) {
             in_async_read();
         } else {
+            Log::log_with_endpoint(in_endpoint, "SSL handshake failed");
             destroy();
         }
     });
@@ -84,9 +85,11 @@ void ServerSession::in_recv(const string &data) {
                         string req_str = data.substr(first + 2, second - first - 2);
                         TrojanRequest req;
                         if (!req.parse(req_str)) {
+                            Log::log_with_endpoint(in_endpoint, "bad request");
                             destroy();
                             return;
                         };
+                        Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
                         status = CONNECTING_REMOTE;
                         out_write_buf = data.substr(second + 2);
                         tcp::resolver::query query(req.address, to_string(req.port));
@@ -94,6 +97,7 @@ void ServerSession::in_recv(const string &data) {
                             if (!error) {
                                 out_socket.async_connect(*iterator, [this, self](const boost::system::error_code error) {
                                     if (!error) {
+                                        Log::log_with_endpoint(in_endpoint, "tunnel established");
                                         status = FORWARDING;
                                         out_async_read();
                                         if (out_write_buf != "") {
@@ -102,10 +106,12 @@ void ServerSession::in_recv(const string &data) {
                                             in_async_read();
                                         }
                                     } else {
+                                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server");
                                         destroy();
                                     }
                                 });
                             } else {
+                                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname");
                                 destroy();
                             }
                         });
@@ -113,6 +119,7 @@ void ServerSession::in_recv(const string &data) {
                     }
                 }
             }
+            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port));
             status = CONNECTING_REMOTE;
             out_write_buf = data;
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
@@ -120,14 +127,17 @@ void ServerSession::in_recv(const string &data) {
                 if (!error) {
                     out_socket.async_connect(*iterator, [this, self](const boost::system::error_code error) {
                         if (!error) {
+                            Log::log_with_endpoint(in_endpoint, "tunnel established");
                             status = FORWARDING;
                             out_async_read();
                             out_async_write(out_write_buf);
                         } else {
+                            Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
                             destroy();
                         }
                     });
                 } else {
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
                     destroy();
                 }
             });
@@ -226,6 +236,7 @@ void ServerSession::destroy() {
     if (status == DESTROYING) {
         return;
     }
+    Log::log_with_endpoint(in_endpoint, "disconnected");
     status = DESTROYING;
     resolver.cancel();
     out_socket.close();

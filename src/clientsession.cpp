@@ -69,6 +69,7 @@ void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
             if (data.length() < 2 || data[0] != 5) {
+                Log::log_with_endpoint(in_endpoint, "unknown protocol");
                 destroy();
                 return;
             }
@@ -80,6 +81,7 @@ void ClientSession::in_recv(const string &data) {
                 }
             }
             if (!ok) {
+                Log::log_with_endpoint(in_endpoint, "unsupported auth method");
                 status = INVALID;
                 in_async_write(string("\x05\xff", 2));
                 return;
@@ -92,6 +94,7 @@ void ClientSession::in_recv(const string &data) {
                 string req_str = data[1] + data.substr(3);
                 TrojanRequest req;
                 if (req.parse(req_str)) {
+                    Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
                     status = CONNECTING_REMOTE;
                     in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                     out_write_buf = config.password + "\r\n" + req_str + "\r\n";
@@ -103,22 +106,30 @@ void ClientSession::in_recv(const string &data) {
                                 if (!error) {
                                     out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
                                         if (!error) {
+                                            Log::log_with_endpoint(in_endpoint, "tunnel established");
                                             out_async_write(out_write_buf);
                                             out_async_read();
                                         } else {
+                                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port));
                                             destroy();
                                         }
                                     });
                                 } else {
+                                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
                                     destroy();
                                 }
                             });
                         } else {
+                            Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
                             destroy();
                         }
                     });
                     return;
+                } else {
+                    Log::log_with_endpoint(in_endpoint, "bad request");
                 }
+            } else {
+                Log::log_with_endpoint(in_endpoint, "unsupported command");
             }
             status = INVALID;
             in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
@@ -259,6 +270,7 @@ void ClientSession::destroy() {
     if (status == DESTROYING) {
         return;
     }
+    Log::log_with_endpoint(in_endpoint, "disconnected");
     status = DESTROYING;
     resolver.cancel();
     in_socket.close();
