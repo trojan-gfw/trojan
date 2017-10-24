@@ -26,7 +26,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `password`: password used  for verification
 - `ssl_verify`: whether to verify `SSL` certificate. **STRONGLY RECOMMENDED**
 - `ssl_verify_hostname`: whether to verify `SSL` hostname. **STRONGLY RECOMMENDED**
-- `ca_certs`: if ssl_verify is set to 'true', a collection of `CA` certificates should be privided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will likely to fail.
+- `ca_certs`: if `ssl_verify` is set to 'true', a collection of `CA` certificates should be privided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will likely to fail.
 
 ## A valid server.json
 
