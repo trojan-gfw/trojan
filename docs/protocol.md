@@ -56,6 +56,6 @@ All connection without correct structure and password will be redirected to a pr
 
 ### Passive Detection
 
-Because the traffic is protected by `TLS` (it is users' responsibility to use a valid certificate) and if you are visiting an `HTTP` site, the traffic looks exactly the same as `HTTPS` (there is only one `RTT` after `TLS` handshake). If you are not visiting an `HTTP` site, then the traffic looks exactly the same as `HTTPS` kept alive or `WebSocket`. Because of this, trojan can also bypass ISP QoS limitations.
+Because the traffic is protected by `TLS` (it is users' responsibility to use a valid certificate) and if you are visiting an `HTTP` site, the traffic looks exactly the same as `HTTPS` (there is only one `RTT` after `TLS` handshake). If you are not visiting an `HTTP` site, then the traffic looks exactly the same as `HTTPS` kept alive or `WebSocket`. Because of this, trojan can also bypass ISP `QoS` limitations.
 
 [Homepage](.) | [Prev Page](overview) | [Next Page](config)
