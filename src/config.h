@@ -1,6 +1,6 @@
 /*
  * This file is part of the trojan project.
- * Trojan is an unidentifiable mechanism to bypass GFW.
+ * Trojan is an unidentifiable mechanism that helps you bypass GFW.
  * Copyright (C) 2017  GreaterFire
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,6 +40,7 @@ public:
     std::string keyfile_password;
     std::string certfile;
     bool ssl_verify;
+    bool ssl_verify_hostname;
     std::string ca_certs;
     Config();
     void load(const std::string &filename);

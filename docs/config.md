@@ -2,9 +2,7 @@
 
 In this page we will look at the config file of trojan. Trojan uses [`JSON`](https://en.wikipedia.org/wiki/JSON) as the format of the config.
 
-## Client
-
-Example:
+## A valid client.json
 
 ```json
 {
@@ -15,22 +13,22 @@ Example:
     "remote_port": 443,
     "password": "password",
     "ssl_verify": true,
-    "ca_certs": "cert.pem"
+    "ssl_verify_hostname": true,
+    "ca_certs": "/path/to/ca_certs.pem"
 }
 ```
 
-- `run_type`: we are running trojan as `client`.
-- `local_addr`: the `SOCKS5` interface will be bound to this network interface. Feel free to change this to ``0.0.0.0``, ``::1``, ``::`` or other addresses if you know what you are doing.
-- `local_port`: the `SOCKS5` interface will be bound to this port.
-- `remote_addr`: the trojan server address.
-- `remote_port`: the trojan server port.
-- `password`: the trojan server password.
+- `run_type`: running trojan as `client`
+- `local_addr`: A `SOCKS5` server interface will be bound to the specified interface. Feel free to change this to ``0.0.0.0``, ``::1``, ``::`` or other addresses, if you know what you are doing.
+- `local_port`: A `SOCKS5` interface will be bound to this port.
+- `remote_addr`: server address
+- `remote_port`: server port
+- `password`: password used for verification
 - `ssl_verify`: whether to verify `SSL` certificate. **STRONGLY RECOMMENDED**
-- `ca_certs`: if you choose to verify `SSL` certificate, which `CA` are you using? You can also choose the server certificate directly. Note that if you leave this field blank, `OpenSSL` will try to look for system `CA` and will usually fail.
+- `ssl_verify_hostname`: whether to verify `SSL` hostname. **STRONGLY RECOMMENDED**
+- `ca_certs`: if `ssl_verify` is set to `true`, a collection of `CA` certificates should be privided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will likely to fail.
 
-## Server
-
-Example:
+## A valid server.json
 
 ```json
 {
@@ -40,20 +38,20 @@ Example:
     "remote_addr": "127.0.0.1",
     "remote_port": 80,
     "password": "password",
-    "keyfile": "key.pem",
-    "keyfile_password": "",
-    "certfile": "cert.pem"
+    "keyfile": "/path/to/private.key",
+    "keyfile_password": "keyfile_password",
+    "certfile": "/path/to/cert_chain.crt"
 }
 ```
 
-- `run_type`: we are running trojan as `server`.
-- `local_addr`: trojan server will be bound to this network interface. Feel free to change this to ``::`` or other addresses if you know what you are doing.
+- `run_type`: running trojan as `server`
+- `local_addr`: trojan server will be bound to the specified interface. Feel free to change this to `::` or other addresses, if you know what you are doing.
 - `local_port`: trojan server will be bound to this port.
 - `remote_addr`: the endpoint address that trojan server will connect to when encountering other protocols.
-- `remote_port`: the endpoint port that trojan server will connect to when encountering other protocols.
-- `password`: trojan server password.
-- `keyfile`: private key file used to encrypt traffic.
-- `keyfile_password`: private key file decrypt password.
-- `certfile`: server certification. **STRONGLY RECOMMENDED TO BE SIGNED BY A CA**
+- `remote_port`: the endpoint port to which trojan server connects when encountering other protocols.
+- `password`: password used for verification
+- `keyfile`: private key file for encryption
+- `keyfile_password`: password of the keyfile
+- `certfile`: server certification **STRONGLY RECOMMENDED TO BE SIGNED BY A CA**
 
-[Homepage](.) | [Prev Page](protocol) | [Next Page](build)
+[Homepage](.) | [Prev Page](protocol) | [Next Page](compile)

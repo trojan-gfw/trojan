@@ -1,6 +1,6 @@
 /*
  * This file is part of the trojan project.
- * Trojan is an unidentifiable mechanism to bypass GFW.
+ * Trojan is an unidentifiable mechanism that helps you bypass GFW.
  * Copyright (C) 2017  GreaterFire
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,4 @@
 #include <boost/asio.hpp>
 
 Session::Session(const Config &config, boost::asio::io_service &io_service) : config(config),
-                                                                              closing(false),
-                                                                              destroying(false),
                                                                               resolver(io_service) {}

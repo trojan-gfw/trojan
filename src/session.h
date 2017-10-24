@@ -1,6 +1,6 @@
 /*
  * This file is part of the trojan project.
- * Trojan is an unidentifiable mechanism to bypass GFW.
+ * Trojan is an unidentifiable mechanism that helps you bypass GFW.
  * Copyright (C) 2017  GreaterFire
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 #define _SESSION_H_
 
 #include <cstdint>
-#include <queue>
+#include <string>
 #include <memory>
 #include <boost/asio.hpp>
 
@@ -34,10 +34,8 @@ protected:
     };
     const Config &config;
     uint8_t in_read_buf[MAX_LENGTH];
-    std::queue<std::string>in_write_queue;
     uint8_t out_read_buf[MAX_LENGTH];
-    std::queue<std::string>out_write_queue;
-    bool closing, destroying;
+    std::string out_write_buf;
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::endpoint in_endpoint;
 public:

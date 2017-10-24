@@ -1,6 +1,6 @@
 /*
  * This file is part of the trojan project.
- * Trojan is an unidentifiable mechanism to bypass GFW.
+ * Trojan is an unidentifiable mechanism that helps you bypass GFW.
  * Copyright (C) 2017  GreaterFire
  *
  * This program is free software: you can redistribute it and/or modify
@@ -47,9 +47,11 @@ Service::Service(const Config &config) :
             ssl_context.set_verify_mode(verify_peer);
             if (config.ca_certs == "") {
                 ssl_context.set_default_verify_paths();
-                ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
             } else {
                 ssl_context.load_verify_file(config.ca_certs);
+            }
+            if (config.ssl_verify_hostname) {
+                ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
             }
         } else {
             ssl_context.set_verify_mode(verify_none);

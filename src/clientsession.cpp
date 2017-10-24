@@ -1,6 +1,6 @@
 /*
  * This file is part of the trojan project.
- * Trojan is an unidentifiable mechanism to bypass GFW.
+ * Trojan is an unidentifiable mechanism that helps you bypass GFW.
  * Copyright (C) 2017  GreaterFire
  *
  * This program is free software: you can redistribute it and/or modify
@@ -48,27 +48,17 @@ void ClientSession::in_async_read() {
     in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (!error) {
             in_recv(string((const char*)in_read_buf, length));
-            in_async_read();
         } else {
-            if (out_write_queue.empty()) {
-                destroy();
-            } else {
-                closing = true;
-            }
+            destroy();
         }
     });
 }
 
-void ClientSession::in_async_write() {
+void ClientSession::in_async_write(const string &data) {
     auto self = shared_from_this();
-    boost::asio::async_write(in_socket, boost::asio::buffer(in_write_queue.front()), [this, self](boost::system::error_code error, std::size_t) {
+    boost::asio::async_write(in_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
         if (!error) {
-            in_write_queue.pop();
-            if (in_write_queue.size() > 0) {
-                in_async_write();
-            } else if (closing) {
-                destroy();
-            }
+            in_sent();
         } else {
             destroy();
         }
@@ -78,90 +68,122 @@ void ClientSession::in_async_write() {
 void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
-            if (data[0] != 5) {
+            if (data.length() < 2 || data[0] != 5) {
                 Log::log_with_endpoint(in_endpoint, "unknown protocol");
                 destroy();
                 return;
             }
             bool ok = false;
-            for (char i = 0; i < data[1]; ++i) {
-                if (data[i + 2] == 0) {
+            for (int i = 2; i < 2 + data[1] && i < data.length(); ++i) {
+                if (data[i] == 0) {
                     ok = true;
                     break;
                 }
             }
             if (!ok) {
-                closing = true;
                 Log::log_with_endpoint(in_endpoint, "unsupported auth method");
-                in_send(string("\x05\xff", 2));
+                status = INVALID;
+                in_async_write(string("\x05\xff", 2));
                 return;
             }
-            in_send(string("\x05\x00", 2));
-            status = REQUEST;
+            in_async_write(string("\x05\x00", 2));
             break;
         }
         case REQUEST: {
-            if (data[0] != 5 || data[1] != 1 || data[2] != 0) {
-                closing = true;
-                Log::log_with_endpoint(in_endpoint, "unsupported command");
-                in_send(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
-                return;
-            }
-            in_send(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
-            string req_str = data[1] + data.substr(3);
-            TrojanRequest req;
-            if (!req.parse(req_str)) {
-                Log::log_with_endpoint(in_endpoint, "bad request");
-                destroy();
-                return;
-            }
-            Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
-            out_write_queue.push(config.password + "\r\n" + req_str + "\r\n");
-            status = CONNECTING_REMOTE;
-            tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
-            auto self = shared_from_this();
-            resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
-                if (!error) {
-                    out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
+            if (data.length() >= 3 && data[0] == 5 && data[2] == 0) {
+                string req_str = data[1] + data.substr(3);
+                TrojanRequest req;
+                if (req.parse(req_str)) {
+                    Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
+                    status = CONNECTING_REMOTE;
+                    in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
+                    out_write_buf = config.password + "\r\n" + req_str + "\r\n";
+                    tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
+                    auto self = shared_from_this();
+                    resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
                         if (!error) {
-                            out_socket.async_handshake(boost::asio::ssl::stream_base::client, [this, self](const boost::system::error_code error) {
+                            out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
                                 if (!error) {
-                                    Log::log_with_endpoint(in_endpoint, "tunnel established");
-                                    status = FORWARD;
-                                    out_async_read();
-                                    out_async_write();
+                                    out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
+                                        if (!error) {
+                                            Log::log_with_endpoint(in_endpoint, "tunnel established");
+                                            out_async_write(out_write_buf);
+                                            out_async_read();
+                                        } else {
+                                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port));
+                                            destroy();
+                                        }
+                                    });
                                 } else {
-                                    Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port));
+                                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
                                     destroy();
                                 }
                             });
                         } else {
-                            Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
+                            Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
                             destroy();
                         }
                     });
+                    return;
                 } else {
-                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
-                    destroy();
+                    Log::log_with_endpoint(in_endpoint, "bad request");
                 }
-            });
+            } else {
+                Log::log_with_endpoint(in_endpoint, "unsupported command");
+            }
+            status = INVALID;
+            in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
             break;
         }
         case CONNECTING_REMOTE: {
-            out_write_queue.front() += data;
+            out_write_buf += data;
+            status = FIRST_PACKET_RECEIVED;
             break;
         }
-        case FORWARD: {
-            out_send(data);
+        case FIRST_PACKET_RECEIVED: {
+            break;
+        }
+        case FORWARDING: {
+            out_async_write(data);
+            break;
+        }
+        case INVALID: {
+            break;
+        }
+        case DESTROYING: {
             break;
         }
     }
 }
 
-void ClientSession::in_send(const string &data) {
-    in_write_queue.push(data);
-    if (in_write_queue.size() == 1) {
-        in_async_write();
+void ClientSession::in_sent() {
+    switch (status) {
+        case HANDSHAKE: {
+            status = REQUEST;
+            in_async_read();
+            break;
+        }
+        case REQUEST: {
+            break;
+        }
+        case CONNECTING_REMOTE: {
+            in_async_read();
+            break;
+        }
+        case FIRST_PACKET_RECEIVED: {
+            break;
+        }
+        case FORWARDING: {
+            out_async_read();
+            break;
+        }
+        case INVALID: {
+            destroy();
+            break;
+        }
+        case DESTROYING: {
+            break;
+        }
     }
 }
 
@@ -170,52 +192,88 @@ void ClientSession::out_async_read() {
     out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (!error) {
             out_recv(string((const char*)out_read_buf, length));
-            out_async_read();
-        } else {
-            if (in_write_queue.empty()) {
-                destroy();
-            } else {
-                closing = true;
-            }
-        }
-    });
-}
-
-void ClientSession::out_async_write() {
-    auto self = shared_from_this();
-    boost::asio::async_write(out_socket, boost::asio::buffer(out_write_queue.front()), [this, self](boost::system::error_code error, std::size_t) {
-        if (!error) {
-            out_write_queue.pop();
-            if (out_write_queue.size() > 0) {
-                out_async_write();
-            } else if (closing) {
-                destroy();
-            }
         } else {
             destroy();
         }
     });
 }
 
-void ClientSession::out_recv(const std::string &data) {
-    in_send(data);
+void ClientSession::out_async_write(const string &data) {
+    auto self = shared_from_this();
+    boost::asio::async_write(out_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
+        if (!error) {
+            out_sent();
+        } else {
+            destroy();
+        }
+    });
 }
 
-void ClientSession::out_send(const std::string &data) {
-    out_write_queue.push(data);
-    if (out_write_queue.size() == 1) {
-        out_async_write();
+void ClientSession::out_recv(const string &data) {
+    switch (status) {
+        case HANDSHAKE: {
+            break;
+        }
+        case REQUEST: {
+            break;
+        }
+        case CONNECTING_REMOTE: {
+            break;
+        }
+        case FIRST_PACKET_RECEIVED: {
+            break;
+        }
+        case FORWARDING: {
+            in_async_write(data);
+            break;
+        }
+        case INVALID: {
+            break;
+        }
+        case DESTROYING: {
+            break;
+        }
+    }
+}
+
+void ClientSession::out_sent() {
+    switch (status) {
+        case HANDSHAKE: {
+            break;
+        }
+        case REQUEST: {
+            break;
+        }
+        case CONNECTING_REMOTE: {
+            status = FORWARDING;
+            break;
+        }
+        case FIRST_PACKET_RECEIVED: {
+            status = FORWARDING;
+            in_async_read();
+            break;
+        }
+        case FORWARDING: {
+            in_async_read();
+            break;
+        }
+        case INVALID: {
+            break;
+        }
+        case DESTROYING: {
+            break;
+        }
     }
 }
 
 void ClientSession::destroy() {
-    if (destroying) {
+    if (status == DESTROYING) {
         return;
     }
-    destroying = true;
     Log::log_with_endpoint(in_endpoint, "disconnected");
+    status = DESTROYING;
     resolver.cancel();
     in_socket.close();
     auto self = shared_from_this();
-    out_socket.async_shutdown([this, self](boost::system::error_code) {});
+    out_socket.async_shutdown([this, self](const boost::system::error_code){});
 }
