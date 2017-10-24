@@ -30,6 +30,9 @@ TrojanRequest::TrojanRequest() : command(CONNECT),
 
 bool TrojanRequest::parse(const string &data) {
     if (data.length() >= 2) {
+        if (data[0] != 1 || !(data[1] == 1 || data[1] == 3 || data[1] == 4)) {
+            return false;
+        }
         command = static_cast<Command>(data[0]);
         address_type = static_cast<AddressType>(data[1]);
         switch (address_type) {
