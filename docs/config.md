@@ -21,12 +21,12 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `run_type`: running trojan as `client`
 - `local_addr`: A `SOCKS5` server interface will be bound to the specified interface. Feel free to change this to ``0.0.0.0``, ``::1``, ``::`` or other addresses, if you know what you are doing.
 - `local_port`: A `SOCKS5` interface will be bound to this port.
-- `remote_addr`: the address your server listens
+- `remote_addr`: server address
 - `remote_port`: server port
-- `password`: password used  for verification
+- `password`: password used for verification
 - `ssl_verify`: whether to verify `SSL` certificate. **STRONGLY RECOMMENDED**
 - `ssl_verify_hostname`: whether to verify `SSL` hostname. **STRONGLY RECOMMENDED**
-- `ca_certs`: if `ssl_verify` is set to 'true', a collection of `CA` certificates should be privided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will likely to fail.
+- `ca_certs`: if `ssl_verify` is set to `true`, a collection of `CA` certificates should be privided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will likely to fail.
 
 ## A valid server.json
 
@@ -45,10 +45,10 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 ```
 
 - `run_type`: running trojan as `server`
-- `local_addr`: trojan server will be bound to set interface. Feel free to change this to ``::`` or other addresses, if you know what you are doing.
+- `local_addr`: trojan server will be bound to the specified interface. Feel free to change this to `::` or other addresses, if you know what you are doing.
 - `local_port`: trojan server will be bound to this port.
 - `remote_addr`: the endpoint address that trojan server will connect to when encountering other protocols.
-- `remote_port`: the endpoint port to which trojan server connects when encountering 'other protocols'
+- `remote_port`: the endpoint port to which trojan server connects when encountering other protocols.
 - `password`: password used for verification
 - `keyfile`: private key file for encryption
 - `keyfile_password`: password of the keyfile
