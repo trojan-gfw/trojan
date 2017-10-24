@@ -54,4 +54,4 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `keyfile_password`: password of the keyfile
 - `certfile`: server certification **STRONGLY RECOMMENDED TO BE SIGNED BY A CA**
 
-[Homepage](.) | [Prev Page](protocol) | [Next Page](build)
+[Homepage](.) | [Prev Page](protocol) | [Next Page](compile)
