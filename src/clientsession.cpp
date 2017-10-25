@@ -22,6 +22,7 @@
 #include <memory>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include <openssl/ssl.h>
 #include "trojanrequest.h"
 #include "log.h"
 using namespace std;
