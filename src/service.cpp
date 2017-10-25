@@ -22,7 +22,6 @@
 #include <memory>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-#include <openssl/ssl.h>
 #include "config.h"
 #include "log.h"
 #include "session.h"
