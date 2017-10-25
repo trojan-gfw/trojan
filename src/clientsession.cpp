@@ -40,6 +40,10 @@ boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& Client
 
 void ClientSession::start() {
     in_endpoint = in_socket.remote_endpoint();
+    if (config.ssl_verify_hostname) {
+        auto ssl = out_socket.native_handle();
+        SSL_set_tlsext_host_name(ssl, config.remote_addr.c_str());
+    }
     in_async_read();
 }
 
