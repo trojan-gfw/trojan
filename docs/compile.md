@@ -13,7 +13,7 @@ Install these dependencies before you build:
 For example, if you are using Ubuntu 14.04, you can type in
 
 ```bash
-curl https://www.openssl.org/source/openssl-1.0.2l.tar.gz | tar xz && cd openssl-1.0.2l && sudo ./config && sudo make && sudo make install
+curl https://www.openssl.org/source/openssl-1.0.2l.tar.gz | tar xz && cd openssl-1.0.2l && sudo ./config shared && sudo make && sudo make install
 sudo apt-get install cmake3 libboost-all-dev
 ```
 
