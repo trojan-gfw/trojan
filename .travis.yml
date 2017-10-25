@@ -5,4 +5,4 @@ before_script:
   - sudo apt-get install cmake3 libboost-all-dev -y
   - cd ..
 script:
-  - cmake . && make
+  - cmake -DOPENSSL_ROOT_DIR="/usr/local/ssl/" . && make
