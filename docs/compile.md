@@ -6,8 +6,8 @@ I'll only cover the build process on Linux since I will be providing Windows and
 
 Install these dependencies before you build:
 
-- [CMake](https://cmake.org/) >= 3.5.1
-- [Boost](http://www.boost.org/) >= 1.54.0
+- [CMake](https://cmake.org/) >= 2.8.12
+- [Boost](http://www.boost.org/)
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
 
 For example, if you are using Ubuntu 14.04, you can type in
