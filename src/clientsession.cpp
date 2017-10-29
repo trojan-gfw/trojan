@@ -52,7 +52,7 @@ void ClientSession::in_async_read() {
     in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (!error) {
             in_recv(string((const char*)in_read_buf, length));
-        } else {
+        } else if (error != boost::asio::error::operation_aborted) {
             destroy();
         }
     });
@@ -111,6 +111,10 @@ void ClientSession::in_recv(const string &data) {
                                     out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
                                         if (!error) {
                                             Log::log_with_endpoint(in_endpoint, "tunnel established");
+                                            if (status == CONNECTING_REMOTE) {
+                                                status = FIRST_PACKET_RECEIVED;
+                                                in_socket.cancel();
+                                            }
                                             out_async_write(out_write_buf);
                                             out_async_read();
                                         } else {
@@ -249,7 +253,6 @@ void ClientSession::out_sent() {
             break;
         }
         case CONNECTING_REMOTE: {
-            status = FORWARDING;
             break;
         }
         case FIRST_PACKET_RECEIVED: {
