@@ -25,9 +25,18 @@
 
 class Log {
 public:
-    static void log(const std::string &message);
-    static void log_with_date_time(const std::string &message);
-    static void log_with_endpoint(const boost::asio::ip::tcp::endpoint &endpoint, const std::string &message);
+    enum Level {
+        ALL = 0,
+        INFO = 1,
+        WARN = 2,
+        ERROR = 3,
+        FATAL = 4,
+        OFF = 5
+    };
+    static Level level;
+    static void log(const std::string &message, Level level = ALL);
+    static void log_with_date_time(const std::string &message, Level level = ALL);
+    static void log_with_endpoint(const boost::asio::ip::tcp::endpoint &endpoint, const std::string &message, Level level = ALL);
 };
 
 #endif // _LOG_H_

@@ -45,7 +45,7 @@ void ServerSession::start() {
         if (!error) {
             in_async_read();
         } else {
-            Log::log_with_endpoint(in_endpoint, "SSL handshake failed");
+            Log::log_with_endpoint(in_endpoint, "SSL handshake failed", Log::ERROR);
             destroy();
         }
     });
@@ -85,11 +85,11 @@ void ServerSession::in_recv(const string &data) {
                         string req_str = data.substr(first + 2, second - first - 2);
                         TrojanRequest req;
                         if (!req.parse(req_str)) {
-                            Log::log_with_endpoint(in_endpoint, "bad request");
+                            Log::log_with_endpoint(in_endpoint, "bad request", Log::ERROR);
                             destroy();
                             return;
                         };
-                        Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port));
+                        Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port), Log::INFO);
                         status = CONNECTING_REMOTE;
                         out_write_buf = data.substr(second + 2);
                         tcp::resolver::query query(req.address, to_string(req.port));
@@ -106,12 +106,12 @@ void ServerSession::in_recv(const string &data) {
                                             in_async_read();
                                         }
                                     } else {
-                                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server");
+                                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server", Log::ERROR);
                                         destroy();
                                     }
                                 });
                             } else {
-                                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname");
+                                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname", Log::ERROR);
                                 destroy();
                             }
                         });
@@ -119,7 +119,7 @@ void ServerSession::in_recv(const string &data) {
                     }
                 }
             }
-            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port));
+            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port), Log::WARN);
             status = CONNECTING_REMOTE;
             out_write_buf = data;
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
@@ -132,12 +132,12 @@ void ServerSession::in_recv(const string &data) {
                             out_async_read();
                             out_async_write(out_write_buf);
                         } else {
-                            Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port));
+                            Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port), Log::ERROR);
                             destroy();
                         }
                     });
                 } else {
-                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr);
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr, Log::ERROR);
                     destroy();
                 }
             });

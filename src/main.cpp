@@ -27,9 +27,9 @@
 using namespace std;
 
 int main(int argc, const char *argv[]) {
-    puts(("Welcome to trojan " + Version::get_version()).c_str());
+    Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
     if (argc != 2) {
-        Log::log(string("usage: ") + argv[0] + " config_file");
+        Log::log(string("usage: ") + argv[0] + " config_file", Log::FATAL);
         exit(1);
     }
     Config config;
@@ -38,8 +38,7 @@ int main(int argc, const char *argv[]) {
         Service service(config);
         return service.run();
     } catch (const exception &e) {
-        Log::log_with_date_time(string("fatal: ") + e.what());
-        Log::log_with_date_time("exiting. . . ");
+        Log::log_with_date_time(string("fatal: ") + e.what() + "\nexiting. . . ", Log::FATAL);
         exit(1);
     }
 }

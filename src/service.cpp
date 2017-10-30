@@ -73,7 +73,7 @@ Service::Service(const Config &config) :
 
 int Service::run() {
     async_accept();
-    Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + config.local_addr + ':' + to_string(config.local_port));
+    Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + config.local_addr + ':' + to_string(config.local_port), Log::FATAL);
     io_service.run();
     return 0;
 }
