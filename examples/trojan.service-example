@@ -1,0 +1,13 @@
+[Unit]
+Description=An unidentifiable mechanism that helps you bypass GFW.
+After=network.target
+
+[Service]
+Type=simple
+StandardError=journal
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/trojan /etc/trojan.json
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+
+[Install]
+WantedBy=multi-user.target
