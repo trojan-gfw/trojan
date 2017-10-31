@@ -10,15 +10,6 @@ Install these dependencies before you build:
 - [Boost](http://www.boost.org/) >= 1.53.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
 
-For example, if you are using Ubuntu 14.04, you can type in
-
-```bash
-curl https://www.openssl.org/source/openssl-1.0.2l.tar.gz | tar xz && cd openssl-1.0.2l && sudo ./config shared && sudo make && sudo make install
-sudo apt-get install cmake3 libboost-all-dev
-```
-
-to install all the dependencies.
-
 ## Clone
 
 Type in
@@ -31,14 +22,18 @@ git checkout stable
 
 to clone the project and go into the directory and change to `stable` branch.
 
-## Build
+## Build and Install
 
 Type in
 
 ```bash
-cmake . && make
+mkdir build
+cd build/
+cmake ..
+make
+sudo make install
 ```
 
-to build the project. If everything goes well you'll get a binary called `trojan`.
+to build and install trojan. If everything goes well you'll be able to use trojan.
 
 [Homepage](.) | [Prev Page](config) | [Next Page](usage)
