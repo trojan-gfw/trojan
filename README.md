@@ -13,7 +13,7 @@ An online documentation can be found [here](https://greaterfire.github.io/trojan
 ## Dependencies
 
 - [CMake](https://cmake.org/) >= 2.8.12
-- [Boost](http://www.boost.org/) >= 1.53.0
+- [Boost](http://www.boost.org/) >= 1.54.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
 
 ## License
