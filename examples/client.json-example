@@ -7,5 +7,6 @@
     "password": "password",
     "ssl_verify": true,
     "ssl_verify_hostname": true,
-    "ca_certs": "/path/to/ca_certs.pem"
+    "ca_certs": "/path/to/ca_certs.pem",
+    "log_level": 1
 }

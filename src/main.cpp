@@ -19,7 +19,6 @@
 
 #include <cstdlib>
 #include <string>
-#include <iostream>
 #include "log.h"
 #include "config.h"
 #include "service.h"
@@ -38,7 +37,8 @@ int main(int argc, const char *argv[]) {
         Service service(config);
         return service.run();
     } catch (const exception &e) {
-        Log::log_with_date_time(string("fatal: ") + e.what() + "\nexiting. . . ", Log::FATAL);
+        Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
+        Log::log_with_date_time("exiting. . . ", Log::FATAL);
         exit(1);
     }
 }

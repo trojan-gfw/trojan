@@ -22,6 +22,7 @@
 
 #include <string>
 #include <cstdint>
+#include "log.h"
 
 class Config {
 private:
@@ -42,7 +43,7 @@ public:
     bool ssl_verify;
     bool ssl_verify_hostname;
     std::string ca_certs;
-    Config();
+    Log::Level log_level;
     void load(const std::string &filename);
 };
 

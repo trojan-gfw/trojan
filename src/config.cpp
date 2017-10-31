@@ -27,35 +27,24 @@
 using namespace std;
 using namespace boost::property_tree;
 
-Config::Config() : run_type(CLIENT),
-                   local_addr("127.0.0.1"),
-                   local_port(1080),
-                   remote_addr("example.com"),
-                   remote_port(443),
-                   password("password"),
-                   keyfile("/path/to/private.key"),
-                   keyfile_password("keyfile_password"),
-                   certfile("/path/to/cert_chain.crt"),
-                   ssl_verify(true),
-                   ssl_verify_hostname(true),
-                   ca_certs("/path/to/ca_certs.pem") {}
-
 void Config::load(const string &filename) {
     ptree tree;
     read_json(filename, tree);
     run_type = (tree.get("run_type", string("client")) == "server") ? SERVER : CLIENT;
-    local_addr = tree.get("local_addr", string("127.0.0.1"));
-    local_port = tree.get("local_port", uint16_t(1080));
-    remote_addr = tree.get("remote_addr", string("example.com"));
-    remote_port = tree.get("remote_port", uint16_t(443));
-    password = tree.get("password", string("password"));
+    local_addr = tree.get("local_addr", string());
+    local_port = tree.get("local_port", uint16_t(0));
+    remote_addr = tree.get("remote_addr", string());
+    remote_port = tree.get("remote_port", uint16_t(0));
+    password = tree.get("password", string());
     password = Config::SHA224(password);
-    keyfile = tree.get("keyfile", string("/path/to/private.key"));
-    keyfile_password = tree.get("keyfile_password", string("keyfile_password"));
-    certfile = tree.get("certfile", string("/path/to/cert_chain.crt"));
+    keyfile = tree.get("keyfile", string());
+    keyfile_password = tree.get("keyfile_password", string());
+    certfile = tree.get("certfile", string());
     ssl_verify = tree.get("ssl_verify", true);
     ssl_verify_hostname = tree.get("ssl_verify_hostname", true);
-    ca_certs = tree.get("ca_certs", string("/path/to/ca_certs.pem"));
+    ca_certs = tree.get("ca_certs", string());
+    log_level = static_cast<Log::Level>(tree.get("log_level", 1));
+    Log::level = log_level;
 }
 
 string Config::SHA224(const string &message) {
