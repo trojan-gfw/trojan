@@ -1,0 +1,13 @@
+[Unit]
+Description=An unidentifiable mechanism that helps you bypass GFW.
+After=syslog.target network.target
+
+[Service]
+Type=simple
+PIDFile=/run/trojan.pid
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/trojan /etc/trojan.json 2>> /var/log/trojan.log
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+
+[Install]
+WantedBy=multi-user.target
