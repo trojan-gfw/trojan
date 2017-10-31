@@ -28,6 +28,7 @@ class Config;
 class Service {
 private:
     static const unsigned char alpn[];
+    static const char g_dh2048_sz[];
     const Config &config;
     boost::asio::io_service io_service;
     boost::asio::ip::tcp::acceptor socket_acceptor;

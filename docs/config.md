@@ -43,6 +43,8 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
     "keyfile": "/path/to/private.key",
     "keyfile_password": "keyfile_password",
     "certfile": "/path/to/cert_chain.crt",
+    "use_default_dhparam": true,
+    "dhparamfile": "",
     "log_level": 1
 }
 ```
@@ -56,6 +58,8 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `keyfile`: private key file for encryption
 - `keyfile_password`: password of the keyfile
 - `certfile`: server certificate **STRONGLY RECOMMENDED TO BE SIGNED BY A CA**
+- `use_default_dhparam`: whether to use default (RFC 3526) dhparam.
+- `dhparamfile`: if `use_default_dhparam` is set to false, specify the dhparam file.
 - `log_level`: specify how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 
 [Homepage](.) | [Prev Page](protocol) | [Next Page](compile)

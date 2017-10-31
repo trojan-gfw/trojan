@@ -8,5 +8,7 @@
     "keyfile": "/path/to/private.key",
     "keyfile_password": "keyfile_password",
     "certfile": "/path/to/cert_chain.crt",
+    "use_default_dhparam": true,
+    "dhparamfile": "",
     "log_level": 1
 }

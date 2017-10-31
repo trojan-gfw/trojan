@@ -40,6 +40,8 @@ void Config::load(const string &filename) {
     keyfile = tree.get("keyfile", string());
     keyfile_password = tree.get("keyfile_password", string());
     certfile = tree.get("certfile", string());
+    use_default_dhparam = tree.get("use_default_dhparam", true);
+    dhparamfile = tree.get("dhparamfile", string());
     ssl_verify = tree.get("ssl_verify", true);
     ssl_verify_hostname = tree.get("ssl_verify_hostname", true);
     ca_certs = tree.get("ca_certs", string());

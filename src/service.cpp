@@ -18,6 +18,7 @@
  */
 
 #include "service.h"
+#include <cstring>
 #include <string>
 #include <memory>
 #include <boost/asio.hpp>
@@ -35,13 +36,28 @@ const unsigned char Service::alpn[] = {
     8, 'h', 't', 't', 'p', '/', '1', '.', '1'
 };
 
+const char Service::g_dh2048_sz[] =
+    "-----BEGIN DH PARAMETERS-----\n"
+    "MIIBCAKCAQEA///////////JD9qiIWjCNMTGYouA3BzRKQJOCIpnzHQCC76mOxOb\n"
+    "IlFKCHmONATd75UZs806QxswKwpt8l8UN0/hNW1tUcJF5IW1dmJefsb0TELppjft\n"
+    "awv/XLb0Brft7jhr+1qJn6WunyQRfEsf5kkoZlHs5Fs9wgB8uKFjvwWY2kg2HFXT\n"
+    "mmkWP6j9JM9fg2VdI9yjrZYcYvNWIIVSu57VKQdwlpZtZww1Tkq8mATxdGwIyhgh\n"
+    "fDKQXkYuNs474553LBgOhgObJ4Oi7Aeij7XFXfBvTFLJ3ivL9pVYFxg5lUl86pVq\n"
+    "5RXSJhiY+gUQFXKOWoqsqmj//////////wIBAg==\n"
+    "-----END DH PARAMETERS-----";
+
 Service::Service(const Config &config) :
     config(config),
     socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
     ssl_context(context::sslv23) {
     auto native_context = ssl_context.native_handle();
     if (config.run_type == Config::SERVER) {
-        ssl_context.set_options(context::default_workarounds | context::no_sslv2);
+        ssl_context.set_options(context::default_workarounds | context::no_sslv2 | boost::asio::ssl::context::single_dh_use);
+        if (config.use_default_dhparam) {
+            ssl_context.use_tmp_dh(boost::asio::const_buffer(g_dh2048_sz, strlen(g_dh2048_sz)));
+        } else {
+            ssl_context.use_tmp_dh_file(config.dhparamfile);
+        }
         ssl_context.set_password_callback([this](size_t, context_base::password_purpose) {
             return this->config.keyfile_password;
         });

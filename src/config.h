@@ -40,6 +40,8 @@ public:
     std::string keyfile;
     std::string keyfile_password;
     std::string certfile;
+    bool use_default_dhparam;
+    std::string dhparamfile;
     bool ssl_verify;
     bool ssl_verify_hostname;
     std::string ca_certs;
