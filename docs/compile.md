@@ -34,6 +34,6 @@ make
 sudo make install
 ```
 
-to build and install trojan. If everything goes well you'll be able to use trojan.
+to build and install trojan. If everything goes well you'll be able to use trojan. The default config file will be installed to `/etc/trojan.json`. If you have systemd in your system, `trojan.service` will be installed to `/etc/systemd/system`.
 
 [Homepage](.) | [Prev Page](config) | [Next Page](usage)
