@@ -21,7 +21,7 @@
 #include <string>
 using namespace std;
 
-const string Version::version("0.2.1");
+const string Version::version("0.3.0");
 
 string Version::get_version() {
     return version;
