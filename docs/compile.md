@@ -1,4 +1,4 @@
-# How to Build Trojan
+# Compilation
 
 I'll only cover the build process on Linux since I will be providing Windows and macOS binaries and that building trojan on every platform is similar.
 
@@ -6,17 +6,9 @@ I'll only cover the build process on Linux since I will be providing Windows and
 
 Install these dependencies before you build:
 
-- [CMake](https://cmake.org/) >= 3.5.1
-- [Boost](http://www.boost.org/) >= 1.54.0
-- [OpenSSL](https://www.openssl.org/) >= 1.0.1f
-
-For example, if you are using Ubuntu 14.04, you can type in
-
-```bash
-sudo apt-get install cmake3 libssl-dev libboost-all-dev
-```
-
-to install all the dependencies.
+- [CMake](https://cmake.org/) >= 2.8.12
+- [Boost](http://www.boost.org/) >= 1.53.0
+- [OpenSSL](https://www.openssl.org/) >= 1.0.2
 
 ## Clone
 
@@ -30,14 +22,18 @@ git checkout stable
 
 to clone the project and go into the directory and change to `stable` branch.
 
-## Build
+## Build and Install
 
 Type in
 
 ```bash
-cmake . && make
+mkdir build
+cd build/
+cmake ..
+make
+sudo make install
 ```
 
-to build the project. If everything goes well you'll get a binary called `trojan`.
+to build and install trojan. If everything goes well you'll be able to use trojan.
 
 [Homepage](.) | [Prev Page](config) | [Next Page](usage)

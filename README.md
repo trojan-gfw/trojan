@@ -4,4 +4,18 @@
 
 An unidentifiable mechanism that helps you bypass GFW.
 
-Online documentation can be found [here](https://greaterfire.github.io/trojan).
+Trojan features multiple protocols over `TLS` to avoid both active/passive detections and ISP `QoS` limitations.
+
+## Documentation
+
+An online documentation can be found [here](https://greaterfire.github.io/trojan).
+
+## Dependencies
+
+- [CMake](https://cmake.org/) >= 2.8.12
+- [Boost](http://www.boost.org/) >= 1.53.0
+- [OpenSSL](https://www.openssl.org/) >= 1.0.2
+
+## License
+
+[GPLv3](LICENSE)

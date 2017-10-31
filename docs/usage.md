@@ -1,4 +1,4 @@
-# How to Use Trojan
+# Usage
 
 You can run trojan by typing in
 
