@@ -53,6 +53,7 @@ Service::Service(const Config &config) :
     auto native_context = ssl_context.native_handle();
     if (config.run_type == Config::SERVER) {
         ssl_context.set_options(context::default_workarounds | context::no_sslv2 | boost::asio::ssl::context::single_dh_use);
+        SSL_CTX_set_ecdh_auto(native_context, 1);
         if (config.use_default_dhparam) {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(g_dh2048_sz, strlen(g_dh2048_sz)));
         } else {
