@@ -33,6 +33,7 @@ Log::Level Log::level(INFO);
 void Log::log(const string &message, Level level) {
     if (level >= Log::level) {
         fprintf(stderr, "%s\n", message.c_str());
+        fflush(stderr);
     }
 }
 

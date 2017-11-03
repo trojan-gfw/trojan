@@ -23,6 +23,10 @@
 #include <string>
 #include <boost/asio.hpp>
 
+#ifdef ERROR // windows.h
+#undef ERROR
+#endif
+
 class Log {
 public:
     enum Level {
