@@ -15,5 +15,4 @@ script:
   - cd build/
   - cmake -DOPENSSL_ROOT_DIR="/usr/local/ssl/" ..
   - make
-  - ctest -VV
   - sudo make install
