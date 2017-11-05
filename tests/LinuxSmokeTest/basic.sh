@@ -6,7 +6,7 @@ tmpdir=`mktemp -d`
 echo Test directory is $tmpdir.
 cp server.json client.json $tmpdir
 cd $tmpdir
-exec 2>>test.log
+#exec 2>>test.log
 
 yes '' | openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 1 -nodes
 
