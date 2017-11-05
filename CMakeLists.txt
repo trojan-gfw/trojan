@@ -21,4 +21,11 @@ else()
         configure_file(examples/trojan.service-example trojan.service)
         install(FILES ${CMAKE_BINARY_DIR}/trojan.service DESTINATION /etc/systemd/system)
     endif()
+    enable_testing()
+    add_test(NAME LinuxSmokeTest-basic
+             COMMAND sh ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/basic.sh ${CMAKE_BINARY_DIR}/trojan
+             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest)
+    add_test(NAME LinuxSmokeTest-fake-client
+             COMMAND sh ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/fake-client.sh ${CMAKE_BINARY_DIR}/trojan
+             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest)
 endif()
