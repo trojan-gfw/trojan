@@ -1,0 +1,11 @@
+Prerequisites:
+
+coreutils
+openssl
+python2
+curl
+
+Running tests:
+
+sh basic.sh ../../build/trojan
+sh fake-client.sh ../../build/trojan

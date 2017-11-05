@@ -1,0 +1,12 @@
+{
+    "run_type": "client",
+    "local_addr": "127.0.0.1",
+    "local_port": 11080,
+    "remote_addr": "127.0.0.2",
+    "remote_port": 10443,
+    "password": "wrong-password",
+    "ssl_verify": false,
+    "ssl_verify_hostname": false,
+    "ca_certs": "",
+    "log_level": 0
+}
