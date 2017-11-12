@@ -15,7 +15,7 @@ Install these dependencies before you build:
 Type in
 
 ```bash
-git clone https://github.com/GreaterFire/trojan.git
+git clone https://github.com/trojan-gfw/trojan.git
 cd trojan/
 git checkout stable
 ```

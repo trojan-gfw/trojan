@@ -1,6 +1,6 @@
 # trojan
 
-[![Build Status](https://travis-ci.org/GreaterFire/trojan.svg?branch=master)](https://travis-ci.org/GreaterFire/trojan)
+[![Build Status](https://travis-ci.org/trojan-gfw/trojan.svg?branch=master)](https://travis-ci.org/trojan-gfw/trojan)
 
 An unidentifiable mechanism that helps you bypass GFW.
 
@@ -8,7 +8,7 @@ Trojan features multiple protocols over `TLS` to avoid both active/passive detec
 
 ## Documentation
 
-An online documentation can be found [here](https://greaterfire.github.io/trojan).
+An online documentation can be found [here](https://trojan-gfw.github.io/trojan/).
 
 ## Dependencies
 
