@@ -104,8 +104,12 @@ void Service::async_accept() {
     }
     socket_acceptor.async_accept(session->accept_socket(), [this, session](boost::system::error_code error) {
         if (!error) {
-            Log::log_with_endpoint(session->accept_socket().remote_endpoint(), "incoming connection");
-            session->start();
+            boost::system::error_code ec;
+            auto endpoint = session->accept_socket().remote_endpoint(ec);
+            if (!ec) {
+                Log::log_with_endpoint(endpoint, "incoming connection");
+                session->start();
+            }
         }
         async_accept();
     });
