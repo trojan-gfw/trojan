@@ -51,13 +51,17 @@ const char Service::g_dh2048_sz[] =
     "5RXSJhiY+gUQFXKOWoqsqmj//////////wIBAg==\n"
     "-----END DH PARAMETERS-----";
 
+const char Service::client_cipher_list[] = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA";
+
+const char Service::server_cipher_list[] = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256";
+
 Service::Service(const Config &config) :
     config(config),
     socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
     ssl_context(context::sslv23) {
     auto native_context = ssl_context.native_handle();
     if (config.run_type == Config::SERVER) {
-        ssl_context.set_options(context::default_workarounds | context::no_sslv2 | boost::asio::ssl::context::single_dh_use);
+        ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | boost::asio::ssl::context::single_dh_use);
         SSL_CTX_set_ecdh_auto(native_context, 1);
         if (config.use_default_dhparam) {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(g_dh2048_sz, strlen(g_dh2048_sz)));
@@ -75,6 +79,7 @@ Service::Service(const Config &config) :
             }
             return SSL_TLSEXT_ERR_OK;
         }, NULL);
+        SSL_CTX_set_cipher_list(native_context, Service::server_cipher_list);
     } else {
         if (config.ssl_verify) {
             ssl_context.set_verify_mode(verify_peer);
@@ -90,6 +95,7 @@ Service::Service(const Config &config) :
             ssl_context.set_verify_mode(verify_none);
         }
         SSL_CTX_set_alpn_protos(native_context, Service::client_alpn, sizeof(Service::client_alpn));
+        SSL_CTX_set_cipher_list(native_context, Service::client_cipher_list);
     }
 }
 

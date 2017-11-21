@@ -30,6 +30,8 @@ private:
     static const unsigned char client_alpn[];
     static const unsigned char server_alpn[];
     static const char g_dh2048_sz[];
+    static const char client_cipher_list[];
+    static const char server_cipher_list[];
     const Config &config;
     boost::asio::io_service io_service;
     boost::asio::ip::tcp::acceptor socket_acceptor;
