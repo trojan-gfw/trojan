@@ -32,7 +32,12 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-const unsigned char Service::alpn[] = {
+const unsigned char Service::client_alpn[] = {
+    2, 'h', '2',
+    8, 'h', 't', 't', 'p', '/', '1', '.', '1'
+};
+
+const unsigned char Service::server_alpn[] = {
     8, 'h', 't', 't', 'p', '/', '1', '.', '1'
 };
 
@@ -65,7 +70,7 @@ Service::Service(const Config &config) :
         ssl_context.use_certificate_chain_file(config.certfile);
         ssl_context.use_private_key_file(config.keyfile, context::pem);
         SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void*) -> int {
-            if (SSL_select_next_proto((unsigned char**)out, outlen, Service::alpn, sizeof(Service::alpn), in, inlen) != OPENSSL_NPN_NEGOTIATED) {
+            if (SSL_select_next_proto((unsigned char**)out, outlen, Service::server_alpn, sizeof(Service::server_alpn), in, inlen) != OPENSSL_NPN_NEGOTIATED) {
                 return SSL_TLSEXT_ERR_NOACK;
             }
             return SSL_TLSEXT_ERR_OK;
@@ -84,7 +89,7 @@ Service::Service(const Config &config) :
         } else {
             ssl_context.set_verify_mode(verify_none);
         }
-        SSL_CTX_set_alpn_protos(native_context, Service::alpn, sizeof(Service::alpn));
+        SSL_CTX_set_alpn_protos(native_context, Service::client_alpn, sizeof(Service::client_alpn));
     }
 }
 
