@@ -60,8 +60,8 @@ Service::Service(const Config &config) :
     socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
     ssl_context(context::sslv23) {
     auto native_context = ssl_context.native_handle();
+    ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
     if (config.run_type == Config::SERVER) {
-        ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | boost::asio::ssl::context::single_dh_use);
         SSL_CTX_set_ecdh_auto(native_context, 1);
         if (config.use_default_dhparam) {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(g_dh2048_sz, strlen(g_dh2048_sz)));
