@@ -17,26 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SERVICE_H_
-#define _SERVICE_H_
+#ifndef _SSLDEFAULTS_H_
+#define _SSLDEFAULTS_H_
 
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-
-class Config;
-
-class Service {
-private:
-    const Config &config;
-    boost::asio::io_service io_service;
-    boost::asio::ip::tcp::acceptor socket_acceptor;
-    boost::asio::ssl::context ssl_context;
-    void async_accept();
-public:
-    Service(const Config &config);
-    int run();
+class SSLDefaults {
+    static const unsigned char g_dh2048_sz[];
+    static const unsigned char ca_certs[];
 };
 
-#include "config.h"
-
-#endif // _SERVICE_H_
+#endif // _SSLDEFAULTS_H_

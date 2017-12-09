@@ -32,21 +32,30 @@ void Config::load(const string &filename) {
     read_json(filename, tree);
     run_type = (tree.get("run_type", string("client")) == "server") ? SERVER : CLIENT;
     local_addr = tree.get("local_addr", string());
-    local_port = tree.get("local_port", uint16_t(0));
+    local_port = tree.get("local_port", uint16_t());
     remote_addr = tree.get("remote_addr", string());
-    remote_port = tree.get("remote_port", uint16_t(0));
-    password = tree.get("password", string());
-    password = Config::SHA224(password);
-    keyfile = tree.get("keyfile", string());
-    keyfile_password = tree.get("keyfile_password", string());
-    certfile = tree.get("certfile", string());
-    use_default_dhparam = tree.get("use_default_dhparam", true);
-    dhparamfile = tree.get("dhparamfile", string());
-    ssl_verify = tree.get("ssl_verify", true);
-    ssl_verify_hostname = tree.get("ssl_verify_hostname", true);
-    ca_certs = tree.get("ca_certs", string());
+    remote_port = tree.get("remote_port", uint16_t());
+    for (auto& item: tree.get_child("password")) {
+        password.push_back(item.second.get_value<string>());
+    }
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     Log::level = log_level;
+    ssl.sigalgs = tree.get("ssl.sigalgs", string());
+    ssl.curves = tree.get("ssl.curves", string());
+    ssl.cipher = tree.get("ssl.cipher", string());
+    ssl.cert = tree.get("ssl.cert", string());
+    ssl.key = tree.get("ssl.key", string());
+    ssl.key_password = tree.get("ssl.key_password", string());
+    ssl.dhparam = tree.get("ssl.dhparam", string());
+    ssl.ticket = tree.get("ssl.ticket", true);
+    ssl.compression = tree.get("ssl.compression", false);
+    for (auto& item: tree.get_child("ssl.alpn")) {
+        string proto = item.second.get_value<string>();
+        ssl.alpn += (char)((unsigned char)(proto.length()));
+        ssl.alpn += proto;
+    }
+    ssl.verify = tree.get("ssl.verify", true);
+    ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
 }
 
 string Config::SHA224(const string &message) {

@@ -79,7 +79,15 @@ void ServerSession::in_recv(const string &data) {
             auto self = shared_from_this();
             size_t first = data.find("\r\n");
             if (first != string::npos) {
-                if (config.password == data.substr(0, first)) {
+                string client_password = data.substr(0, first);
+                bool match = false;
+                for (int i = 0; i < config.password.size(); ++i) {
+                    if (client_password == config.password[i]) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (match) {
                     size_t second = data.find("\r\n", first + 2);
                     if (second != string::npos) {
                         string req_str = data.substr(first + 2, second - first - 2);
