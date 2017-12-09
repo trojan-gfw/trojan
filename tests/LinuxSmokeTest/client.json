@@ -7,6 +7,7 @@
     "password": ["linux-smoke-test-password"],
     "log_level": 0,
     "ssl": {
-        "verify": false
+        "verify": false,
+        "alpn": []
     }
 }

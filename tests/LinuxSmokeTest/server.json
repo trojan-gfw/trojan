@@ -8,6 +8,7 @@
     "log_level": 0,
     "ssl": {
         "cert": "cert.pem",
-        "key": "key.pem"
+        "key": "key.pem",
+        "alpn": []
     }
 }
