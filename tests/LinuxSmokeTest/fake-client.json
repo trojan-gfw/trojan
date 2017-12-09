@@ -7,7 +7,14 @@
     "password": ["wrong-password"],
     "log_level": 0,
     "ssl": {
+        "sigalgs": "",
+        "curves": "",
+        "cipher": "",
         "verify": false,
+        "verify_hostname": false,
+        "cert": "",
+        "ticket": true,
+        "compression": false,
         "alpn": []
     }
 }
