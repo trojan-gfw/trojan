@@ -4,11 +4,10 @@
     "local_port": 10443,
     "remote_addr": "127.0.0.1",
     "remote_port": 10080,
-    "password": "linux-smoke-test-password",
-    "keyfile": "key.pem",
-    "keyfile_password": "",
-    "certfile": "cert.pem",
-    "use_default_dhparam": true,
-    "dhparamfile": "",
-    "log_level": 0
+    "password": ["linux-smoke-test-password"],
+    "log_level": 0,
+    "ssl": {
+        "cert": "cert.pem",
+        "key": "key.pem"
+    }
 }
