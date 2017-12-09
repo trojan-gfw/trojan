@@ -21,8 +21,9 @@
 #define _SSLDEFAULTS_H_
 
 class SSLDefaults {
+public:
     static const unsigned char g_dh2048_sz[];
-    static const unsigned char ca_certs[];
+    static const unsigned int g_dh2048_sz_size;
 };
 
 #endif // _SSLDEFAULTS_H_

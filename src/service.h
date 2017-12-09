@@ -33,7 +33,7 @@ private:
     boost::asio::ssl::context ssl_context;
     void async_accept();
 public:
-    Service(const Config &config);
+    Service(Config &config);
     int run();
 };
 

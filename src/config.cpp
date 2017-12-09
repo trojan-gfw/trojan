@@ -36,7 +36,7 @@ void Config::load(const string &filename) {
     remote_addr = tree.get("remote_addr", string());
     remote_port = tree.get("remote_port", uint16_t());
     for (auto& item: tree.get_child("password")) {
-        password.push_back(item.second.get_value<string>());
+        password.push_back(SHA224(item.second.get_value<string>()));
     }
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     Log::level = log_level;
