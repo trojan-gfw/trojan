@@ -4,9 +4,17 @@
     "local_port": 11080,
     "remote_addr": "127.0.0.2",
     "remote_port": 10443,
-    "password": "wrong-password",
-    "ssl_verify": false,
-    "ssl_verify_hostname": false,
-    "ca_certs": "",
-    "log_level": 0
+    "password": ["wrong-password"],
+    "log_level": 0,
+    "ssl": {
+        "sigalgs": "",
+        "curves": "",
+        "cipher": "",
+        "verify": false,
+        "verify_hostname": false,
+        "cert": "",
+        "ticket": true,
+        "compression": false,
+        "alpn": []
+    }
 }

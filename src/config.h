@@ -22,6 +22,7 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
 #include "log.h"
 
 class Config {
@@ -36,16 +37,23 @@ public:
     uint16_t local_port;
     std::string remote_addr;
     uint16_t remote_port;
-    std::string password;
-    std::string keyfile;
-    std::string keyfile_password;
-    std::string certfile;
-    bool use_default_dhparam;
-    std::string dhparamfile;
-    bool ssl_verify;
-    bool ssl_verify_hostname;
-    std::string ca_certs;
+    std::vector<std::string> password;
     Log::Level log_level;
+    class SSLConfig {
+    public:
+        std::string sigalgs;
+        std::string curves;
+        std::string cipher;
+        std::string cert;
+        std::string key;
+        std::string key_password;
+        std::string dhparam;
+        bool ticket;
+        bool compression;
+        std::string alpn;
+        bool verify;
+        bool verify_hostname;
+    } ssl;
     void load(const std::string &filename);
 };
 

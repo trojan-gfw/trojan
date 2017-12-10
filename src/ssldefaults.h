@@ -17,12 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.h"
-#include <string>
-using namespace std;
+#ifndef _SSLDEFAULTS_H_
+#define _SSLDEFAULTS_H_
 
-const string Version::version("0.4.0");
+class SSLDefaults {
+public:
+    static const unsigned char g_dh2048_sz[];
+    static const unsigned int g_dh2048_sz_size;
+};
 
-string Version::get_version() {
-    return version;
-}
+#endif // _SSLDEFAULTS_H_

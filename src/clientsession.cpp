@@ -40,7 +40,7 @@ boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& Client
 
 void ClientSession::start() {
     in_endpoint = in_socket.remote_endpoint();
-    if (config.ssl_verify_hostname) {
+    if (config.ssl.verify_hostname) {
         auto ssl = out_socket.native_handle();
         SSL_set_tlsext_host_name(ssl, config.remote_addr.c_str());
     }
@@ -101,7 +101,7 @@ void ClientSession::in_recv(const string &data) {
                     Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port), Log::INFO);
                     status = CONNECTING_REMOTE;
                     in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
-                    out_write_buf = config.password + "\r\n" + req_str + "\r\n";
+                    out_write_buf = config.password[0] + "\r\n" + req_str + "\r\n";
                     tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
                     auto self = shared_from_this();
                     resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {

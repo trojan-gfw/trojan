@@ -36,7 +36,7 @@ where:
 
 More information on `SOCKS5` requests can be found [here](https://tools.ietf.org/html/rfc1928).
 
-**Note that `UDP ASSOCIATE` has not been implemented in current version. The `CMD` field may be extended in future implementation (if needed).**
+**Note that `UDP ASSOCIATE` has not been implemented in current version. The `CMD` field is reserved for future implementation (if needed).**
 
 When the server receives the first data packet, it unwraps the TLS packet and looks for the two `CRLF`s. Then it checks if the hashed password is correct and the Trojan Request is valid. On failure at any step, the protocol is considered "other protocols" (see next section). Note that the first packet will have payload (Application Data) appended. This avoids length pattern detection and may reduce the number of packets to be sent.
 
@@ -57,5 +57,7 @@ All connection without correct structure and password will be redirected to a pr
 ### Passive Detection
 
 Because the traffic is protected by `TLS` (it is users' responsibility to use a valid certificate) and if you are visiting an `HTTP` site, the traffic looks exactly the same as `HTTPS` (there is only one `RTT` after `TLS` handshake). If you are not visiting an `HTTP` site, then the traffic looks exactly the same as `HTTPS` kept alive or `WebSocket`. Because of this, trojan can also bypass ISP `QoS` limitations.
+
+For more information, go to [Issue #14](https://github.com/trojan-gfw/trojan/issues/14).
 
 [Homepage](.) | [Prev Page](overview) | [Next Page](config)
