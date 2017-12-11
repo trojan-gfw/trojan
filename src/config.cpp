@@ -40,21 +40,23 @@ void Config::load(const string &filename) {
     }
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     Log::level = log_level;
-    ssl.sigalgs = tree.get("ssl.sigalgs", string());
-    ssl.curves = tree.get("ssl.curves", string());
-    ssl.cipher = tree.get("ssl.cipher", string());
+    ssl.verify = tree.get("ssl.verify", true);
+    ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
     ssl.cert = tree.get("ssl.cert", string());
     ssl.key = tree.get("ssl.key", string());
     ssl.key_password = tree.get("ssl.key_password", string());
-    ssl.dhparam = tree.get("ssl.dhparam", string());
-    ssl.reuse_session = tree.get("ssl.reuse_session", true);
+    ssl.cipher = tree.get("ssl.cipher", string());
+    ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
     for (auto& item: tree.get_child("ssl.alpn")) {
         string proto = item.second.get_value<string>();
         ssl.alpn += (char)((unsigned char)(proto.length()));
         ssl.alpn += proto;
     }
-    ssl.verify = tree.get("ssl.verify", true);
-    ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
+    ssl.reuse_session = tree.get("ssl.reuse_session", true);
+    ssl.session_timeout = tree.get("ssl.session_timeout", long(300));
+    ssl.curves = tree.get("ssl.curves", string());
+    ssl.sigalgs = tree.get("ssl.sigalgs", string());
+    ssl.dhparam = tree.get("ssl.dhparam", string());
 }
 
 string Config::SHA224(const string &message) {

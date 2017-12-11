@@ -55,23 +55,14 @@ Service::Service(Config &config) :
     if (config.ssl.curves != "") {
         SSL_CTX_set1_curves_list(native_context, config.ssl.curves.c_str());
     }
-    if (config.ssl.cipher != "") {
-        SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
-    }
     if (config.run_type == Config::SERVER) {
         ssl_context.use_certificate_chain_file(config.ssl.cert);
         ssl_context.set_password_callback([this](size_t, context_base::password_purpose) {
             return this->config.ssl.key_password;
         });
         ssl_context.use_private_key_file(config.ssl.key, context::pem);
-        if (config.ssl.dhparam == "") {
-            ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
-        } else {
-            ssl_context.use_tmp_dh_file(config.ssl.dhparam);
-        }
-        if (!config.ssl.reuse_session) {
-            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
-            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+        if (config.ssl.prefer_server_cipher) {
+            SSL_CTX_set_options(native_context, SSL_OP_CIPHER_SERVER_PREFERENCE);
         }
         if (config.ssl.alpn != "") {
             SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {
@@ -80,8 +71,19 @@ Service::Service(Config &config) :
                 }
                 return SSL_TLSEXT_ERR_OK;
             }, &config);
-            SSL_CTX_set_ecdh_auto(native_context, 1);
         }
+        if (config.ssl.reuse_session) {
+            SSL_CTX_set_timeout(native_context, config.ssl.session_timeout);
+        } else {
+            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
+            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+        }
+        if (config.ssl.dhparam == "") {
+            ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
+        } else {
+            ssl_context.use_tmp_dh_file(config.ssl.dhparam);
+        }
+        SSL_CTX_set_ecdh_auto(native_context, 1);
     } else {
         if (config.ssl.verify) {
             ssl_context.set_verify_mode(verify_peer);
@@ -99,6 +101,9 @@ Service::Service(Config &config) :
         if (config.ssl.alpn != "") {
             SSL_CTX_set_alpn_protos(native_context, (unsigned char*)(config.ssl.alpn.c_str()), config.ssl.alpn.length());
         }
+    }
+    if (config.ssl.cipher != "") {
+        SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
     }
 }
 

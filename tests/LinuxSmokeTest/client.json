@@ -7,13 +7,13 @@
     "password": ["linux-smoke-test-password"],
     "log_level": 0,
     "ssl": {
-        "sigalgs": "",
-        "curves": "",
-        "cipher": "",
         "verify": false,
         "verify_hostname": false,
         "cert": "",
+        "cipher": "",
+        "alpn": [],
         "reuse_session": false,
-        "alpn": []
+        "curves": "",
+        "sigalgs": ""
     }
 }

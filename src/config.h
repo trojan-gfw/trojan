@@ -41,17 +41,19 @@ public:
     Log::Level log_level;
     class SSLConfig {
     public:
-        std::string sigalgs;
-        std::string curves;
-        std::string cipher;
+        bool verify;
+        bool verify_hostname;
         std::string cert;
         std::string key;
         std::string key_password;
-        std::string dhparam;
-        bool reuse_session;
+        std::string cipher;
+        bool prefer_server_cipher;
         std::string alpn;
-        bool verify;
-        bool verify_hostname;
+        bool reuse_session;
+        long session_timeout;
+        std::string curves;
+        std::string sigalgs;
+        std::string dhparam;
     } ssl;
     void load(const std::string &filename);
 };
