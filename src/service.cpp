@@ -71,6 +71,7 @@ Service::Service(Config &config) :
         }
         if (!config.ssl.reuse_session) {
             SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
+            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
         if (config.ssl.alpn != "") {
             SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {
