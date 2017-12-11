@@ -38,6 +38,7 @@ private:
     } status;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
+    static SSL_SESSION *ssl_session;
     void destroy();
     void in_async_read();
     void in_async_write(const std::string &data);

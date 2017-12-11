@@ -48,8 +48,7 @@ public:
         std::string key;
         std::string key_password;
         std::string dhparam;
-        bool ticket;
-        bool compression;
+        bool reuse_session;
         std::string alpn;
         bool verify;
         bool verify_hostname;

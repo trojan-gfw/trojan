@@ -58,16 +58,6 @@ Service::Service(Config &config) :
     if (config.ssl.cipher != "") {
         SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
     }
-    if (config.ssl.ticket) {
-        SSL_CTX_clear_options(native_context, SSL_OP_NO_TICKET);
-    } else {
-        SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
-    }
-    if (config.ssl.compression) {
-        ssl_context.clear_options(context::no_compression);
-    } else {
-        ssl_context.set_options(context::no_compression);
-    }
     if (config.run_type == Config::SERVER) {
         ssl_context.use_certificate_chain_file(config.ssl.cert);
         ssl_context.use_private_key_file(config.ssl.key, context::pem);
@@ -78,6 +68,9 @@ Service::Service(Config &config) :
             ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
         } else {
             ssl_context.use_tmp_dh_file(config.ssl.dhparam);
+        }
+        if (!config.ssl.reuse_session) {
+            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
         }
         if (config.ssl.alpn != "") {
             SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {

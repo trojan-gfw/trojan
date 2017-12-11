@@ -28,6 +28,8 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
+SSL_SESSION *ClientSession::ssl_session(NULL);
+
 ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
     Session(config, io_service),
     in_socket(io_service),
@@ -40,9 +42,12 @@ boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& Client
 
 void ClientSession::start() {
     in_endpoint = in_socket.remote_endpoint();
+    auto ssl = out_socket.native_handle();
     if (config.ssl.verify_hostname) {
-        auto ssl = out_socket.native_handle();
         SSL_set_tlsext_host_name(ssl, config.remote_addr.c_str());
+    }
+    if (config.ssl.reuse_session && ssl_session) {
+        SSL_set_session(ssl, ssl_session);
     }
     in_async_read();
 }
@@ -117,6 +122,15 @@ void ClientSession::in_recv(const string &data) {
                                             }
                                             out_async_write(out_write_buf);
                                             out_async_read();
+                                            if (config.ssl.reuse_session) {
+                                                auto ssl = out_socket.native_handle();
+                                                if (!SSL_session_reused(ssl)) {
+                                                    if (ssl_session) {
+                                                        SSL_SESSION_free(ssl_session);
+                                                    }
+                                                    ssl_session = SSL_get1_session(ssl);
+                                                }
+                                            }
                                         } else {
                                             Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port), Log::ERROR);
                                             destroy();
