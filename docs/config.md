@@ -20,8 +20,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
         "verify": true,
         "verify_hostname": true,
         "cert": "/path/to/ca_certs.pem",
-        "ticket": true,
-        "compression": false,
+        "reuse_session": true,
         "alpn": [
             "h2",
             "http/1.1"
@@ -33,7 +32,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `run_type`: running trojan as `client`
 - `local_addr`: a `SOCKS5` server interface will be bound to the specified interface. Feel free to change this to ``0.0.0.0``, ``::1``, ``::`` or other addresses, if you know what you are doing.
 - `local_port`: a `SOCKS5` interface will be bound to this port
-- `remote_addr`: server address
+- `remote_addr`: server address (hostname)
 - `remote_port`: server port
 - `password`: password used for verification (only the first password in the array will be used)
 - `log_level`: specify how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
@@ -44,8 +43,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
     - `verify`: whether to verify `SSL` certificate **STRONGLY RECOMMENDED**
     - `verify_hostname`: whether to verify `SSL` hostname **STRONGLY RECOMMENDED**
     - `cert`: if `verify` is set to `true`, a collection of `CA` certificates should be provided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will be likely to fail.
-    - `ticket`: whether to use `SSL` ticket
-    - `compression`: whether to compress `SSL` traffic
+    - `reuse_session`: whether to reuse `SSL` session
     - `alpn`: specify a list of `ALPN` protocols to send
 
 ## A valid server.json
@@ -70,8 +68,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
         "key": "/path/to/private.key",
         "key_password": "key_password",
         "dhparam": "",
-        "ticket": true,
-        "compression": false,
+        "reuse_session": true,
         "alpn": [
             "http/1.1"
         ]
@@ -94,8 +91,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
     - `key`: private key file for encryption
     - `key_password`: password of the private key file
     - `dhparam`: If left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used.
-    - `ticket`: whether to use `SSL` ticket
-    - `compression`: whether to compress `SSL` traffic
+    - `reuse_session`: whether to reuse `SSL` session
     - `alpn`: specify a list of `ALPN` protocols to reply
 
 [Homepage](.) | [Prev Page](protocol) | [Next Page](compile)

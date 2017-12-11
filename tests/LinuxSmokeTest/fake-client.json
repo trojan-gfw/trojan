@@ -13,8 +13,7 @@
         "verify": false,
         "verify_hostname": false,
         "cert": "",
-        "ticket": true,
-        "compression": false,
+        "reuse_session": false,
         "alpn": []
     }
 }

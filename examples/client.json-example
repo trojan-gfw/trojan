@@ -13,8 +13,7 @@
         "verify": true,
         "verify_hostname": true,
         "cert": "/path/to/ca_certs.pem",
-        "ticket": true,
-        "compression": false,
+        "reuse_session": true,
         "alpn": [
             "h2",
             "http/1.1"

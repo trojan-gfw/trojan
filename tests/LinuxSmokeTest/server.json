@@ -14,8 +14,7 @@
         "key": "key.pem",
         "key_password": "",
         "dhparam": "",
-        "ticket": true,
-        "compression": false,
+        "reuse_session": false,
         "alpn": []
     }
 }
