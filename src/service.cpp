@@ -60,10 +60,10 @@ Service::Service(Config &config) :
     }
     if (config.run_type == Config::SERVER) {
         ssl_context.use_certificate_chain_file(config.ssl.cert);
-        ssl_context.use_private_key_file(config.ssl.key, context::pem);
         ssl_context.set_password_callback([this](size_t, context_base::password_purpose) {
             return this->config.ssl.key_password;
         });
+        ssl_context.use_private_key_file(config.ssl.key, context::pem);
         if (config.ssl.dhparam == "") {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
         } else {
