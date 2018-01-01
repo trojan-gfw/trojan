@@ -47,6 +47,7 @@ void Config::load(const string &filename) {
     ssl.key_password = tree.get("ssl.key_password", string());
     ssl.cipher = tree.get("ssl.cipher", string());
     ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
+    ssl.sni = tree.get("ssl.sni", string());
     for (auto& item: tree.get_child("ssl.alpn")) {
         string proto = item.second.get_value<string>();
         ssl.alpn += (char)((unsigned char)(proto.length()));

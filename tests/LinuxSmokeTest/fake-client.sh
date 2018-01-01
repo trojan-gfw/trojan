@@ -25,8 +25,8 @@ pid4=$!
 
 sleep 1
 
-whoami=`curl -v --socks5 127.0.0.1:11080 http://127.0.0.3:10081/whoami.txt`
-whoami2=`curl -v --insecure https://127.0.0.2:10443/whoami.txt`
+whoami=`curl -v --socks5 127.0.0.1:11080 http://127.0.0.1:10081/whoami.txt`
+whoami2=`curl -v --insecure https://127.0.0.1:10443/whoami.txt`
 kill $pid1 $pid2 $pid3 $pid4
 if [ "$whoami" != true -a "$whoami2" = fake ]; then
   rm -rf $tmpdir

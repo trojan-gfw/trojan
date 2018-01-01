@@ -25,7 +25,7 @@ pid4=$!
 
 sleep 1
 
-whoami=`curl -v --socks5 127.0.0.1:11080 http://127.0.0.3:10081/whoami.txt`
+whoami=`curl -v --socks5 127.0.0.1:11080 http://127.0.0.1:10081/whoami.txt`
 kill $pid1 $pid2 $pid3 $pid4
 if [ "$whoami" = true ]; then
   rm -rf $tmpdir

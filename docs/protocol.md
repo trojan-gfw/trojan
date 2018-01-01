@@ -4,7 +4,7 @@ We will now show how a trojan server will react to a **valid Trojan Protocol**, 
 
 ## Valid Trojan Protocol
 
-When a trojan client connects to a server, it first performs a **real** TLS handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately, as any `HTTPS` server would. Then the client sends the following structure:
+When a trojan client connects to a server, it first performs a **real** `TLS` handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately, as any `HTTPS` server would. Then the client sends the following structure:
 
 ```
 +-----------------------+---------+----------------+---------+----------+
@@ -38,7 +38,7 @@ More information on `SOCKS5` requests can be found [here](https://tools.ietf.org
 
 **Note that `UDP ASSOCIATE` has not been implemented in current version. The `CMD` field is reserved for future implementation (if needed).**
 
-When the server receives the first data packet, it unwraps the TLS packet and looks for the two `CRLF`s. Then it checks if the hashed password is correct and the Trojan Request is valid. On failure at any step, the protocol is considered "other protocols" (see next section). Note that the first packet will have payload (Application Data) appended. This avoids length pattern detection and may reduce the number of packets to be sent.
+When the server receives the first data packet, it unwraps the `TLS` packet and looks for the two `CRLF`s. Then it checks if the hashed password is correct and the Trojan Request is valid. On failure at any step, the protocol is considered "other protocols" (see next section). Note that the first packet will have payload (Application Data) appended. This avoids length pattern detection and may reduce the number of packets to be sent.
 
 If the request is valid, the trojan server connects to the endpoint indicated by the `DST.ADDR` and `DST.PORT` field and opens a direct tunnel between the endpoint and trojan client.
 

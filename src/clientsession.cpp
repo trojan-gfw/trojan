@@ -43,8 +43,8 @@ boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& Client
 void ClientSession::start() {
     in_endpoint = in_socket.remote_endpoint();
     auto ssl = out_socket.native_handle();
-    if (config.ssl.verify_hostname) {
-        SSL_set_tlsext_host_name(ssl, config.remote_addr.c_str());
+    if (config.ssl.sni != "") {
+        SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
     }
     if (config.ssl.reuse_session && ssl_session) {
         SSL_set_session(ssl, ssl_session);

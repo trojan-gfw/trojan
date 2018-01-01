@@ -48,6 +48,7 @@ public:
         std::string key_password;
         std::string cipher;
         bool prefer_server_cipher;
+        std::string sni;
         std::string alpn;
         bool reuse_session;
         long session_timeout;

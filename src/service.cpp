@@ -93,7 +93,7 @@ Service::Service(Config &config) :
                 ssl_context.load_verify_file(config.ssl.cert);
             }
             if (config.ssl.verify_hostname) {
-                ssl_context.set_verify_callback(rfc2818_verification(config.remote_addr));
+                ssl_context.set_verify_callback(rfc2818_verification(config.ssl.sni));
             }
         } else {
             ssl_context.set_verify_mode(verify_none);

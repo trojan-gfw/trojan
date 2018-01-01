@@ -18,6 +18,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
         "verify_hostname": true,
         "cert": "/path/to/ca_certs.pem",
         "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+        "sni": "example.com",
         "alpn": [
             "h2",
             "http/1.1"
@@ -38,9 +39,10 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `log_level`: specify how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 - `ssl`: `SSL` specific configurations
     - `verify`: whether to verify `SSL` certificate **STRONGLY RECOMMENDED**
-    - `verify_hostname`: whether to verify `SSL` hostname **STRONGLY RECOMMENDED**
+    - `verify_hostname`: whether to verify `SSL` hostname (specified in the `sni` field) **STRONGLY RECOMMENDED**
     - `cert`: if `verify` is set to `true`, a collection of `CA` certificates should be provided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will be likely to fail.
     - `cipher`: specify a cipher list to send and use
+    - `sni`: specify the Server Name Indication field in the `SSL` handshake
     - `alpn`: specify a list of `ALPN` protocols to send
     - `reuse_session`: whether to reuse `SSL` session
     - `curves`: specify `ECC` curves to send and use
