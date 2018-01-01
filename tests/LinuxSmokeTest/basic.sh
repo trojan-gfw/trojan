@@ -13,10 +13,16 @@ yes '' | openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 
 mkdir true fake
 echo true >true/whoami.txt
 echo fake >fake/whoami.txt
-{ cd true; python2 -m SimpleHTTPServer 10081 >server.log 2>&1; } &
+
+cd true
+python2 -m SimpleHTTPServer 10081 >server.log 2>&1 &
 pid1=$!
-{ cd fake; python2 -m SimpleHTTPServer 10080 >server.log 2>&1; } &
+cd ..
+
+cd fake
+python2 -m SimpleHTTPServer 10080 >server.log 2>&1 &
 pid2=$!
+cd ..
 
 $trojan server.json 2>server.log &
 pid3=$!
