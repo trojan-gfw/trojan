@@ -36,7 +36,7 @@ ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_s
     out_socket(io_service, ssl_context),
     status(HANDSHAKE) {}
 
-boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& ClientSession::accept_socket() {
+tcp::socket& ClientSession::accept_socket() {
     return in_socket;
 }
 

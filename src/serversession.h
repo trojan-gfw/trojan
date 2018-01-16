@@ -46,7 +46,7 @@ private:
     void out_sent();
 public:
     ServerSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context);
-    boost::asio::basic_socket<boost::asio::ip::tcp, boost::asio::stream_socket_service<boost::asio::ip::tcp> >& accept_socket();
+    boost::asio::ip::tcp::socket& accept_socket();
     void start();
 };
 

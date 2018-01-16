@@ -34,8 +34,8 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_s
     out_socket(io_service),
     status(HANDSHAKE) {}
 
-boost::asio::basic_socket<tcp, boost::asio::stream_socket_service<tcp> >& ServerSession::accept_socket() {
-    return in_socket.lowest_layer();
+tcp::socket& ServerSession::accept_socket() {
+    return (tcp::socket&)in_socket.lowest_layer();
 }
 
 void ServerSession::start() {
