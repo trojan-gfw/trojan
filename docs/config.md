@@ -1,6 +1,6 @@
 # Config
 
-In this page we will look at the config file of trojan. Trojan uses [`JSON`](https://en.wikipedia.org/wiki/JSON) as the format of the config.
+In this page we will look at the config file of trojan. Trojan uses [`JSON`](https://en.wikipedia.org/wiki/JSON) as the format of the config. A config generator can be found [here](https://trojan-gfw.github.io/trojan-config-gen/).
 
 ## A valid client.json
 
