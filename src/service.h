@@ -34,7 +34,8 @@ private:
     void async_accept();
 public:
     Service(Config &config);
-    int run();
+    void run();
+    void stop();
 };
 
 #include "config.h"

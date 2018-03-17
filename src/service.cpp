@@ -107,11 +107,15 @@ Service::Service(Config &config) :
     }
 }
 
-int Service::run() {
+void Service::run() {
     async_accept();
     Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + config.local_addr + ':' + to_string(config.local_port), Log::FATAL);
     io_service.run();
-    return 0;
+    Log::log_with_date_time("trojan service stopped", Log::FATAL);
+}
+
+void Service::stop() {
+    io_service.stop();
 }
 
 void Service::async_accept() {
