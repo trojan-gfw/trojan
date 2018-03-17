@@ -46,7 +46,9 @@ int main(int argc, const char *argv[]) {
     }
     signal(SIGINT, handleTermination);
     signal(SIGTERM, handleTermination);
+#ifndef _WIN32
     signal(SIGHUP, restartService);
+#endif
     restart = true;
     try {
         while (restart) {
