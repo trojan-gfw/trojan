@@ -6,6 +6,8 @@ After=network.target
 Type=simple
 StandardError=journal
 ExecStart=@CMAKE_INSTALL_PREFIX@/bin/trojan /etc/trojan.json
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -TERM $MAINPID
 
 [Install]
 WantedBy=multi-user.target
