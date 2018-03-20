@@ -37,6 +37,7 @@ Service::Service(Config &config) :
     config(config),
     socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
     ssl_context(context::sslv23) {
+    Log::level = config.log_level;
     auto native_context = ssl_context.native_handle();
     if (config.ssl.sigalgs != "") {
         SSL_CONF_CTX *cctx = SSL_CONF_CTX_new();

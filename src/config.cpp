@@ -35,11 +35,11 @@ void Config::load(const string &filename) {
     local_port = tree.get("local_port", uint16_t());
     remote_addr = tree.get("remote_addr", string());
     remote_port = tree.get("remote_port", uint16_t());
+    vector<string>().swap(password);
     for (auto& item: tree.get_child("password")) {
         password.push_back(SHA224(item.second.get_value<string>()));
     }
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
-    Log::level = log_level;
     ssl.verify = tree.get("ssl.verify", true);
     ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
     ssl.cert = tree.get("ssl.cert", string());
@@ -48,6 +48,7 @@ void Config::load(const string &filename) {
     ssl.cipher = tree.get("ssl.cipher", string());
     ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
     ssl.sni = tree.get("ssl.sni", string());
+    ssl.alpn = "";
     for (auto& item: tree.get_child("ssl.alpn")) {
         string proto = item.second.get_value<string>();
         ssl.alpn += (char)((unsigned char)(proto.length()));

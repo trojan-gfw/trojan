@@ -49,16 +49,18 @@ int main(int argc, const char *argv[]) {
 #ifndef _WIN32
     signal(SIGHUP, restartService);
 #endif
-    restart = true;
+    Config config;
     try {
-        while (restart) {
+        do {
             restart = false;
-            Config config;
             config.load(argv[1]);
             service = new Service(config);
             service->run();
             delete service;
-        }
+            if (restart) {
+                Log::log_with_date_time("trojan service restarting. . . ", Log::FATAL);
+            }
+        } while (restart);
         return 0;
     } catch (const exception &e) {
         Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);

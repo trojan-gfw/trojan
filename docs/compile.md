@@ -29,7 +29,7 @@ Type in
 ```bash
 mkdir build
 cd build/
-cmake ..
+cmake .. # You can use -DSTATIC to link statically
 make
 ctest
 sudo make install
