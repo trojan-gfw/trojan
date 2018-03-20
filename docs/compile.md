@@ -35,6 +35,6 @@ ctest
 sudo make install
 ```
 
-to build, test, and install trojan. If everything goes well you'll be able to use trojan. The default config file will be installed to `/etc/trojan.json`. If you have systemd in your system, `trojan.service` will be installed to `/etc/systemd/system`.
+to build, test, and install trojan. If everything goes well you'll be able to use trojan. The default config file will be installed to `/etc/trojan.json`. If you have systemd in your system, `trojan.service` will be installed to `/usr/lib/systemd/system`.
 
 [Homepage](.) | [Prev Page](config) | [Next Page](usage)
