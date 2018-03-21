@@ -2,7 +2,7 @@ language: cpp
 
 install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y cmake3 libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-system-dev libboost-thread-dev realpath
+  - sudo apt-get install -y cmake3 libboost-system-dev realpath
   - curl https://www.openssl.org/source/openssl-1.0.2l.tar.gz | tar xz
   - cd openssl-1.0.2l/
   - ./config shared
