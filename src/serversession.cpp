@@ -97,10 +97,10 @@ void ServerSession::in_recv(const string &data) {
                             destroy();
                             return;
                         };
-                        Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port), Log::INFO);
+                        Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                         status = CONNECTING_REMOTE;
                         out_write_buf = data.substr(second + 2);
-                        tcp::resolver::query query(req.address, to_string(req.port));
+                        tcp::resolver::query query(req.address.address, to_string(req.address.port));
                         resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
                             if (!error) {
                                 out_socket.async_connect(*iterator, [this, self](const boost::system::error_code error) {

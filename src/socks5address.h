@@ -17,21 +17,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TROJANREQUEST_H_
-#define _TROJANREQUEST_H_
+#ifndef _SOCKS5ADDRESS_H_
+#define _SOCKS5ADDRESS_H_
 
+#include <cstdint>
 #include <string>
-#include "socks5address.h"
+#include <boost/asio.hpp>
 
-class TrojanRequest {
+class SOCKS5Address {
 public:
-    enum Command {
-        CONNECT = 1,
-        UDP_ASSOCIATE = 3
-    } command;
-    SOCKS5Address address;
-    TrojanRequest();
+    enum AddressType {
+        IPv4 = 1,
+        DOMAINNAME = 3,
+        IPv6 = 4
+    } address_type;
+    std::string address;
+    uint16_t port;
+    SOCKS5Address();
     bool parse(const std::string &data);
+    static std::string generate(const boost::asio::ip::udp::endpoint &endpoint);
 };
 
-#endif // _TROJANREQUEST_H_
+#endif // _SOCKS5ADDRESS_H_

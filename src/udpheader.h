@@ -17,21 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TROJANREQUEST_H_
-#define _TROJANREQUEST_H_
+#ifndef _UDPHEADER_H_
+#define _UDPHEADER_H_
 
+#include <cstdint>
 #include <string>
 #include "socks5address.h"
 
-class TrojanRequest {
+class UDPHeader {
 public:
-    enum Command {
-        CONNECT = 1,
-        UDP_ASSOCIATE = 3
-    } command;
     SOCKS5Address address;
-    TrojanRequest();
+    uint16_t length;
+    UDPHeader();
     bool parse(const std::string &data);
 };
 
-#endif // _TROJANREQUEST_H_
+#endif // _UDPHEADER_H_

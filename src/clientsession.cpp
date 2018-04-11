@@ -103,7 +103,7 @@ void ClientSession::in_recv(const string &data) {
                 string req_str = data[1] + data.substr(3);
                 TrojanRequest req;
                 if (req.parse(req_str)) {
-                    Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address + ':' + to_string(req.port), Log::INFO);
+                    Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                     status = CONNECTING_REMOTE;
                     in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                     out_write_buf = config.password[0] + "\r\n" + req_str + "\r\n";
