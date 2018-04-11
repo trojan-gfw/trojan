@@ -36,6 +36,7 @@ private:
         INVALID,
         DESTROY
     } status;
+    bool is_udp;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     boost::asio::ip::udp::endpoint udp_endpoint;

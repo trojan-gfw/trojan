@@ -123,24 +123,57 @@ void ClientSession::udp_async_write(const string &data, const udp::endpoint &end
 void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
+            if (data.length() < 2 || data[0] != 5 || data.length() != data[1] + 2) {
+                destroy();
+                return;
+            }
+            bool has_method = false;
+            for (int i = 2; i < data[1] + 2; ++i) {
+                if (data[i] == 0) {
+                    has_method = true;
+                    break;
+                }
+            }
+            if (!has_method) {
+                in_async_write(string("\x05\xff", 2));
+                status = INVALID;
+                return;
+            }
+            in_async_write(string("\x05\x00", 2));
             break;
         }
         case REQUEST: {
+            if (data.length() < 7 || data[0] != 5 || data[2] != 0) {
+                destroy();
+                return;
+            }
+            out_write_buf = data[1] + data.substr(3);
+            TrojanRequest req;
+            if (!req.parse(out_write_buf)) {
+                in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
+                status = INVALID;
+                return;
+            }
+            out_write_buf = config.password[0] + "\r\n" + out_write_buf + "\r\n";
+            is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
+            if (is_udp) {
+                udp_socket.bind(udp::endpoint(in_socket.local_endpoint().address(), 0));
+                in_async_write(string("\x05\x00\x00", 3) + SOCKS5Address::generate(udp_socket.local_endpoint()));
+            } else {
+                in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
+            }
             break;
         }
         case CONNECT: {
+            out_write_buf += data;
             break;
         }
         case FORWARD: {
+            out_async_write(data);
             break;
         }
         case UDP_FORWARD: {
-            break;
-        }
-        case INVALID: {
-            break;
-        }
-        case DESTROY: {
+            destroy();
             break;
         }
     }
@@ -149,24 +182,62 @@ void ClientSession::in_recv(const string &data) {
 void ClientSession::in_sent() {
     switch (status) {
         case HANDSHAKE: {
+            status = REQUEST;
+            in_async_read();
             break;
         }
         case REQUEST: {
-            break;
-        }
-        case CONNECT: {
+            status = CONNECT;
+            if (is_udp) {
+                udp_async_read();
+            }
+            in_async_read();
+            tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
+            auto self = shared_from_this();
+            resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+                if (error) {
+                    destroy();
+                    return;
+                }
+                out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
+                    if (error) {
+                        destroy();
+                        return;
+                    }
+                    out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
+                        if (error) {
+                            destroy();
+                            return;
+                        }
+                        if (is_udp) {
+                            udp_socket.cancel();
+                            status = UDP_FORWARD;
+                        } else {
+                            in_socket.cancel();
+                            status = FORWARD;
+                        }
+                        out_async_read();
+                        out_async_write(out_write_buf);
+                        if (config.ssl.reuse_session) {
+                            auto ssl = out_socket.native_handle();
+                            if (!SSL_session_reused(ssl)) {
+                                if (ssl_session) {
+                                    SSL_SESSION_free(ssl_session);
+                                }
+                                ssl_session = SSL_get1_session(ssl);
+                            }
+                        }
+                    });
+                });
+            });
             break;
         }
         case FORWARD: {
-            break;
-        }
-        case UDP_FORWARD: {
+            out_async_read();
             break;
         }
         case INVALID: {
-            break;
-        }
-        case DESTROY: {
+            destroy();
             break;
         }
     }
@@ -174,25 +245,13 @@ void ClientSession::in_sent() {
 
 void ClientSession::out_recv(const string &data) {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
-        case REQUEST: {
-            break;
-        }
-        case CONNECT: {
-            break;
-        }
         case FORWARD: {
+            in_async_write(data);
             break;
         }
         case UDP_FORWARD: {
-            break;
-        }
-        case INVALID: {
-            break;
-        }
-        case DESTROY: {
+            udp_data_buf += data;
+            // TODO
             break;
         }
     }
@@ -200,51 +259,26 @@ void ClientSession::out_recv(const string &data) {
 
 void ClientSession::out_sent() {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
-        case REQUEST: {
-            break;
-        }
-        case CONNECT: {
-            break;
-        }
         case FORWARD: {
+            in_async_read();
             break;
         }
         case UDP_FORWARD: {
-            break;
-        }
-        case INVALID: {
-            break;
-        }
-        case DESTROY: {
+            udp_async_read();
             break;
         }
     }
 }
 
 void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
+    // TODO
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
-        case REQUEST: {
-            break;
-        }
         case CONNECT: {
-            break;
-        }
-        case FORWARD: {
+            // TODO
             break;
         }
         case UDP_FORWARD: {
-            break;
-        }
-        case INVALID: {
-            break;
-        }
-        case DESTROY: {
+            // TODO
             break;
         }
     }
@@ -252,25 +286,9 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
 
 void ClientSession::udp_sent() {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
-        case REQUEST: {
-            break;
-        }
-        case CONNECT: {
-            break;
-        }
-        case FORWARD: {
-            break;
-        }
         case UDP_FORWARD: {
-            break;
-        }
-        case INVALID: {
-            break;
-        }
-        case DESTROY: {
+            // TODO
+            out_async_read();
             break;
         }
     }

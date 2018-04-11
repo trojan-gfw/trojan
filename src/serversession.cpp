@@ -34,7 +34,8 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_s
     Session(config, io_service),
     in_socket(io_service, ssl_context),
     out_socket(io_service),
-    status(HANDSHAKE) {}
+    status(HANDSHAKE),
+    udp_resolver(io_service) {}
 
 tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.lowest_layer();
@@ -124,12 +125,11 @@ void ServerSession::in_recv(const string &data) {
             break;
         }
         case FORWARD: {
+            out_async_write(data);
             break;
         }
         case UDP_FORWARD: {
-            break;
-        }
-        case DESTROY: {
+            // TODO
             break;
         }
     }
@@ -137,16 +137,12 @@ void ServerSession::in_recv(const string &data) {
 
 void ServerSession::in_sent() {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
         case FORWARD: {
+            out_async_read();
             break;
         }
         case UDP_FORWARD: {
-            break;
-        }
-        case DESTROY: {
+            udp_async_read();
             break;
         }
     }
@@ -154,16 +150,8 @@ void ServerSession::in_sent() {
 
 void ServerSession::out_recv(const string &data) {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
         case FORWARD: {
-            break;
-        }
-        case UDP_FORWARD: {
-            break;
-        }
-        case DESTROY: {
+            in_async_write(data);
             break;
         }
     }
@@ -171,16 +159,8 @@ void ServerSession::out_recv(const string &data) {
 
 void ServerSession::out_sent() {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
         case FORWARD: {
-            break;
-        }
-        case UDP_FORWARD: {
-            break;
-        }
-        case DESTROY: {
+            in_async_read();
             break;
         }
     }
@@ -188,16 +168,8 @@ void ServerSession::out_sent() {
 
 void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
-        case FORWARD: {
-            break;
-        }
         case UDP_FORWARD: {
-            break;
-        }
-        case DESTROY: {
+            // TODO
             break;
         }
     }
@@ -205,16 +177,8 @@ void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
 
 void ServerSession::udp_sent() {
     switch (status) {
-        case HANDSHAKE: {
-            break;
-        }
-        case FORWARD: {
-            break;
-        }
         case UDP_FORWARD: {
-            break;
-        }
-        case DESTROY: {
+            // TODO
             break;
         }
     }
