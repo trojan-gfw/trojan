@@ -21,4 +21,5 @@
 #include <boost/asio.hpp>
 
 Session::Session(const Config &config, boost::asio::io_service &io_service) : config(config),
-                                                                              resolver(io_service) {}
+                                                                              resolver(io_service),
+                                                                              udp_socket(io_service) {}

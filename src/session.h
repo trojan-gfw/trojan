@@ -35,9 +35,13 @@ protected:
     const Config &config;
     uint8_t in_read_buf[MAX_LENGTH];
     uint8_t out_read_buf[MAX_LENGTH];
+    uint8_t udp_read_buf[MAX_LENGTH];
     std::string out_write_buf;
+    std::string udp_data_buf;
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::endpoint in_endpoint;
+    boost::asio::ip::udp::socket udp_socket;
+    boost::asio::ip::udp::endpoint recv_endpoint;
 public:
     Session(const Config &config, boost::asio::io_service &io_service);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;

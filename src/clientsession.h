@@ -30,14 +30,15 @@ private:
     enum Status {
         HANDSHAKE,
         REQUEST,
-        CONNECTING_REMOTE,
-        FIRST_PACKET_RECEIVED,
-        FORWARDING,
+        CONNECT,
+        FORWARD,
+        UDP_FORWARD,
         INVALID,
-        DESTROYING
+        DESTROY
     } status;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
+    boost::asio::ip::udp::endpoint udp_endpoint;
     static SSL_SESSION *ssl_session;
     void destroy();
     void in_async_read();
@@ -48,6 +49,10 @@ private:
     void out_async_write(const std::string &data);
     void out_recv(const std::string &data);
     void out_sent();
+    void udp_async_read();
+    void udp_async_write(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
+    void udp_recv(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
+    void udp_sent();
 public:
     ClientSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context);
     boost::asio::ip::tcp::socket& accept_socket();
