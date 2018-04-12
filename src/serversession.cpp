@@ -114,74 +114,102 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
 }
 
 void ServerSession::in_recv(const string &data) {
-    switch (status) {
-        case HANDSHAKE: {
-            break;
+    if (status == HANDSHAKE) {
+        bool valid = true;
+        TrojanRequest req;
+        string tmp;
+        int req_len;
+        do {
+            size_t first = data.find("\r\n");
+            if (first == string::npos) {
+                valid = false;
+                break;
+            }
+            tmp = data.substr(0, first);
+            bool match = false;
+            for (int i = 0; i < config.password.size(); ++i) {
+                if (tmp == config.password[i]) {
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) {
+                valid = false;
+                break;
+            }
+            tmp = data.substr(first + 2);
+            req_len = req.parse(tmp);
+            if (req_len == -1 || tmp.length() < req_len + 2 || tmp.substr(req_len, 2) != "\r\n") {
+                valid = false;
+                break;
+            }
+        } while (false);
+        tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
+                                   to_string(valid ? req.address.port : config.remote_port));
+        if (valid) {
+            out_write_buf = tmp.substr(req_len + 2);
+        } else {
+            out_write_buf = data;
         }
-        case FORWARD: {
-            out_async_write(data);
-            break;
-        }
-        case UDP_FORWARD: {
-            // TODO
-            break;
-        }
-        default: break;
+        auto self = shared_from_this();
+        resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+            if (error) {
+                destroy();
+                return;
+            }
+            out_socket.async_connect(*iterator, [this, self](const boost::system::error_code error) {
+                if (error) {
+                    destroy();
+                    return;
+                }
+                status = FORWARD;
+                out_async_read();
+                if (out_write_buf != "") {
+                    out_async_write(out_write_buf);
+                } else {
+                    in_async_read();
+                }
+            });
+        });
+    } else if (status == FORWARD) {
+        out_async_write(data);
+    } else if (status == UDP_FORWARD) {
+        // TODO
     }
 }
 
 void ServerSession::in_sent() {
-    switch (status) {
-        case FORWARD: {
-            out_async_read();
-            break;
-        }
-        case UDP_FORWARD: {
-            udp_async_read();
-            break;
-        }
-        default: break;
+    if (status == FORWARD) {
+        out_async_read();
+    } else if (status == UDP_FORWARD) {
+        udp_async_read();
     }
 }
 
 void ServerSession::out_recv(const string &data) {
-    switch (status) {
-        case FORWARD: {
-            in_async_write(data);
-            break;
-        }
-        default: break;
+    if (status == FORWARD) {
+        in_async_write(data);
     }
 }
 
 void ServerSession::out_sent() {
-    switch (status) {
-        case FORWARD: {
-            in_async_read();
-            break;
-        }
-        default: break;
+    if (status == FORWARD) {
+        in_async_read();
     }
 }
 
 void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
-    switch (status) {
-        case UDP_FORWARD: {
-            // TODO
-            break;
-        }
-        default: break;
+    if (status != UDP_FORWARD) {
+        return;
     }
+    // TODO
 }
 
 void ServerSession::udp_sent() {
-    switch (status) {
-        case UDP_FORWARD: {
-            // TODO
-            break;
-        }
-        default: break;
+    if (status != UDP_FORWARD) {
+        return;
     }
+    // TODO
 }
 
 void ServerSession::destroy() {
@@ -190,6 +218,7 @@ void ServerSession::destroy() {
     }
     status = DESTROY;
     resolver.cancel();
+    udp_resolver.cancel();
     out_socket.close();
     udp_socket.close();
     auto self = shared_from_this();

@@ -240,58 +240,35 @@ void ClientSession::in_sent() {
 }
 
 void ClientSession::out_recv(const string &data) {
-    switch (status) {
-        case FORWARD: {
-            in_async_write(data);
-            break;
-        }
-        case UDP_FORWARD: {
-            udp_data_buf += data;
-            // TODO
-            break;
-        }
-        default: break;
+    if (status == FORWARD) {
+        in_async_write(data);
+    } else if (status == UDP_FORWARD) {
+        // TODO
     }
 }
 
 void ClientSession::out_sent() {
-    switch (status) {
-        case FORWARD: {
-            in_async_read();
-            break;
-        }
-        case UDP_FORWARD: {
-            udp_async_read();
-            break;
-        }
-        default: break;
+    if (status == FORWARD) {
+        in_async_read();
+    } else if (status == UDP_FORWARD) {
+        udp_async_read();
     }
 }
 
 void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
     // TODO
-    switch (status) {
-        case CONNECT: {
-            // TODO
-            break;
-        }
-        case UDP_FORWARD: {
-            // TODO
-            break;
-        }
-        default: break;
+    if (status == CONNECT) {
+        // TODO
+    } else if (status == UDP_FORWARD) {
+        // TODO
     }
 }
 
 void ClientSession::udp_sent() {
-    switch (status) {
-        case UDP_FORWARD: {
-            // TODO
-            out_async_read();
-            break;
-        }
-        default: break;
+    if (status != UDP_FORWARD) {
+        return;
     }
+    // TODO
 }
 
 void ClientSession::destroy() {
