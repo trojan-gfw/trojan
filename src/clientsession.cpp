@@ -119,6 +119,7 @@ void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
             if (data.length() < 2 || data[0] != 5 || data.length() != data[1] + 2) {
+                Log::log_with_endpoint(in_endpoint, "unknown protocol", Log::ERROR);
                 destroy();
                 return;
             }
@@ -130,6 +131,7 @@ void ClientSession::in_recv(const string &data) {
                 }
             }
             if (!has_method) {
+                Log::log_with_endpoint(in_endpoint, "unsupported auth method", Log::ERROR);
                 in_async_write(string("\x05\xff", 2));
                 status = INVALID;
                 return;
@@ -139,16 +141,19 @@ void ClientSession::in_recv(const string &data) {
         }
         case REQUEST: {
             if (data.length() < 7 || data[0] != 5 || data[2] != 0) {
+                Log::log_with_endpoint(in_endpoint, "bad request", Log::ERROR);
                 destroy();
                 return;
             }
             out_write_buf = data[1] + data.substr(3);
             TrojanRequest req;
             if (req.parse(out_write_buf) != out_write_buf.length()) {
+                Log::log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);
                 in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 status = INVALID;
                 return;
             }
+            Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             out_write_buf = config.password[0] + "\r\n" + out_write_buf + "\r\n";
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
@@ -195,19 +200,23 @@ void ClientSession::in_sent() {
             auto self = shared_from_this();
             resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
                 if (error) {
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr, Log::ERROR);
                     destroy();
                     return;
                 }
                 out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
                     if (error) {
+                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port), Log::ERROR);
                         destroy();
                         return;
                     }
                     out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
                         if (error) {
+                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port), Log::ERROR);
                             destroy();
                             return;
                         }
+                        Log::log_with_endpoint(in_endpoint, "tunnel established");
                         if (is_udp) {
                             if (!first_packet_recv) {
                                 udp_socket.cancel();
@@ -305,6 +314,7 @@ void ClientSession::destroy() {
     if (status == DESTROY) {
         return;
     }
+    Log::log_with_endpoint(in_endpoint, "disconnected");
     status = DESTROY;
     resolver.cancel();
     boost::system::error_code ec;

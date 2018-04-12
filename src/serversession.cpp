@@ -40,6 +40,7 @@ void ServerSession::start() {
     auto self = shared_from_this();
     in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
         if (error) {
+            Log::log_with_endpoint(in_endpoint, "SSL handshake failed", Log::ERROR);
             destroy();
             return;
         }
@@ -147,6 +148,7 @@ void ServerSession::in_recv(const string &data) {
         tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
                                    to_string(valid ? req.address.port : config.remote_port));
         if (valid) {
+            Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             out_write_buf = tmp.substr(req_len + 2);
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
                 status = UDP_FORWARD;
@@ -155,19 +157,23 @@ void ServerSession::in_recv(const string &data) {
                 return;
             }
         } else {
+            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port), Log::WARN);
             out_write_buf = data;
         }
         auto self = shared_from_this();
         resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
             if (error) {
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname", Log::ERROR);
                 destroy();
                 return;
             }
             out_socket.async_connect(*iterator, [this, self](const boost::system::error_code error) {
                 if (error) {
+                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server", Log::ERROR);
                     destroy();
                     return;
                 }
+                Log::log_with_endpoint(in_endpoint, "tunnel established");
                 status = FORWARD;
                 out_async_read();
                 if (out_write_buf != "") {
@@ -241,6 +247,7 @@ void ServerSession::destroy() {
     if (status == DESTROY) {
         return;
     }
+    Log::log_with_endpoint(in_endpoint, "disconnected");
     status = DESTROY;
     resolver.cancel();
     udp_resolver.cancel();

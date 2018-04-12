@@ -103,7 +103,10 @@ Service::Service(Config &config) :
 
 void Service::run() {
     async_accept();
+    tcp::endpoint local_endpoint = socket_acceptor.local_endpoint();
+    Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::FATAL);
     io_service.run();
+    Log::log_with_date_time("trojan service stopped", Log::FATAL);
 }
 
 void Service::stop() {
@@ -122,6 +125,7 @@ void Service::async_accept() {
             boost::system::error_code ec;
             auto endpoint = session->accept_socket().remote_endpoint(ec);
             if (!ec) {
+                Log::log_with_endpoint(endpoint, "incoming connection");
                 session->start();
             }
         }
