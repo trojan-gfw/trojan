@@ -19,7 +19,7 @@
 
 #include "clientsession.h"
 #include "trojanrequest.h"
-#include "udpheader.h"
+#include "udppacket.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -243,7 +243,8 @@ void ClientSession::out_recv(const string &data) {
     if (status == FORWARD) {
         in_async_write(data);
     } else if (status == UDP_FORWARD) {
-        // TODO
+        udp_data_buf += data;
+        udp_sent();
     }
 }
 
@@ -256,19 +257,39 @@ void ClientSession::out_sent() {
 }
 
 void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
-    // TODO
+    if (data[0] || data[1] || data[2]) {
+        destroy();
+        return;
+    }
+    SOCKS5Address address;
+    int address_len = address.parse(data.substr(3));
+    if (address_len == -1) {
+        destroy();
+        return;
+    }
+    uint16_t length = data.length() - 3 - address_len;
+    string packet = data.substr(3, address_len) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data.substr(address_len + 3);
     if (status == CONNECT) {
-        // TODO
+        out_write_buf += packet;
     } else if (status == UDP_FORWARD) {
-        // TODO
+        out_async_write(packet);
     }
 }
 
 void ClientSession::udp_sent() {
-    if (status != UDP_FORWARD) {
-        return;
+    if (status == UDP_FORWARD) {
+        UDPPacket packet;
+        int packet_len = packet.parse(udp_data_buf);
+        if (packet_len == -1) {
+            out_async_read();
+            return;
+        }
+        SOCKS5Address address;
+        int address_len = address.parse(udp_data_buf);
+        string reply = string("\x00\x00\x00", 3) + udp_data_buf.substr(0, address_len) + packet.payload;
+        udp_data_buf = udp_data_buf.substr(packet_len);
+        udp_async_write(reply, udp_recv_endpoint);
     }
-    // TODO
 }
 
 void ClientSession::destroy() {

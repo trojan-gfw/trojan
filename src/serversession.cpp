@@ -19,7 +19,7 @@
 
 #include "serversession.h"
 #include "trojanrequest.h"
-#include "udpheader.h"
+#include "udppacket.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -148,6 +148,12 @@ void ServerSession::in_recv(const string &data) {
                                    to_string(valid ? req.address.port : config.remote_port));
         if (valid) {
             out_write_buf = tmp.substr(req_len + 2);
+            if (req.command == TrojanRequest::UDP_ASSOCIATE) {
+                status = UDP_FORWARD;
+                udp_data_buf = out_write_buf;
+                udp_sent();
+                return;
+            }
         } else {
             out_write_buf = data;
         }
@@ -174,7 +180,8 @@ void ServerSession::in_recv(const string &data) {
     } else if (status == FORWARD) {
         out_async_write(data);
     } else if (status == UDP_FORWARD) {
-        // TODO
+        udp_data_buf += data;
+        udp_sent();
     }
 }
 
@@ -199,17 +206,31 @@ void ServerSession::out_sent() {
 }
 
 void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
-    if (status != UDP_FORWARD) {
-        return;
+    if (status == UDP_FORWARD) {
+        uint16_t length = data.length();
+        in_async_write(SOCKS5Address::generate(endpoint) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data);
     }
-    // TODO
 }
 
 void ServerSession::udp_sent() {
-    if (status != UDP_FORWARD) {
-        return;
+    if (status == UDP_FORWARD) {
+        UDPPacket packet;
+        int packet_len = packet.parse(udp_data_buf);
+        if (packet_len == -1) {
+            in_async_read();
+            return;
+        }
+        udp_data_buf = udp_data_buf.substr(packet_len);
+        udp::resolver::query query(packet.address.address, to_string(packet.address.port));
+        auto self = shared_from_this();
+        udp_resolver.async_resolve(query, [this, self, packet](const boost::system::error_code error, udp::resolver::iterator iterator) {
+            if (error) {
+                destroy();
+                return;
+            }
+            udp_async_write(packet.payload, *iterator);
+        });
     }
-    // TODO
 }
 
 void ServerSession::destroy() {

@@ -17,16 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UDPHEADER_H_
-#define _UDPHEADER_H_
+#include "udppacket.h"
+using namespace std;
 
-#include "socks5address.h"
-
-class UDPHeader {
-public:
-    SOCKS5Address address;
-    uint16_t length;
-    int parse(const std::string &data);
-};
-
-#endif // _UDPHEADER_H_
+int UDPPacket::parse(const string &data) {
+    int address_len = address.parse(data);
+    if (address_len == -1 || data.length() < address_len + 2) {
+        return -1;
+    }
+    length = (uint8_t(data[address_len]) << 8) | uint8_t(data[address_len + 1]);
+    if (data.length() < address_len + 4 + length || data.substr(address_len + 2, 2) != "\r\n") {
+        return -1;
+    }
+    payload = data.substr(address_len + 4, length);
+    return address_len + 4 + length;
+}
