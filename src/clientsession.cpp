@@ -30,7 +30,8 @@ ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_s
     Session(config, io_service),
     in_socket(io_service),
     out_socket(io_service, ssl_context),
-    status(HANDSHAKE) {}
+    status(HANDSHAKE),
+    first_packet_recv(false) {}
 
 tcp::socket& ClientSession::accept_socket() {
     return in_socket;
@@ -151,7 +152,9 @@ void ClientSession::in_recv(const string &data) {
             out_write_buf = config.password[0] + "\r\n" + out_write_buf + "\r\n";
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
-                udp_socket.bind(udp::endpoint(in_socket.local_endpoint().address(), 0));
+                udp::endpoint bindpoint(in_socket.local_endpoint().address(), 0);
+                udp_socket.open(bindpoint.protocol());
+                udp_socket.bind(bindpoint);
                 in_async_write(string("\x05\x00\x00", 3) + SOCKS5Address::generate(udp_socket.local_endpoint()));
             } else {
                 in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
@@ -159,6 +162,7 @@ void ClientSession::in_recv(const string &data) {
             break;
         }
         case CONNECT: {
+            first_packet_recv = true;
             out_write_buf += data;
             break;
         }
@@ -205,10 +209,14 @@ void ClientSession::in_sent() {
                             return;
                         }
                         if (is_udp) {
-                            udp_socket.cancel();
+                            if (!first_packet_recv) {
+                                udp_socket.cancel();
+                            }
                             status = UDP_FORWARD;
                         } else {
-                            in_socket.cancel();
+                            if (!first_packet_recv) {
+                                in_socket.cancel();
+                            }
                             status = FORWARD;
                         }
                         if (config.ssl.reuse_session) {
@@ -270,6 +278,7 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
     uint16_t length = data.length() - 3 - address_len;
     string packet = data.substr(3, address_len) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data.substr(address_len + 3);
     if (status == CONNECT) {
+        first_packet_recv = true;
         out_write_buf += packet;
     } else if (status == UDP_FORWARD) {
         out_async_write(packet);

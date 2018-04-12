@@ -220,6 +220,10 @@ void ServerSession::udp_sent() {
             in_async_read();
             return;
         }
+        if (!udp_socket.is_open()) {
+            udp::endpoint endpoint(address::from_string(packet.address.address), packet.address.port);
+            udp_socket.open(endpoint.protocol());
+        }
         udp_data_buf = udp_data_buf.substr(packet_len);
         udp::resolver::query query(packet.address.address, to_string(packet.address.port));
         auto self = shared_from_this();
