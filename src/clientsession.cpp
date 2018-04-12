@@ -307,7 +307,8 @@ void ClientSession::destroy() {
     }
     status = DESTROY;
     resolver.cancel();
-    in_socket.close();
+    boost::system::error_code ec;
+    in_socket.shutdown(tcp::socket::shutdown_both, ec);
     udp_socket.close();
     auto self = shared_from_this();
     out_socket.async_shutdown([this, self](const boost::system::error_code){});
