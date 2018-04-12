@@ -20,8 +20,6 @@
 #include <cstdlib>
 #include <string>
 #include <csignal>
-#include "log.h"
-#include "config.h"
 #include "service.h"
 #include "version.h"
 using namespace std;

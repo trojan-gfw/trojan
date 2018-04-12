@@ -33,8 +33,7 @@ public:
     } address_type;
     std::string address;
     uint16_t port;
-    SOCKS5Address();
-    bool parse(const std::string &data);
+    int parse(const std::string &data);
     static std::string generate(const boost::asio::ip::udp::endpoint &endpoint);
 };
 

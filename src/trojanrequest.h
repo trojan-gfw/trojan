@@ -20,7 +20,6 @@
 #ifndef _TROJANREQUEST_H_
 #define _TROJANREQUEST_H_
 
-#include <string>
 #include "socks5address.h"
 
 class TrojanRequest {
@@ -30,8 +29,7 @@ public:
         UDP_ASSOCIATE = 3
     } command;
     SOCKS5Address address;
-    TrojanRequest();
-    bool parse(const std::string &data);
+    int parse(const std::string &data);
 };
 
 #endif // _TROJANREQUEST_H_

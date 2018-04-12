@@ -18,18 +18,13 @@
  */
 
 #include "trojanrequest.h"
-#include <string>
 using namespace std;
 
-TrojanRequest::TrojanRequest() : command(CONNECT) {}
-
-bool TrojanRequest::parse(const string &data) {
-    if (data.length() < 1) {
-        return false;
-    }
-    if (data[0] != CONNECT && data[0] == UDP_ASSOCIATE) {
-        return false;
+int TrojanRequest::parse(const string &data) {
+    if (data.length() == 0 || (data[0] != CONNECT && data[0] != UDP_ASSOCIATE)) {
+        return -1;
     }
     command = static_cast<Command>(data[0]);
-    return address.parse(data.substr(1));
+    int address_len = address.parse(data.substr(1));
+    return address_len == -1 ? -1 : address_len + 1;
 }

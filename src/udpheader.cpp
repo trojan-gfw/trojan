@@ -18,17 +18,13 @@
  */
 
 #include "udpheader.h"
-#include <cstdint>
-#include <string>
 using namespace std;
 
-UDPHeader::UDPHeader() : length(0) {}
-
-bool UDPHeader::parse(const string &data) {
-    int len = data.length();
-    if (len < 2) {
-        return false;
+int UDPHeader::parse(const string &data) {
+    int address_len = address.parse(data);
+    if (address_len == -1 || data.length() < address_len + 2) {
+        return -1;
     }
-    length = (uint8_t(data[len - 2]) << 8) | uint8_t(data[len - 1]);
-    return address.parse(data.substr(0, len - 2));
+    length = (uint8_t(data[address_len]) << 8) | uint8_t(data[address_len + 1]);
+    return address_len + 2;
 }

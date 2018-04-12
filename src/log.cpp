@@ -19,11 +19,9 @@
 
 #include "log.h"
 #include <cstdio>
-#include <string>
 #include <sstream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
-#include <boost/asio.hpp>
 using namespace std;
 using namespace boost::posix_time;
 using namespace boost::asio::ip;

@@ -18,7 +18,6 @@
  */
 
 #include "version.h"
-#include <string>
 using namespace std;
 
 const string Version::version("1.0.0");

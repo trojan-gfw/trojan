@@ -18,12 +18,9 @@
  */
 
 #include "config.h"
-#include <string>
-#include <cstdint>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <openssl/sha.h>
-#include "log.h"
 using namespace std;
 using namespace boost::property_tree;
 

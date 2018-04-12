@@ -20,16 +20,13 @@
 #ifndef _UDPHEADER_H_
 #define _UDPHEADER_H_
 
-#include <cstdint>
-#include <string>
 #include "socks5address.h"
 
 class UDPHeader {
 public:
     SOCKS5Address address;
     uint16_t length;
-    UDPHeader();
-    bool parse(const std::string &data);
+    int parse(const std::string &data);
 };
 
 #endif // _UDPHEADER_H_

@@ -18,14 +18,7 @@
  */
 
 #include "service.h"
-#include <cstring>
-#include <string>
 #include <memory>
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include "config.h"
-#include "log.h"
-#include "session.h"
 #include "serversession.h"
 #include "clientsession.h"
 #include "ssldefaults.h"
@@ -124,7 +117,7 @@ void Service::async_accept() {
     } else {
         session = make_shared<ClientSession>(config, io_service, ssl_context);
     }
-    socket_acceptor.async_accept(session->accept_socket(), [this, session](boost::system::error_code error) {
+    socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
         if (!error) {
             boost::system::error_code ec;
             auto endpoint = session->accept_socket().remote_endpoint(ec);

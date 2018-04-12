@@ -19,47 +19,36 @@
 
 #include "socks5address.h"
 #include <cstdio>
-#include <cstdint>
-#include <string>
-#include <array>
-#include <boost/asio.hpp>
 using namespace std;
 using namespace boost::asio::ip;
 
-SOCKS5Address::SOCKS5Address() : address_type(IPv4),
-                                 address("0.0.0.0"),
-                                 port(0) {}
-
-bool SOCKS5Address::parse(const string &data) {
-    if (data.length() == 0) {
-        return false;
-    }
-    if (data[0] != IPv4 && data[0] != DOMAINNAME && data[0] != IPv6) {
-        return false;
+int SOCKS5Address::parse(const string &data) {
+    if (data.length() == 0 || (data[0] != IPv4 && data[0] != DOMAINNAME && data[0] != IPv6)) {
+        return -1;
     }
     address_type = static_cast<AddressType>(data[0]);
     switch (address_type) {
         case IPv4: {
-            if (data.length() == 7) {
+            if (data.length() >= 7) {
                 address = to_string(uint8_t(data[1])) + '.' +
                           to_string(uint8_t(data[2])) + '.' +
                           to_string(uint8_t(data[3])) + '.' +
                           to_string(uint8_t(data[4]));
                 port = (uint8_t(data[5]) << 8) | uint8_t(data[6]);
-                return true;
+                return 7;
             }
             break;
         }
         case DOMAINNAME: {
-            if (data.length() == data[1] + 4) {
+            if (data.length() >= data[1] + 4) {
                 address = data.substr(2, data[1]);
                 port = (uint8_t(data[data[1] + 2]) << 8) | uint8_t(data[data[1] + 3]);
-                return true;
+                return data[1] + 4;
             }
             break;
         }
         case IPv6: {
-            if (data.length() == 19) {
+            if (data.length() >= 19) {
                 char t[40];
                 sprintf(t, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
                         uint8_t(data[1]), uint8_t(data[2]), uint8_t(data[3]), uint8_t(data[4]),
@@ -68,12 +57,12 @@ bool SOCKS5Address::parse(const string &data) {
                         uint8_t(data[13]), uint8_t(data[14]), uint8_t(data[15]), uint8_t(data[16]));
                 address = t;
                 port = (uint8_t(data[17]) << 8) | uint8_t(data[18]);
-                return true;
+                return 19;
             }
             break;
         }
     }
-    return false;
+    return -1;
 }
 
 string SOCKS5Address::generate(const udp::endpoint &endpoint) {

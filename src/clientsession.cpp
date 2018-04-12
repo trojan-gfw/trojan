@@ -176,6 +176,7 @@ void ClientSession::in_recv(const string &data) {
             destroy();
             break;
         }
+        default: break;
     }
 }
 
@@ -240,6 +241,7 @@ void ClientSession::in_sent() {
             destroy();
             break;
         }
+        default: break;
     }
 }
 
@@ -254,6 +256,7 @@ void ClientSession::out_recv(const string &data) {
             // TODO
             break;
         }
+        default: break;
     }
 }
 
@@ -267,6 +270,7 @@ void ClientSession::out_sent() {
             udp_async_read();
             break;
         }
+        default: break;
     }
 }
 
@@ -281,6 +285,7 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
             // TODO
             break;
         }
+        default: break;
     }
 }
 
@@ -291,6 +296,7 @@ void ClientSession::udp_sent() {
             out_async_read();
             break;
         }
+        default: break;
     }
 }
 
