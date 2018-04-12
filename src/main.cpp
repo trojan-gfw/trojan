@@ -18,7 +18,6 @@
  */
 
 #include <cstdlib>
-#include <string>
 #include <csignal>
 #include "service.h"
 #include "version.h"

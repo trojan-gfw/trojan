@@ -21,8 +21,6 @@
 #define _CLIENTSESSION_H_
 
 #include "session.h"
-#include <string>
-#include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 
 class ClientSession : public Session {

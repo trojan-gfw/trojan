@@ -18,14 +18,8 @@
  */
 
 #include "serversession.h"
-#include <string>
-#include <memory>
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include "socks5address.h"
 #include "trojanrequest.h"
 #include "udpheader.h"
-#include "log.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -99,12 +93,12 @@ void ServerSession::out_async_write(const string &data) {
 
 void ServerSession::udp_async_read() {
     auto self = shared_from_this();
-    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
+    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
             destroy();
             return;
         }
-        udp_recv(string((const char*)udp_read_buf, length), recv_endpoint);
+        udp_recv(string((const char*)udp_read_buf, length), udp_recv_endpoint);
     });
 }
 

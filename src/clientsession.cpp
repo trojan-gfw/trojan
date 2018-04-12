@@ -18,14 +18,8 @@
  */
 
 #include "clientsession.h"
-#include <string>
-#include <memory>
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include "socks5address.h"
 #include "trojanrequest.h"
 #include "udpheader.h"
-#include "log.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -100,12 +94,12 @@ void ClientSession::out_async_write(const string &data) {
 
 void ClientSession::udp_async_read() {
     auto self = shared_from_this();
-    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
+    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
         if (error && error != boost::asio::error::operation_aborted) {
             destroy();
             return;
         }
-        udp_recv(string((const char*)udp_read_buf, length), recv_endpoint);
+        udp_recv(string((const char*)udp_read_buf, length), udp_recv_endpoint);
     });
 }
 
@@ -149,7 +143,7 @@ void ClientSession::in_recv(const string &data) {
             }
             out_write_buf = data[1] + data.substr(3);
             TrojanRequest req;
-            if (!req.parse(out_write_buf)) {
+            if (req.parse(out_write_buf) != out_write_buf.length()) {
                 in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 status = INVALID;
                 return;
@@ -217,8 +211,6 @@ void ClientSession::in_sent() {
                             in_socket.cancel();
                             status = FORWARD;
                         }
-                        out_async_read();
-                        out_async_write(out_write_buf);
                         if (config.ssl.reuse_session) {
                             auto ssl = out_socket.native_handle();
                             if (!SSL_session_reused(ssl)) {
@@ -228,6 +220,8 @@ void ClientSession::in_sent() {
                                 ssl_session = SSL_get1_session(ssl);
                             }
                         }
+                        out_async_read();
+                        out_async_write(out_write_buf);
                     });
                 });
             });
