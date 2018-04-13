@@ -153,29 +153,33 @@ void ClientSession::in_recv(const string &data) {
                 status = INVALID;
                 return;
             }
-            Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             out_write_buf = config.password[0] + "\r\n" + out_write_buf + "\r\n";
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
+                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 udp::endpoint bindpoint(in_socket.local_endpoint().address(), 0);
                 udp_socket.open(bindpoint.protocol());
                 udp_socket.bind(bindpoint);
                 in_async_write(string("\x05\x00\x00", 3) + SOCKS5Address::generate(udp_socket.local_endpoint()));
             } else {
+                Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
             }
             break;
         }
         case CONNECT: {
+            sent_len += data.length();
             first_packet_recv = true;
             out_write_buf += data;
             break;
         }
         case FORWARD: {
+            sent_len += data.length();
             out_async_write(data);
             break;
         }
         case UDP_FORWARD: {
+            Log::log_with_endpoint(in_endpoint, "unexpected data from TCP port", Log::ERROR);
             destroy();
             break;
         }
@@ -231,10 +235,13 @@ void ClientSession::in_sent() {
                         if (config.ssl.reuse_session) {
                             auto ssl = out_socket.native_handle();
                             if (!SSL_session_reused(ssl)) {
+                                Log::log_with_endpoint(in_endpoint, "SSL session not reused");
                                 if (ssl_session) {
                                     SSL_SESSION_free(ssl_session);
                                 }
                                 ssl_session = SSL_get1_session(ssl);
+                            } else {
+                                Log::log_with_endpoint(in_endpoint, "SSL session reused");
                             }
                         }
                         out_async_read();
@@ -258,6 +265,7 @@ void ClientSession::in_sent() {
 
 void ClientSession::out_recv(const string &data) {
     if (status == FORWARD) {
+        recv_len += data.length();
         in_async_write(data);
     } else if (status == UDP_FORWARD) {
         udp_data_buf += data;
@@ -275,17 +283,21 @@ void ClientSession::out_sent() {
 
 void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
     if (data[0] || data[1] || data[2]) {
+        Log::log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
         destroy();
         return;
     }
     SOCKS5Address address;
     int address_len = address.parse(data.substr(3));
     if (address_len == -1) {
+        Log::log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
         destroy();
         return;
     }
     uint16_t length = data.length() - 3 - address_len;
+    Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " to " + address.address + ':' + to_string(address.port));
     string packet = data.substr(3, address_len) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data.substr(address_len + 3);
+    sent_len += length;
     if (status == CONNECT) {
         first_packet_recv = true;
         out_write_buf += packet;
@@ -299,13 +311,20 @@ void ClientSession::udp_sent() {
         UDPPacket packet;
         int packet_len = packet.parse(udp_data_buf);
         if (packet_len == -1) {
+            if (udp_data_buf.length() > MAX_LENGTH) {
+                Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
+                destroy();
+                return;
+            }
             out_async_read();
             return;
         }
+        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.payload.length()) + " from " + packet.address.address + ':' + to_string(packet.address.port));
         SOCKS5Address address;
         int address_len = address.parse(udp_data_buf);
         string reply = string("\x00\x00\x00", 3) + udp_data_buf.substr(0, address_len) + packet.payload;
         udp_data_buf = udp_data_buf.substr(packet_len);
+        recv_len += packet.payload.length();
         udp_async_write(reply, udp_recv_endpoint);
     }
 }
@@ -314,7 +333,8 @@ void ClientSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected");
+    Log::log_with_endpoint(in_endpoint, "disconnected", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " second(s).", Log::INFO);
     status = DESTROY;
     resolver.cancel();
     boost::system::error_code ec;

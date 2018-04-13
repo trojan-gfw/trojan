@@ -148,18 +148,21 @@ void ServerSession::in_recv(const string &data) {
         tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
                                    to_string(valid ? req.address.port : config.remote_port));
         if (valid) {
-            Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             out_write_buf = tmp.substr(req_len + 2);
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
+                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 status = UDP_FORWARD;
                 udp_data_buf = out_write_buf;
                 udp_sent();
                 return;
+            } else {
+                Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             }
         } else {
             Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port), Log::WARN);
             out_write_buf = data;
         }
+        sent_len += out_write_buf.length();
         auto self = shared_from_this();
         resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
             if (error) {
@@ -184,6 +187,7 @@ void ServerSession::in_recv(const string &data) {
             });
         });
     } else if (status == FORWARD) {
+        sent_len += data.length();
         out_async_write(data);
     } else if (status == UDP_FORWARD) {
         udp_data_buf += data;
@@ -201,6 +205,7 @@ void ServerSession::in_sent() {
 
 void ServerSession::out_recv(const string &data) {
     if (status == FORWARD) {
+        recv_len += data.length();
         in_async_write(data);
     }
 }
@@ -214,6 +219,8 @@ void ServerSession::out_sent() {
 void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
     if (status == UDP_FORWARD) {
         uint16_t length = data.length();
+        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(length) + " from " + endpoint.address().to_string() + ':' + to_string(endpoint.port()));
+        recv_len += length;
         in_async_write(SOCKS5Address::generate(endpoint) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data);
     }
 }
@@ -223,9 +230,15 @@ void ServerSession::udp_sent() {
         UDPPacket packet;
         int packet_len = packet.parse(udp_data_buf);
         if (packet_len == -1) {
+            if (udp_data_buf.length() > MAX_LENGTH) {
+                Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
+                destroy();
+                return;
+            }
             in_async_read();
             return;
         }
+        Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.payload.length()) + " to " + packet.address.address + ':' + to_string(packet.address.port));
         if (!udp_socket.is_open()) {
             udp::endpoint endpoint(address::from_string(packet.address.address), packet.address.port);
             udp_socket.open(endpoint.protocol());
@@ -235,6 +248,7 @@ void ServerSession::udp_sent() {
         udp_data_buf = udp_data_buf.substr(packet_len);
         udp::resolver::query query(packet.address.address, to_string(packet.address.port));
         auto self = shared_from_this();
+        sent_len += packet.payload.length();
         udp_resolver.async_resolve(query, [this, self, packet](const boost::system::error_code error, udp::resolver::iterator iterator) {
             if (error) {
                 destroy();
@@ -249,7 +263,8 @@ void ServerSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected");
+    Log::log_with_endpoint(in_endpoint, "disconnected", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " second(s).", Log::INFO);
     status = DESTROY;
     resolver.cancel();
     udp_resolver.cancel();

@@ -126,6 +126,7 @@ void Service::async_accept() {
             auto endpoint = session->accept_socket().remote_endpoint(ec);
             if (!ec) {
                 Log::log_with_endpoint(endpoint, "incoming connection");
+                session->start_time = time(NULL);
                 session->start();
             }
         }
