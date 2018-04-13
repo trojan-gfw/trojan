@@ -32,9 +32,10 @@ void Config::load(const string &filename) {
     local_port = tree.get("local_port", uint16_t());
     remote_addr = tree.get("remote_addr", string());
     remote_port = tree.get("remote_port", uint16_t());
-    vector<string>().swap(password);
+    map<string, string>().swap(password);
     for (auto& item: tree.get_child("password")) {
-        password.push_back(SHA224(item.second.get_value<string>()));
+        string p = item.second.get_value<string>();
+        password[SHA224(p)] = p;
     }
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     ssl.verify = tree.get("ssl.verify", true);

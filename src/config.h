@@ -21,7 +21,7 @@
 #define _CONFIG_H_
 
 #include <cstdint>
-#include <vector>
+#include <map>
 #include "log.h"
 
 class Config {
@@ -36,7 +36,7 @@ public:
     uint16_t local_port;
     std::string remote_addr;
     uint16_t remote_port;
-    std::vector<std::string> password;
+    std::map<std::string, std::string> password;
     Log::Level log_level;
     class SSLConfig {
     public:

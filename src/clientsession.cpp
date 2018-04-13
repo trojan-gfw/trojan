@@ -153,7 +153,7 @@ void ClientSession::in_recv(const string &data) {
                 status = INVALID;
                 return;
             }
-            out_write_buf = config.password[0] + "\r\n" + out_write_buf + "\r\n";
+            out_write_buf = config.password.cbegin()->first + "\r\n" + out_write_buf + "\r\n";
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
                 Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
@@ -282,7 +282,10 @@ void ClientSession::out_sent() {
 }
 
 void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
-    if (data[0] || data[1] || data[2]) {
+    if (data.length() == 0) {
+        return;
+    }
+    if (data.length() < 3 || data[0] || data[1] || data[2]) {
         Log::log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
         destroy();
         return;
@@ -333,8 +336,7 @@ void ClientSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected", Log::INFO);
-    Log::log_with_endpoint(in_endpoint, to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " second(s).", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " second(s)", Log::INFO);
     status = DESTROY;
     resolver.cancel();
     boost::system::error_code ec;
