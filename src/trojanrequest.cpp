@@ -20,11 +20,26 @@
 #include "trojanrequest.h"
 using namespace std;
 
-int TrojanRequest::parse(const string &data) {
-    if (data.length() == 0 || (data[0] != CONNECT && data[0] != UDP_ASSOCIATE)) {
+int TrojanRequest::parse(const string &data, const map<string, string>valid_passwords) {
+    size_t first = data.find("\r\n");
+    if (first == string::npos) {
         return -1;
     }
-    command = static_cast<Command>(data[0]);
-    int address_len = address.parse(data.substr(1));
-    return address_len == -1 ? -1 : address_len + 1;
+    password = data.substr(0, first);
+    auto password_iterator = valid_passwords.find(password);
+    if (password_iterator == valid_passwords.end()) {
+        return -1;
+    }
+    password = password_iterator->second;
+    payload = data.substr(first + 2);
+    if (payload.length() == 0 || (payload[0] != CONNECT && payload[0] != UDP_ASSOCIATE)) {
+        return -1;
+    }
+    command = static_cast<Command>(payload[0]);
+    int address_len = address.parse(payload.substr(1));
+    if (address_len == -1 || payload.length() < address_len + 3 || payload.substr(address_len + 1, 2) != "\r\n") {
+        return -1;
+    }
+    payload = payload.substr(address_len + 3);
+    return data.length();
 }

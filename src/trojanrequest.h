@@ -21,15 +21,18 @@
 #define _TROJANREQUEST_H_
 
 #include "socks5address.h"
+#include <map>
 
 class TrojanRequest {
 public:
+    std::string password;
     enum Command {
         CONNECT = 1,
         UDP_ASSOCIATE = 3
     } command;
     SOCKS5Address address;
-    int parse(const std::string &data);
+    std::string payload;
+    int parse(const std::string &data, const std::map<std::string, std::string>valid_passwords);
 };
 
 #endif // _TROJANREQUEST_H_

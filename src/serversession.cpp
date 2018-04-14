@@ -116,34 +116,13 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
 
 void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
-        bool valid = true;
         TrojanRequest req;
-        string password;
-        string tmp;
-        int req_len;
-        do {
-            size_t first = data.find("\r\n");
-            if (first == string::npos) {
-                valid = false;
-                break;
-            }
-            password = data.substr(0, first);
-            if (config.password.find(password) == config.password.end()) {
-                valid = false;
-                break;
-            }
-            tmp = data.substr(first + 2);
-            req_len = req.parse(tmp);
-            if (req_len == -1 || tmp.length() < req_len + 2 || tmp.substr(req_len, 2) != "\r\n") {
-                valid = false;
-                break;
-            }
-        } while (false);
+        bool valid = req.parse(data, config.password) != -1;
         tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
                                    to_string(valid ? req.address.port : config.remote_port));
         if (valid) {
-            Log::log_with_endpoint(in_endpoint, "is authenticated as " + config.password.find(password)->second, Log::INFO);
-            out_write_buf = tmp.substr(req_len + 2);
+            Log::log_with_endpoint(in_endpoint, "is authenticated as " + req.password, Log::INFO);
+            out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
                 Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 status = UDP_FORWARD;

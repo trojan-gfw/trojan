@@ -145,15 +145,14 @@ void ClientSession::in_recv(const string &data) {
                 destroy();
                 return;
             }
-            out_write_buf = data[1] + data.substr(3);
+            out_write_buf = config.password.cbegin()->first + "\r\n" + data[1] + data.substr(3) + "\r\n";
             TrojanRequest req;
-            if (req.parse(out_write_buf) != out_write_buf.length()) {
+            if (req.parse(out_write_buf, config.password) != out_write_buf.length()) {
                 Log::log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);
                 in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 status = INVALID;
                 return;
             }
-            out_write_buf = config.password.cbegin()->first + "\r\n" + out_write_buf + "\r\n";
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
                 Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
