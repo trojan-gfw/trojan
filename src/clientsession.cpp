@@ -297,7 +297,7 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
         return;
     }
     uint16_t length = data.length() - 3 - address_len;
-    Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " to " + address.address + ':' + to_string(address.port));
+    Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " bytes to " + address.address + ':' + to_string(address.port));
     string packet = data.substr(3, address_len) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data.substr(address_len + 3);
     sent_len += length;
     if (status == CONNECT) {
@@ -321,7 +321,7 @@ void ClientSession::udp_sent() {
             out_async_read();
             return;
         }
-        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " from " + packet.address.address + ':' + to_string(packet.address.port));
+        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
         SOCKS5Address address;
         int address_len = address.parse(udp_data_buf);
         string reply = string("\x00\x00\x00", 3) + udp_data_buf.substr(0, address_len) + packet.payload;
@@ -335,7 +335,7 @@ void ClientSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " second(s)", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     status = DESTROY;
     resolver.cancel();
     boost::system::error_code ec;

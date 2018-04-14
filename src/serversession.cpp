@@ -193,7 +193,7 @@ void ServerSession::out_sent() {
 void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
     if (status == UDP_FORWARD) {
         uint16_t length = data.length();
-        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(length) + " from " + endpoint.address().to_string() + ':' + to_string(endpoint.port()));
+        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(length) + " bytes from " + endpoint.address().to_string() + ':' + to_string(endpoint.port()));
         recv_len += length;
         in_async_write(UDPPacket::generate(endpoint, data));
     }
@@ -212,7 +212,7 @@ void ServerSession::udp_sent() {
             in_async_read();
             return;
         }
-        Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.length) + " to " + packet.address.address + ':' + to_string(packet.address.port));
+        Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.length) + " bytes to " + packet.address.address + ':' + to_string(packet.address.port));
         if (!udp_socket.is_open()) {
             udp::endpoint endpoint(address::from_string(packet.address.address), packet.address.port);
             udp_socket.open(endpoint.protocol());
@@ -238,7 +238,7 @@ void ServerSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " second(s)", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     status = DESTROY;
     resolver.cancel();
     udp_resolver.cancel();
