@@ -1,6 +1,6 @@
 # Linux Smoke Test
 
-## Prerequisites
+## Dependencies
 
 - coreutils
 - openssl
