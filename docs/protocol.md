@@ -36,7 +36,7 @@ where:
 
 More information on `SOCKS5` requests can be found [here](https://tools.ietf.org/html/rfc1928).
 
-If the connection is a `UDP ASSICIATE`, then each `UDP` packet has the following format:
+If the connection is a `UDP ASSOCIATE`, then each `UDP` packet has the following format:
 
 ```
 +------+----------+----------+--------+---------+----------+
@@ -46,7 +46,7 @@ If the connection is a `UDP ASSICIATE`, then each `UDP` packet has the following
 +------+----------+----------+--------+---------+----------+
 ```
 
-When the server receives the first data packet, it unwraps the `TLS` packet and looks for the two `CRLF`s. Then it checks if the hashed password is correct and the Trojan Request is valid. On failure at any step, the protocol is considered "other protocols" (see next section). Note that the first packet will have payload (Application Data) appended. This avoids length pattern detection and may reduce the number of packets to be sent.
+When the server receives the first data packet, it checks if the hashed password is correct and the Trojan Request is valid. If not, the protocol is considered "other protocols" (see next section). Note that the first packet will have payload appended. This avoids length pattern detection and may reduce the number of packets to be sent.
 
 If the request is valid, the trojan server connects to the endpoint indicated by the `DST.ADDR` and `DST.PORT` field and opens a direct tunnel between the endpoint and trojan client.
 

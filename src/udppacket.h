@@ -28,6 +28,7 @@ public:
     uint16_t length;
     std::string payload;
     int parse(const std::string &data);
+    static std::string generate(const boost::asio::ip::udp::endpoint &endpoint, const std::string &payload);
 };
 
 #endif // _UDPPACKET_H_

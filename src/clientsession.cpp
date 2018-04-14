@@ -147,7 +147,7 @@ void ClientSession::in_recv(const string &data) {
             }
             out_write_buf = config.password.cbegin()->first + "\r\n" + data[1] + data.substr(3) + "\r\n";
             TrojanRequest req;
-            if (req.parse(out_write_buf, config.password) != out_write_buf.length()) {
+            if (req.parse(out_write_buf, config.password) == -1) {
                 Log::log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);
                 in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 status = INVALID;
@@ -203,34 +203,23 @@ void ClientSession::in_sent() {
             auto self = shared_from_this();
             resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
                 if (error) {
-                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr, Log::ERROR);
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
                     destroy();
                     return;
                 }
                 out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
                     if (error) {
-                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port), Log::ERROR);
+                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
                         destroy();
                         return;
                     }
                     out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
                         if (error) {
-                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port), Log::ERROR);
+                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
                             destroy();
                             return;
                         }
                         Log::log_with_endpoint(in_endpoint, "tunnel established");
-                        if (is_udp) {
-                            if (!first_packet_recv) {
-                                udp_socket.cancel();
-                            }
-                            status = UDP_FORWARD;
-                        } else {
-                            if (!first_packet_recv) {
-                                in_socket.cancel();
-                            }
-                            status = FORWARD;
-                        }
                         if (config.ssl.reuse_session) {
                             auto ssl = out_socket.native_handle();
                             if (!SSL_session_reused(ssl)) {
@@ -242,6 +231,17 @@ void ClientSession::in_sent() {
                             } else {
                                 Log::log_with_endpoint(in_endpoint, "SSL session reused");
                             }
+                        }
+                        if (is_udp) {
+                            if (!first_packet_recv) {
+                                udp_socket.cancel();
+                            }
+                            status = UDP_FORWARD;
+                        } else {
+                            if (!first_packet_recv) {
+                                in_socket.cancel();
+                            }
+                            status = FORWARD;
                         }
                         out_async_read();
                         out_async_write(out_write_buf);
@@ -321,12 +321,12 @@ void ClientSession::udp_sent() {
             out_async_read();
             return;
         }
-        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.payload.length()) + " from " + packet.address.address + ':' + to_string(packet.address.port));
+        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " from " + packet.address.address + ':' + to_string(packet.address.port));
         SOCKS5Address address;
         int address_len = address.parse(udp_data_buf);
         string reply = string("\x00\x00\x00", 3) + udp_data_buf.substr(0, address_len) + packet.payload;
         udp_data_buf = udp_data_buf.substr(packet_len);
-        recv_len += packet.payload.length();
+        recv_len += packet.length;
         udp_async_write(reply, udp_recv_endpoint);
     }
 }

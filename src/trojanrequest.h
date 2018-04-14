@@ -32,7 +32,7 @@ public:
     } command;
     SOCKS5Address address;
     std::string payload;
-    int parse(const std::string &data, const std::map<std::string, std::string>valid_passwords);
+    int parse(const std::string &data, const std::map<std::string, std::string> &valid_passwords);
 };
 
 #endif // _TROJANREQUEST_H_

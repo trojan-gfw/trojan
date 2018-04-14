@@ -20,7 +20,7 @@
 #include "trojanrequest.h"
 using namespace std;
 
-int TrojanRequest::parse(const string &data, const map<string, string>valid_passwords) {
+int TrojanRequest::parse(const string &data, const map<string, string> &valid_passwords) {
     size_t first = data.find("\r\n");
     if (first == string::npos) {
         return -1;

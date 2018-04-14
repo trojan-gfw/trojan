@@ -1,6 +1,6 @@
 # Trojan Documentation
 
-Trojan is an unidentifiable mechanism for bypassing GFW. This documentation introduces the trojan protocol, explains its underlying ideas, and provides a guide for it.
+Trojan is an unidentifiable mechanism for bypassing GFW. This documentation introduces the trojan protocol, explains its underlying ideas, and provides a guide to it.
 
 ## Contents
 

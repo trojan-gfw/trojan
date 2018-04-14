@@ -18,7 +18,6 @@
  */
 
 #include "service.h"
-#include <memory>
 #include "serversession.h"
 #include "clientsession.h"
 #include "ssldefaults.h"

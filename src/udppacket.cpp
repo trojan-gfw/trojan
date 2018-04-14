@@ -19,6 +19,7 @@
 
 #include "udppacket.h"
 using namespace std;
+using namespace boost::asio::ip;
 
 int UDPPacket::parse(const string &data) {
     int address_len = address.parse(data);
@@ -31,4 +32,13 @@ int UDPPacket::parse(const string &data) {
     }
     payload = data.substr(address_len + 4, length);
     return address_len + 4 + length;
+}
+
+string UDPPacket::generate(const udp::endpoint &endpoint, const string &payload) {
+    string ret = SOCKS5Address::generate(endpoint);
+    ret += char(uint8_t(payload.length() >> 8));
+    ret += char(uint8_t(payload.length() & 0xFF));
+    ret += "\r\n";
+    ret += payload;
+    return ret;
 }
