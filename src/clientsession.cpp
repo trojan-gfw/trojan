@@ -196,9 +196,17 @@ void ClientSession::in_sent() {
         case REQUEST: {
             status = CONNECT;
             if (is_udp) {
-                udp_async_read();
+                in_async_read();
             }
-            in_async_read();
+            if (config.append_payload) {
+                if (is_udp) {
+                    udp_async_read();
+                } else {
+                    in_async_read();
+                }
+            } else {
+                first_packet_recv = true;
+            }
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
             auto self = shared_from_this();
             resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {

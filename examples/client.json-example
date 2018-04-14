@@ -5,6 +5,7 @@
     "remote_addr": "example.com",
     "remote_port": 443,
     "password": ["password1"],
+    "append_payload": true,
     "log_level": 1,
     "ssl": {
         "verify": true,

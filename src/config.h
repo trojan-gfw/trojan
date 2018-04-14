@@ -37,6 +37,7 @@ public:
     std::string remote_addr;
     uint16_t remote_port;
     std::map<std::string, std::string> password;
+    bool append_payload;
     Log::Level log_level;
     class SSLConfig {
     public:

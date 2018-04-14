@@ -37,6 +37,7 @@ void Config::load(const string &filename) {
         string p = item.second.get_value<string>();
         password[SHA224(p)] = p;
     }
+    append_payload = tree.get("append_payload", true);
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     ssl.verify = tree.get("ssl.verify", true);
     ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
