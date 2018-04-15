@@ -21,20 +21,19 @@
 #define _SERVERSESSION_H_
 
 #include "session.h"
-#include <string>
-#include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 
 class ServerSession : public Session {
 private:
     enum Status {
         HANDSHAKE,
-        CONNECTING_REMOTE,
-        FORWARDING,
-        DESTROYING
+        FORWARD,
+        UDP_FORWARD,
+        DESTROY
     } status;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>in_socket;
     boost::asio::ip::tcp::socket out_socket;
+    boost::asio::ip::udp::resolver udp_resolver;
     void destroy();
     void in_async_read();
     void in_async_write(const std::string &data);
@@ -44,6 +43,10 @@ private:
     void out_async_write(const std::string &data);
     void out_recv(const std::string &data);
     void out_sent();
+    void udp_async_read();
+    void udp_async_write(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
+    void udp_recv(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
+    void udp_sent();
 public:
     ServerSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context);
     boost::asio::ip::tcp::socket& accept_socket();

@@ -17,4 +17,4 @@ Here, I will present a list of things you should do before you start trojan serv
 - Apply for or self-sign (**NOT RECOMMENDED**) an `SSL` certificate.
 - Correctly write the [config file](config).
 
-[Homepage](.) | [Prev Page](compile)
+[Homepage](.) | [Prev Page](build)

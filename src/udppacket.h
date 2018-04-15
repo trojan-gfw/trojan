@@ -17,10 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "session.h"
+#ifndef _UDPPACKET_H_
+#define _UDPPACKET_H_
 
-Session::Session(const Config &config, boost::asio::io_service &io_service) : config(config),
-                                                                              recv_len(0),
-                                                                              sent_len(0),
-                                                                              resolver(io_service),
-                                                                              udp_socket(io_service) {}
+#include "socks5address.h"
+
+class UDPPacket {
+public:
+    SOCKS5Address address;
+    uint16_t length;
+    std::string payload;
+    int parse(const std::string &data);
+    static std::string generate(const boost::asio::ip::udp::endpoint &endpoint, const std::string &payload);
+};
+
+#endif // _UDPPACKET_H_

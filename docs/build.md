@@ -1,4 +1,4 @@
-# Compilation
+# Build
 
 I'll only cover the build process on Linux since I will be providing Windows and macOS binaries and that building trojan on every platform is similar.
 

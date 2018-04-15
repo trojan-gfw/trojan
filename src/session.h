@@ -20,12 +20,9 @@
 #ifndef _SESSION_H_
 #define _SESSION_H_
 
-#include <cstdint>
-#include <string>
+#include <ctime>
 #include <memory>
-#include <boost/asio.hpp>
-
-class Config;
+#include "config.h"
 
 class Session : public std::enable_shared_from_this<Session> {
 protected:
@@ -35,15 +32,20 @@ protected:
     const Config &config;
     uint8_t in_read_buf[MAX_LENGTH];
     uint8_t out_read_buf[MAX_LENGTH];
+    uint8_t udp_read_buf[MAX_LENGTH];
+    uint64_t recv_len;
+    uint64_t sent_len;
     std::string out_write_buf;
+    std::string udp_data_buf;
     boost::asio::ip::tcp::resolver resolver;
     boost::asio::ip::tcp::endpoint in_endpoint;
+    boost::asio::ip::udp::socket udp_socket;
+    boost::asio::ip::udp::endpoint udp_recv_endpoint;
 public:
+    time_t start_time;
     Session(const Config &config, boost::asio::io_service &io_service);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
     virtual void start() = 0;
 };
-
-#include "config.h"
 
 #endif // _SESSION_H_

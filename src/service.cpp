@@ -18,14 +18,6 @@
  */
 
 #include "service.h"
-#include <cstring>
-#include <string>
-#include <memory>
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include "config.h"
-#include "log.h"
-#include "session.h"
 #include "serversession.h"
 #include "clientsession.h"
 #include "ssldefaults.h"
@@ -110,7 +102,8 @@ Service::Service(Config &config) :
 
 void Service::run() {
     async_accept();
-    Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + config.local_addr + ':' + to_string(config.local_port), Log::FATAL);
+    tcp::endpoint local_endpoint = socket_acceptor.local_endpoint();
+    Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::FATAL);
     io_service.run();
     Log::log_with_date_time("trojan service stopped", Log::FATAL);
 }
@@ -126,12 +119,13 @@ void Service::async_accept() {
     } else {
         session = make_shared<ClientSession>(config, io_service, ssl_context);
     }
-    socket_acceptor.async_accept(session->accept_socket(), [this, session](boost::system::error_code error) {
+    socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
         if (!error) {
             boost::system::error_code ec;
             auto endpoint = session->accept_socket().remote_endpoint(ec);
             if (!ec) {
                 Log::log_with_endpoint(endpoint, "incoming connection");
+                session->start_time = time(NULL);
                 session->start();
             }
         }

@@ -20,10 +20,8 @@
 #ifndef _SERVICE_H_
 #define _SERVICE_H_
 
-#include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-
-class Config;
+#include "config.h"
 
 class Service {
 private:
@@ -37,7 +35,5 @@ public:
     void run();
     void stop();
 };
-
-#include "config.h"
 
 #endif // _SERVICE_H_

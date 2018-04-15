@@ -17,10 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "session.h"
+#ifndef _SOCKS5ADDRESS_H_
+#define _SOCKS5ADDRESS_H_
 
-Session::Session(const Config &config, boost::asio::io_service &io_service) : config(config),
-                                                                              recv_len(0),
-                                                                              sent_len(0),
-                                                                              resolver(io_service),
-                                                                              udp_socket(io_service) {}
+#include <cstdint>
+#include <string>
+#include <boost/asio.hpp>
+
+class SOCKS5Address {
+public:
+    enum AddressType {
+        IPv4 = 1,
+        DOMAINNAME = 3,
+        IPv6 = 4
+    } address_type;
+    std::string address;
+    uint16_t port;
+    int parse(const std::string &data);
+    static std::string generate(const boost::asio::ip::udp::endpoint &endpoint);
+};
+
+#endif // _SOCKS5ADDRESS_H_

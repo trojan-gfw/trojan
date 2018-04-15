@@ -12,6 +12,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
     "remote_addr": "example.com",
     "remote_port": 443,
     "password": ["password1"],
+    "append_payload": true,
     "log_level": 1,
     "ssl": {
         "verify": true,
@@ -36,11 +37,12 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `remote_addr`: server address (hostname)
 - `remote_port`: server port
 - `password`: password used for verification (only the first password in the array will be used)
+- `append_payload`: whether to append the first packet to trojan request. It can reduce length patterns of sessions, but may cause stability issues, in which case set it to `false`.
 - `log_level`: specify how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 - `ssl`: `SSL` specific configurations
     - `verify`: whether to verify `SSL` certificate **STRONGLY RECOMMENDED**
     - `verify_hostname`: whether to verify `SSL` hostname (specified in the `sni` field) **STRONGLY RECOMMENDED**
-    - `cert`: if `verify` is set to `true`, a collection of `CA` certificates should be provided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will be likely to fail.
+    - `cert`: if `verify` is set to `true`, a collection of `CA` certificates should be provided. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will be likely to fail.
     - `cipher`: specify a cipher list to send and use
     - `sni`: specify the Server Name Indication field in the `SSL` handshake
     - `alpn`: specify a list of `ALPN` protocols to send
@@ -84,7 +86,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `local_addr`: trojan server will be bound to the specified interface. Feel free to change this to `::` or other addresses, if you know what you are doing.
 - `local_port`: trojan server will be bound to this port
 - `remote_addr`: the endpoint address that trojan server will connect to when encountering other protocols
-- `remote_port`: the endpoint port to which trojan server connects when encountering other protocols
+- `remote_port`: the endpoint port that trojan server will connect when encountering other protocols
 - `password`: an array of passwords used for verification
 - `log_level`: specify how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 - `ssl`: `SSL` specific configurations
@@ -100,4 +102,4 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
     - `sigalgs`: specify signature algorithms to use
     - `dhparam`: if left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used
 
-[Homepage](.) | [Prev Page](protocol) | [Next Page](compile)
+[Homepage](.) | [Prev Page](protocol) | [Next Page](build)
