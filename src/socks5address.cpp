@@ -40,7 +40,7 @@ int SOCKS5Address::parse(const string &data) {
             break;
         }
         case DOMAINNAME: {
-            if (data.length() >= data[1] + 4) {
+            if (data.length() >= (unsigned int)(unsigned char)data[1] + 4) {
                 address = data.substr(2, data[1]);
                 port = (uint8_t(data[data[1] + 2]) << 8) | uint8_t(data[data[1] + 3]);
                 return data[1] + 4;

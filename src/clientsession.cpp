@@ -28,10 +28,10 @@ SSL_SESSION *ClientSession::ssl_session(NULL);
 
 ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
     Session(config, io_service),
-    in_socket(io_service),
-    out_socket(io_service, ssl_context),
     status(HANDSHAKE),
-    first_packet_recv(false) {}
+    first_packet_recv(false),
+    in_socket(io_service),
+    out_socket(io_service, ssl_context) {}
 
 tcp::socket& ClientSession::accept_socket() {
     return in_socket;
@@ -118,7 +118,7 @@ void ClientSession::udp_async_write(const string &data, const udp::endpoint &end
 void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
-            if (data.length() < 2 || data[0] != 5 || data.length() != data[1] + 2) {
+            if (data.length() < 2 || data[0] != 5 || data.length() != (unsigned int)(unsigned char)data[1] + 2) {
                 Log::log_with_endpoint(in_endpoint, "unknown protocol", Log::ERROR);
                 destroy();
                 return;

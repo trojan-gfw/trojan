@@ -37,7 +37,7 @@ int TrojanRequest::parse(const string &data, const map<string, string> &valid_pa
     }
     command = static_cast<Command>(payload[0]);
     int address_len = address.parse(payload.substr(1));
-    if (address_len == -1 || payload.length() < address_len + 3 || payload.substr(address_len + 1, 2) != "\r\n") {
+    if (address_len == -1 || payload.length() < (unsigned int)address_len + 3 || payload.substr(address_len + 1, 2) != "\r\n") {
         return -1;
     }
     payload = payload.substr(address_len + 3);

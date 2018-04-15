@@ -23,11 +23,11 @@ using namespace boost::asio::ip;
 
 int UDPPacket::parse(const string &data) {
     int address_len = address.parse(data);
-    if (address_len == -1 || data.length() < address_len + 2) {
+    if (address_len == -1 || data.length() < (unsigned int)address_len + 2) {
         return -1;
     }
     length = (uint8_t(data[address_len]) << 8) | uint8_t(data[address_len + 1]);
-    if (data.length() < address_len + 4 + length || data.substr(address_len + 2, 2) != "\r\n") {
+    if (data.length() < (unsigned int)address_len + 4 + length || data.substr(address_len + 2, 2) != "\r\n") {
         return -1;
     }
     payload = data.substr(address_len + 4, length);

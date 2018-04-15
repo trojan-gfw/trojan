@@ -26,9 +26,9 @@ using namespace boost::asio::ssl;
 
 ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
     Session(config, io_service),
+    status(HANDSHAKE),
     in_socket(io_service, ssl_context),
     out_socket(io_service),
-    status(HANDSHAKE),
     udp_resolver(io_service) {}
 
 tcp::socket& ServerSession::accept_socket() {
