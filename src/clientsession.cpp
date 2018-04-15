@@ -155,10 +155,10 @@ void ClientSession::in_recv(const string &data) {
             }
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
-                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 udp::endpoint bindpoint(in_socket.local_endpoint().address(), 0);
                 udp_socket.open(bindpoint.protocol());
                 udp_socket.bind(bindpoint);
+                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port) + ", open UDP socket " + udp_socket.local_endpoint().address().to_string() + ':' + to_string(udp_socket.local_endpoint().port()) + " for relay", Log::INFO);
                 in_async_write(string("\x05\x00\x00", 3) + SOCKS5Address::generate(udp_socket.local_endpoint()));
             } else {
                 Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
@@ -343,8 +343,8 @@ void ClientSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     status = DESTROY;
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     boost::system::error_code ec;
     in_socket.shutdown(tcp::socket::shutdown_both, ec);

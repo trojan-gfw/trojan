@@ -124,9 +124,13 @@ void ServerSession::in_recv(const string &data) {
             Log::log_with_endpoint(in_endpoint, "is authenticated as " + req.password, Log::INFO);
             out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
-                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 status = UDP_FORWARD;
-                udp_data_buf = out_write_buf;
+                udp::endpoint endpoint(address::from_string(packet.address.address), packet.address.port);
+                udp_socket.open(endpoint.protocol());
+                udp_socket.bind(udp::endpoint(endpoint.protocol(), 0));
+                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port) + ", open UDP socket " + udp_socket.local_endpoint().address().to_string() + ':' + to_string(udp_socket.local_endpoint().port()) + " for relay", Log::INFO);
+                udp_async_read();
+                udp_data_buf.swap(out_write_buf);
                 udp_sent();
                 return;
             } else {
@@ -213,12 +217,6 @@ void ServerSession::udp_sent() {
             return;
         }
         Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.length) + " bytes to " + packet.address.address + ':' + to_string(packet.address.port));
-        if (!udp_socket.is_open()) {
-            udp::endpoint endpoint(address::from_string(packet.address.address), packet.address.port);
-            udp_socket.open(endpoint.protocol());
-            udp_socket.bind(udp::endpoint(endpoint.protocol(), 0));
-            udp_async_read();
-        }
         udp_data_buf = udp_data_buf.substr(packet_len);
         udp::resolver::query query(packet.address.address, to_string(packet.address.port));
         auto self = shared_from_this();
@@ -238,8 +236,8 @@ void ServerSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     status = DESTROY;
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     udp_resolver.cancel();
     boost::system::error_code ec;
