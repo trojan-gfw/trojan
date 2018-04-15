@@ -236,8 +236,8 @@ void ServerSession::destroy() {
     if (status == DESTROY) {
         return;
     }
-    status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    status = DESTROY;
     resolver.cancel();
     udp_resolver.cancel();
     boost::system::error_code ec;
