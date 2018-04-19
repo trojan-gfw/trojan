@@ -25,8 +25,6 @@
 #include "log.h"
 
 class Config {
-private:
-    static std::string SHA224(const std::string &message);
 public:
     enum RunType {
         SERVER,
@@ -57,6 +55,7 @@ public:
         std::string dhparam;
     } ssl;
     void load(const std::string &filename);
+    static std::string SHA224(const std::string &message);
 };
 
 #endif // _CONFIG_H_
