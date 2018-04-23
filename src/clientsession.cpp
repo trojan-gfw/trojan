@@ -288,7 +288,7 @@ void ClientSession::out_sent() {
     }
 }
 
-void ClientSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
+void ClientSession::udp_recv(const string &data, const udp::endpoint&) {
     if (data.length() == 0) {
         return;
     }
