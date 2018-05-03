@@ -2,7 +2,7 @@
 
 In this page we will look at the config file of trojan. Trojan uses [`JSON`](https://en.wikipedia.org/wiki/JSON) as the format of the config. A config generator can be found [here](https://trojan-gfw.github.io/trojan-config-gen/).
 
-**Note: all "\" in the paths under Windows should be replaced with "/".**
+**Note: all "\\" in the paths under Windows should be replaced with "/".**
 
 ## A valid client.json
 
