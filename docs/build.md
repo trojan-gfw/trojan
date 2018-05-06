@@ -29,7 +29,7 @@ Type in
 ```bash
 mkdir build
 cd build/
-cmake .. # You can use -DSTATIC=ON to link statically
+cmake .. # You can use -DSTATIC=ON to link statically and -DNO_SYSTEMD_SERVICE=ON to disable systemd service installation.
 make
 ctest
 sudo make install
