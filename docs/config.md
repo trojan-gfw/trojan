@@ -44,7 +44,7 @@ In this page we will look at the config file of trojan. Trojan uses [`JSON`](htt
 - `ssl`: `SSL` specific configurations
     - `verify`: whether to verify `SSL` certificate **STRONGLY RECOMMENDED**
     - `verify_hostname`: whether to verify `SSL` hostname (specified in the `sni` field) **STRONGLY RECOMMENDED**
-    - `cert`: if `verify` is set to `true`, a collection of `CA` certificates should be provided. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will be likely to fail.
+    - `cert`: if `verify` is set to `true`, a collection of `CA` certificates should be provided. A client may also use the same certificate used by the server. Note that if you leave this field blank, `OpenSSL` will try to look for a system `CA` and will be likely to fail.
     - `cipher`: specify a cipher list to send and use
     - `sni`: specify the Server Name Indication field in the `SSL` handshake
     - `alpn`: specify a list of `ALPN` protocols to send
