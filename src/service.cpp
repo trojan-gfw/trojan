@@ -88,6 +88,10 @@ Service::Service(Config &config) :
             if (config.ssl.verify_hostname) {
                 ssl_context.set_verify_callback(rfc2818_verification(config.ssl.sni));
             }
+            X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
+            X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_PARTIAL_CHAIN);
+            SSL_CTX_set1_param(native_context, param);
+            X509_VERIFY_PARAM_free(param);
         } else {
             ssl_context.set_verify_mode(verify_none);
         }
