@@ -10,8 +10,7 @@ Trojan is not a fixed program or protocol. It's an idea, an idea that imitating 
 
 ## Documentations
 
-An online documentation can be found [here](https://trojan-gfw.github.io/trojan/).
-
+An online documentation can be found [here](https://trojan-gfw.github.io/trojan/).  
 Installation guide on various platforms can be found in the [wiki](https://github.com/trojan-gfw/trojan/wiki/Binary-&-Package-Distributions).
 
 ## Dependencies

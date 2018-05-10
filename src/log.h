@@ -25,7 +25,7 @@
 
 #ifdef ERROR // windows.h
 #undef ERROR
-#endif
+#endif // ERROR
 
 class Log {
 public:

@@ -29,12 +29,26 @@ Type in
 ```bash
 mkdir build
 cd build/
-cmake .. # You can use -DSTATIC=ON to link statically and -DNO_SYSTEMD_SERVICE=ON to disable systemd service installation.
+cmake ..
 make
 ctest
 sudo make install
 ```
 
-to build, test, and install trojan. If everything goes well you'll be able to use trojan. The default config file will be installed to `/etc/trojan.json`. If you have systemd in your system, `trojan.service` will be installed to `/usr/lib/systemd/system`.
+to build, test, and install trojan. If everything goes well you'll be able to use trojan.
+
+The `cmake ..` command can be extended with the following options:
+
+- `STATIC`
+    - `-DSTATIC=OFF`: don't link any libraries statically (default).
+    - `-DSTATIC=ON`: link Boost and libc (only under Windows) statically.
+- `SYSTEMD_SERVICE`
+    - `-DSYSTEMD_SERVICE=AUTO`: detect systemd automatically and decide whether to install service (default).
+    - `-DSYSTEMD_SERVICE=ON`: install systemd service unconditionally.
+    - `-DSYSTEMD_SERVICE=OFF`: don't install systemd service unconditionally.
+- `CONFIG_TYPE`
+    - `-DCONFIG_TYPE=SERVER`: install server config to `/etc/trojan.json` (default).
+    - `-DCONFIG_TYPE=CLIENT`: install client config to `/etc/trojan.json`.
+    - `-DCONFIG_TYPE=NONE`: don't install config.
 
 [Homepage](.) | [Prev Page](config) | [Next Page](usage)
