@@ -45,7 +45,7 @@ int main(int argc, const char *argv[]) {
     signal(SIGTERM, handleTermination);
 #ifndef _WIN32
     signal(SIGHUP, restartService);
-#endif
+#endif // _WIN32
     Config config;
     try {
         do {
