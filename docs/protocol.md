@@ -1,10 +1,10 @@
 # The Trojan Protocol
 
-We will now show how a trojan server will react to a **valid Trojan Protocol**, and **other protocols** (possibly `HTTPS` or any other probes).
+We will now show how a trojan server will react to a **valid Trojan Protocol** and **other protocols** (possibly `HTTPS` or any other probes).
 
 ## Valid Trojan Protocol
 
-When a trojan client connects to a server, it first performs a **real** `TLS` handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately, as any `HTTPS` server would. Then the client sends the following structure:
+When a trojan client connects to a server, it first performs a **real** `TLS` handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately as any `HTTPS` server would. Then the client sends the following structure:
 
 ```
 +-----------------------+---------+----------------+---------+----------+
@@ -64,7 +64,7 @@ All connection without correct structure and password will be redirected to a pr
 
 ### Passive Detection
 
-Because the traffic is protected by `TLS` (it is users' responsibility to use a valid certificate) and if you are visiting an `HTTP` site, the traffic looks exactly the same as `HTTPS` (there is only one `RTT` after `TLS` handshake). If you are not visiting an `HTTP` site, then the traffic looks exactly the same as `HTTPS` kept alive or `WebSocket`. Because of this, trojan can also bypass ISP `QoS` limitations.
+Because the traffic is protected by `TLS` (it is users' responsibility to use a valid certificate), if you are visiting an `HTTP` site, the traffic looks the same as `HTTPS` (there is only one `RTT` after `TLS` handshake); if you are not visiting an `HTTP` site, then the traffic looks the same as `HTTPS` kept alive or `WebSocket`. Because of this, trojan can also bypass ISP `QoS` limitations.
 
 For more information, go to [Issue #14](https://github.com/trojan-gfw/trojan/issues/14).
 
