@@ -17,10 +17,9 @@ Type in
 ```bash
 git clone https://github.com/trojan-gfw/trojan.git
 cd trojan/
-git checkout stable
 ```
 
-to clone the project and go into the directory and change to `stable` branch.
+to clone the project and go into the directory.
 
 ## Build and Install
 
