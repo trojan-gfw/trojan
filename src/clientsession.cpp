@@ -350,5 +350,5 @@ void ClientSession::destroy() {
     in_socket.shutdown(tcp::socket::shutdown_both, ec);
     udp_socket.close();
     auto self = shared_from_this();
-    out_socket.async_shutdown([this, self](const boost::system::error_code){});
+    out_socket.async_shutdown([self](const boost::system::error_code){});
 }

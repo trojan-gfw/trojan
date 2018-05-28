@@ -246,5 +246,5 @@ void ServerSession::destroy() {
     out_socket.shutdown(tcp::socket::shutdown_both, ec);
     udp_socket.close();
     auto self = shared_from_this();
-    in_socket.async_shutdown([this, self](const boost::system::error_code){});
+    in_socket.async_shutdown([self](const boost::system::error_code){});
 }
