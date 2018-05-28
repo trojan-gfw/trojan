@@ -45,7 +45,7 @@ The `cmake ..` command can be extended with the following options:
     - `-DSYSTEMD_SERVICE=AUTO`: detect systemd automatically and decide whether to install service (default).
     - `-DSYSTEMD_SERVICE=ON`: install systemd service unconditionally.
     - `-DSYSTEMD_SERVICE=OFF`: don't install systemd service unconditionally.
-- `SYSTEMD_SERVICE_PATH`: the path to which the systemd service will be installed (defaults to /usr/lib/systemd/system).
+- `-DSYSTEMD_SERVICE_PATH=/path/to/systemd/system`: the path to which the systemd service will be installed (defaults to `/usr/lib/systemd/system`).
 
 After installation, config examples will be installed to `/usr/share/trojan/` and a server config will be installed to `/etc/trojan.json`.
 
