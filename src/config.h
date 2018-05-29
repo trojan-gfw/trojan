@@ -54,6 +54,12 @@ public:
         std::string sigalgs;
         std::string dhparam;
     } ssl;
+    class TCPConfig {
+    public:
+        bool keep_alive;
+        bool no_delay;
+        bool fast_open;
+    } tcp;
     void load(const std::string &filename);
     static std::string SHA224(const std::string &message);
 };

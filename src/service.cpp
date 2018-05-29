@@ -33,6 +33,28 @@ Service::Service(Config &config) :
     socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
     ssl_context(context::sslv23) {
     Log::level = config.log_level;
+    if (config.tcp.keep_alive) {
+        socket_acceptor.set_option(boost::asio::socket_base::keep_alive(true));
+    }
+    if (config.tcp.no_delay) {
+        socket_acceptor.set_option(tcp::no_delay(true));
+    }
+#ifdef TCP_FASTOPEN
+    if (config.tcp.fast_open) {
+        using fastopen = boost::asio::detail::socket_option::boolean<BOOST_ASIO_OS_DEF(IPPROTO_TCP), TCP_FASTOPEN>;
+        boost::system::error_code ec;
+        socket_acceptor.set_option(fastopen(true), ec);
+    }
+#else
+    if (config.tcp.fast_open) {
+        Log::log_with_date_time("TCP_FASTOPEN is not supported", Log::WARN);
+    }
+#endif // TCP_FASTOPEN
+#ifndef TCP_FASTOPEN_CONNECT
+    if (config.tcp.fast_open) {
+        Log::log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
+    }
+#endif // TCP_FASTOPEN_CONNECT
     auto native_context = ssl_context.native_handle();
     if (config.ssl.sigalgs != "") {
         SSL_CONF_CTX *cctx = SSL_CONF_CTX_new();

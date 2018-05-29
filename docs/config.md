@@ -29,6 +29,11 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
         "reuse_session": true,
         "curves": "",
         "sigalgs": ""
+    },
+    "tcp": {
+        "keep_alive": true,
+        "no_delay": true,
+        "fast_open": true
     }
 }
 ```
@@ -51,6 +56,10 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `reuse_session`: whether to reuse `SSL` session
     - `curves`: `ECC` curves to send and use
     - `sigalgs`: signature algorithms to send and use
+- `tcp`: `TCP` specific configurations
+    - `keep_alive`: whether to enable TCP Keep Alive
+    - `no_delay`: whether to disable Nagle's algorithm
+    - `fast_open`: whether to enable TCP Fast Open (kernel support required)
 
 ## A valid server.json
 
@@ -80,6 +89,11 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
         "curves": "",
         "sigalgs": "",
         "dhparam": ""
+    },
+    "tcp": {
+        "keep_alive": true,
+        "no_delay": true,
+        "fast_open": true
     }
 }
 ```
@@ -103,5 +117,9 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `curves`: `ECC` curves to use
     - `sigalgs`: signature algorithms to use
     - `dhparam`: if left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used
+- `tcp`: `TCP` specific configurations
+    - `keep_alive`: whether to enable TCP Keep Alive
+    - `no_delay`: whether to disable Nagle's algorithm
+    - `fast_open`: whether to enable TCP Fast Open (kernel support required)
 
 [Homepage](.) | [Prev Page](protocol) | [Next Page](build)

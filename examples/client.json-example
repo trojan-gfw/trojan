@@ -20,5 +20,10 @@
         "reuse_session": true,
         "curves": "",
         "sigalgs": ""
+    },
+    "tcp": {
+        "keep_alive": true,
+        "no_delay": true,
+        "fast_open": true
     }
 }

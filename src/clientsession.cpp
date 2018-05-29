@@ -215,6 +215,20 @@ void ClientSession::in_sent() {
                     destroy();
                     return;
                 }
+                out_socket.lowest_layer().open(iterator->endpoint().protocol());
+                if (config.tcp.keep_alive) {
+                    out_socket.lowest_layer().set_option(boost::asio::socket_base::keep_alive(true));
+                }
+                if (config.tcp.no_delay) {
+                    out_socket.lowest_layer().set_option(tcp::no_delay(true));
+                }
+#ifdef TCP_FASTOPEN_CONNECT
+                if (config.tcp.fast_open) {
+                    using fastopen_connect = boost::asio::detail::socket_option::boolean<BOOST_ASIO_OS_DEF(IPPROTO_TCP), TCP_FASTOPEN_CONNECT>;
+                    boost::system::error_code ec;
+                    out_socket.lowest_layer().set_option(fastopen_connect(true), ec);
+                }
+#endif // TCP_FASTOPEN_CONNECT
                 out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
                     if (error) {
                         Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);

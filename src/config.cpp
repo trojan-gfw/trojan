@@ -58,6 +58,9 @@ void Config::load(const string &filename) {
     ssl.curves = tree.get("ssl.curves", string());
     ssl.sigalgs = tree.get("ssl.sigalgs", string());
     ssl.dhparam = tree.get("ssl.dhparam", string());
+    tcp.keep_alive = tree.get("tcp.keep_alive", true);
+    tcp.no_delay = tree.get("tcp.no_delay", true);
+    tcp.fast_open = tree.get("tcp.fast_open", true);
 }
 
 string Config::SHA224(const string &message) {
