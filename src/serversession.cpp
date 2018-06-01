@@ -153,7 +153,7 @@ void ServerSession::in_recv(const string &data) {
             }
 #ifdef TCP_FASTOPEN_CONNECT
             if (config.tcp.fast_open) {
-                using fastopen_connect = boost::asio::detail::socket_option::boolean<BOOST_ASIO_OS_DEF(IPPROTO_TCP), TCP_FASTOPEN_CONNECT>;
+                using fastopen_connect = boost::asio::detail::socket_option::boolean<IPPROTO_TCP, TCP_FASTOPEN_CONNECT>;
                 boost::system::error_code ec;
                 out_socket.set_option(fastopen_connect(true), ec);
             }

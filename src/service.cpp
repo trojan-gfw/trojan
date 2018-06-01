@@ -41,7 +41,7 @@ Service::Service(Config &config) :
     }
 #ifdef TCP_FASTOPEN
     if (config.tcp.fast_open) {
-        using fastopen = boost::asio::detail::socket_option::integer<BOOST_ASIO_OS_DEF(IPPROTO_TCP), TCP_FASTOPEN>;
+        using fastopen = boost::asio::detail::socket_option::integer<IPPROTO_TCP, TCP_FASTOPEN>;
         boost::system::error_code ec;
         socket_acceptor.set_option(fastopen(config.tcp.fast_open_qlen), ec);
     }
