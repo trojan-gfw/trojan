@@ -360,12 +360,23 @@ void ClientSession::destroy() {
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
-    boost::system::error_code ec;
-    in_socket.shutdown(tcp::socket::shutdown_both, ec);
-    in_socket.close();
-    udp_socket.close();
-    auto self = shared_from_this();
-    out_socket.async_shutdown([this, self](const boost::system::error_code) {
-        out_socket.lowest_layer().close();
-    });
+    if (in_socket.is_open()) {
+        in_socket.cancel();
+        boost::system::error_code ec;
+        in_socket.shutdown(tcp::socket::shutdown_both, ec);
+        in_socket.close();
+    }
+    if (udp_socket.is_open()) {
+        udp_socket.cancel();
+        udp_socket.close();
+    }
+    if (out_socket.lowest_layer().is_open()) {
+        out_socket.lowest_layer().cancel();
+        auto self = shared_from_this();
+        out_socket.async_shutdown([this, self](const boost::system::error_code) {
+            boost::system::error_code ec;
+            out_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+            out_socket.lowest_layer().close();
+        });
+    }
 }

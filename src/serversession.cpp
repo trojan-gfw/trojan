@@ -256,12 +256,23 @@ void ServerSession::destroy() {
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     udp_resolver.cancel();
-    boost::system::error_code ec;
-    out_socket.shutdown(tcp::socket::shutdown_both, ec);
-    out_socket.close();
-    udp_socket.close();
-    auto self = shared_from_this();
-    in_socket.async_shutdown([this, self](const boost::system::error_code) {
-        in_socket.lowest_layer().close();
-    });
+    if (out_socket.is_open()) {
+        out_socket.cancel();
+        boost::system::error_code ec;
+        out_socket.shutdown(tcp::socket::shutdown_both, ec);
+        out_socket.close();
+    }
+    if (udp_socket.is_open()) {
+        udp_socket.cancel();
+        udp_socket.close();
+    }
+    if (in_socket.lowest_layer().is_open()) {
+        in_socket.lowest_layer().cancel();
+        auto self = shared_from_this();
+        in_socket.async_shutdown([this, self](const boost::system::error_code) {
+            boost::system::error_code ec;
+            in_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
+            in_socket.lowest_layer().close();
+        });
+    }
 }
