@@ -33,7 +33,8 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     "tcp": {
         "keep_alive": true,
         "no_delay": true,
-        "fast_open": true
+        "fast_open": true,
+        "fast_open_qlen": 5
     }
 }
 ```
@@ -60,6 +61,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `keep_alive`: whether to enable TCP Keep Alive
     - `no_delay`: whether to disable Nagle's algorithm
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
+    - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 
 ## A valid server.json
 
@@ -93,7 +95,8 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     "tcp": {
         "keep_alive": true,
         "no_delay": true,
-        "fast_open": true
+        "fast_open": true,
+        "fast_open_qlen": 5
     }
 }
 ```
@@ -121,5 +124,6 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `keep_alive`: whether to enable TCP Keep Alive
     - `no_delay`: whether to disable Nagle's algorithm
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
+    - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 
 [Homepage](.) | [Prev Page](protocol) | [Next Page](build)

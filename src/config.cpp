@@ -61,6 +61,7 @@ void Config::load(const string &filename) {
     tcp.keep_alive = tree.get("tcp.keep_alive", true);
     tcp.no_delay = tree.get("tcp.no_delay", true);
     tcp.fast_open = tree.get("tcp.fast_open", true);
+    tcp.fast_open_qlen = tree.get("tcp.fast_open_qlen", 5);
 }
 
 string Config::SHA224(const string &message) {

@@ -59,6 +59,7 @@ public:
         bool keep_alive;
         bool no_delay;
         bool fast_open;
+        int fast_open_qlen;
     } tcp;
     void load(const std::string &filename);
     static std::string SHA224(const std::string &message);
