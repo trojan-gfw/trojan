@@ -254,14 +254,15 @@ void ClientSession::in_sent() {
                                 Log::log_with_endpoint(in_endpoint, "SSL session reused");
                             }
                         }
+                        boost::system::error_code ec;
                         if (is_udp) {
                             if (!first_packet_recv) {
-                                udp_socket.cancel();
+                                udp_socket.cancel(ec);
                             }
                             status = UDP_FORWARD;
                         } else {
                             if (!first_packet_recv) {
-                                in_socket.cancel();
+                                in_socket.cancel(ec);
                             }
                             status = FORWARD;
                         }
