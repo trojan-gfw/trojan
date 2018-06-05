@@ -108,7 +108,7 @@ Service::Service(Config &config) :
             if (config.ssl.cert == "") {
                 ssl_context.set_default_verify_paths();
 #ifdef _WIN32
-                HCERTSTORE h_store = CertOpenSystemStore(0, "CA");
+                HCERTSTORE h_store = CertOpenSystemStore(0, "ROOT");
                 if (h_store) {
                     X509_STORE *store = SSL_CTX_get_cert_store(native_context);
                     PCCERT_CONTEXT p_context = NULL;
