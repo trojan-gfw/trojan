@@ -22,6 +22,8 @@
 
 #include <ctime>
 #include <memory>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/udp.hpp>
 #include "config.h"
 
 class Session : public std::enable_shared_from_this<Session> {

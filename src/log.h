@@ -21,7 +21,7 @@
 #define _LOG_H_
 
 #include <string>
-#include <boost/asio.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 #ifdef ERROR // windows.h
 #undef ERROR

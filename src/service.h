@@ -20,6 +20,7 @@
 #ifndef _SERVICE_H_
 #define _SERVICE_H_
 
+#include <boost/asio/io_service.hpp>
 #include <boost/asio/ssl.hpp>
 #include "config.h"
 

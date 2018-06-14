@@ -22,7 +22,7 @@
 
 #include <cstdint>
 #include <string>
-#include <boost/asio.hpp>
+#include <boost/asio/ip/udp.hpp>
 
 class SOCKS5Address {
 public:
