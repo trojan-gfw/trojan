@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 StandardError=journal
-ExecStart=@CMAKE_INSTALL_PREFIX@/bin/trojan @CONFIG_PREFIX@/etc/trojan.json
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/trojan @CMAKE_INSTALL_FULL_SYSCONFDIR@/trojan.json
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -TERM $MAINPID
 
