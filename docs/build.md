@@ -26,13 +26,27 @@ to clone the project and go into the directory.
 Type in
 
 ```bash
-mkdir build
+mkdir -p build
 cd build/
 cmake ..
 make
 ctest
 sudo make install
 ```
+
+### For Debian Build
+```bash
+apt -y install cmake libboost-dev libboost-system-dev libssl-dev
+mkdir -p build && cd build/ && cmake ..
+make
+
+sudo make install
+# or
+apt install -y checkinstall
+sudo checkinstall
+
+```
+
 
 to build, test, and install trojan. If everything goes well you'll be able to use trojan.
 
