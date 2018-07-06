@@ -26,7 +26,7 @@ to clone the project and go into the directory.
 Type in
 
 ```bash
-mkdir build
+mkdir -p build
 cd build/
 cmake ..
 make
@@ -35,6 +35,8 @@ sudo make install
 ```
 
 to build, test, and install trojan. If everything goes well you'll be able to use trojan.
+
+For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libssl-dev` before `cmake` to install all the necessary dependencies.
 
 The `cmake ..` command can be extended with the following options:
 
