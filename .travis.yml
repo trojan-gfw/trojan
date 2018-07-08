@@ -1,19 +1,11 @@
+dist: xenial
 language: cpp
 
 install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y cmake3 libboost-system-dev realpath
-  - curl https://www.openssl.org/source/openssl-1.0.2o.tar.gz | tar xz
-  - cd openssl-1.0.2o/
-  - ./config shared
-  - make
-  - sudo make install
-  - cd ../
+  - sudo apt-get install -y cmake libboost-system-dev libssl-dev realpath
 
 script:
-  - mkdir build
-  - cd build/
-  - cmake -DOPENSSL_ROOT_DIR="/usr/local/ssl/" ..
-  - make
-  - ctest
+  - cmake .
   - sudo make install
+  - ctest
