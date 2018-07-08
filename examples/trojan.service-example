@@ -1,6 +1,7 @@
 [Unit]
 Description=trojan
 After=network.target
+Wants=network.target
 
 [Service]
 Type=simple
