@@ -227,12 +227,6 @@ void ServerSession::udp_sent() {
             return;
         }
         Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.length) + " bytes to " + packet.address.address + ':' + to_string(packet.address.port));
-        if (!udp_socket.is_open()) {
-            udp::endpoint endpoint(address::from_string(packet.address.address), packet.address.port);
-            udp_socket.open(endpoint.protocol());
-            udp_socket.bind(udp::endpoint(endpoint.protocol(), 0));
-            udp_async_read();
-        }
         udp_data_buf = udp_data_buf.substr(packet_len);
         udp::resolver::query query(packet.address.address, to_string(packet.address.port));
         auto self = shared_from_this();
@@ -241,6 +235,12 @@ void ServerSession::udp_sent() {
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname: " + error.message(), Log::ERROR);
                 destroy();
                 return;
+            }
+            if (!udp_socket.is_open()) {
+                auto protocol = iterator->endpoint().protocol();
+                udp_socket.open(protocol);
+                udp_socket.bind(udp::endpoint(protocol, 0));
+                udp_async_read();
             }
             sent_len += packet.length;
             udp_async_write(packet.payload, *iterator);
