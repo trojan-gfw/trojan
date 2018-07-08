@@ -26,7 +26,7 @@ to clone the project and go into the directory.
 Type in
 
 ```bash
-mkdir -p build
+mkdir build
 cd build/
 cmake ..
 make
