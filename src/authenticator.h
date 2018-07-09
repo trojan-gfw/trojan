@@ -17,26 +17,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SERVICE_H_
-#define _SERVICE_H_
+#ifndef _AUTHENTICATOR_H_
+#define _AUTHENTICATOR_H_
 
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/ssl.hpp>
-#include "authenticator.h"
+#include <mysql/mysql.h>
+#include "config.h"
 
-class Service {
+class Authenticator {
 private:
-    const Config &config;
-    boost::asio::io_service io_service;
-    boost::asio::ip::tcp::acceptor socket_acceptor;
-    boost::asio::ssl::context ssl_context;
-    Authenticator *auth;
-    void async_accept();
+    MYSQL con;
 public:
-    Service(Config &config);
-    void run();
-    void stop();
-    ~Service();
+    Authenticator(const Config &config);
 };
 
-#endif // _SERVICE_H_
+#endif // _AUTHENTICATOR_H_

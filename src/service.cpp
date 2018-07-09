@@ -31,7 +31,8 @@ using namespace boost::asio::ssl;
 Service::Service(Config &config) :
     config(config),
     socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
-    ssl_context(context::sslv23) {
+    ssl_context(context::sslv23),
+    auth(nullptr) {
     Log::level = config.log_level;
     if (config.tcp.keep_alive) {
         socket_acceptor.set_option(boost::asio::socket_base::keep_alive(true));
@@ -102,6 +103,9 @@ Service::Service(Config &config) :
             ssl_context.use_tmp_dh_file(config.ssl.dhparam);
         }
         SSL_CTX_set_ecdh_auto(native_context, 1);
+        if (config.mysql.enabled) {
+            auth = new Authenticator(config);
+        }
     } else {
         if (config.ssl.verify) {
             ssl_context.set_verify_mode(verify_peer);
@@ -160,7 +164,7 @@ void Service::stop() {
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_service, ssl_context);
+        session = make_shared<ServerSession>(config, io_service, ssl_context, auth);
     } else {
         session = make_shared<ClientSession>(config, io_service, ssl_context);
     }
@@ -176,4 +180,11 @@ void Service::async_accept() {
         }
         async_accept();
     });
+}
+
+Service::~Service() {
+    if (auth) {
+        delete auth;
+        auth = nullptr;
+    }
 }

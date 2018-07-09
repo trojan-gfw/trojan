@@ -17,26 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SERVICE_H_
-#define _SERVICE_H_
-
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/ssl.hpp>
 #include "authenticator.h"
+#include <stdexcept>
+using namespace std;
 
-class Service {
-private:
-    const Config &config;
-    boost::asio::io_service io_service;
-    boost::asio::ip::tcp::acceptor socket_acceptor;
-    boost::asio::ssl::context ssl_context;
-    Authenticator *auth;
-    void async_accept();
-public:
-    Service(Config &config);
-    void run();
-    void stop();
-    ~Service();
-};
-
-#endif // _SERVICE_H_
+Authenticator::Authenticator(const Config &config) {
+    mysql_init(&con);
+    Log::log_with_date_time("connecting to MySQL server " + config.mysql.server_addr + ':' + to_string(config.mysql.server_port), Log::INFO);
+    if (mysql_real_connect(&con, config.mysql.server_addr.c_str(),
+                                 config.mysql.username.c_str(),
+                                 config.mysql.password.c_str(),
+                                 config.mysql.database.c_str(),
+                                 config.mysql.server_port, NULL, 0) == NULL) {
+        throw runtime_error(mysql_error(&con));
+    }
+    Log::log_with_date_time("connected to MySQL server", Log::INFO);
+}

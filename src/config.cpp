@@ -62,6 +62,12 @@ void Config::load(const string &filename) {
     tcp.no_delay = tree.get("tcp.no_delay", true);
     tcp.fast_open = tree.get("tcp.fast_open", true);
     tcp.fast_open_qlen = tree.get("tcp.fast_open_qlen", 5);
+    mysql.enabled = tree.get("mysql.enabled", false);
+    mysql.server_addr = tree.get("mysql.server_addr", string("127.0.0.1"));
+    mysql.server_port = tree.get("mysql.server_port", uint16_t(3306));
+    mysql.database = tree.get("mysql.database", string("trojan"));
+    mysql.username = tree.get("mysql.username", string("trojan"));
+    mysql.password = tree.get("mysql.password", string());
 }
 
 string Config::SHA224(const string &message) {
