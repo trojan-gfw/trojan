@@ -33,3 +33,7 @@ Authenticator::Authenticator(const Config &config) {
     }
     Log::log_with_date_time("connected to MySQL server", Log::INFO);
 }
+
+bool Authenticator::auth(const string&) {
+    return false;
+}

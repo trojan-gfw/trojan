@@ -21,7 +21,6 @@
 #define _TROJANREQUEST_H_
 
 #include "socks5address.h"
-#include <map>
 
 class TrojanRequest {
 public:
@@ -32,7 +31,7 @@ public:
     } command;
     SOCKS5Address address;
     std::string payload;
-    int parse(const std::string &data, const std::map<std::string, std::string> &valid_passwords);
+    int parse(const std::string &data);
 };
 
 #endif // _TROJANREQUEST_H_

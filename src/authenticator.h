@@ -28,6 +28,7 @@ private:
     MYSQL con;
 public:
     Authenticator(const Config &config);
+    bool auth(const std::string &password);
 };
 
 #endif // _AUTHENTICATOR_H_
