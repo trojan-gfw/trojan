@@ -20,7 +20,7 @@
 #ifndef _AUTHENTICATOR_H_
 #define _AUTHENTICATOR_H_
 
-#include <mysql/mysql.h>
+#include <mysql.h>
 #include "config.h"
 
 class Authenticator {
