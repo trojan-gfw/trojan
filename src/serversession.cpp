@@ -30,7 +30,8 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_s
     in_socket(io_service, ssl_context),
     out_socket(io_service),
     udp_resolver(io_service),
-    auth(auth) {}
+    auth(auth),
+    auth_password() {}
 
 tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.lowest_layer();
@@ -125,6 +126,7 @@ void ServerSession::in_recv(const string &data) {
                 valid = false;
                 if (auth && auth->auth(req.password)) {
                     valid = true;
+                    auth_password = req.password;
                     Log::log_with_endpoint(in_endpoint, "authenticated by authenticator", Log::INFO);
                 }
             } else {
@@ -266,6 +268,9 @@ void ServerSession::destroy() {
     }
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    if (auth && auth_password.size() > 0) {
+        auth->record(auth_password, recv_len, sent_len);
+    }
     boost::system::error_code ec;
     resolver.cancel();
     udp_resolver.cancel();
