@@ -41,3 +41,7 @@ bool Authenticator::auth(const string &password) {
 void Authenticator::record(const std::string &password, uint64_t download, uint64_t upload) {
 
 }
+
+Authenticator::~Authenticator() {
+
+}

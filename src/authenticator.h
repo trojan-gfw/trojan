@@ -30,6 +30,7 @@ public:
     Authenticator(const Config &config);
     bool auth(const std::string &password);
     void record(const std::string &password, uint64_t download, uint64_t upload);
+    ~Authenticator();
 };
 
 #endif // _AUTHENTICATOR_H_
