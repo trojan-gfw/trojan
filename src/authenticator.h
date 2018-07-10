@@ -26,6 +26,10 @@
 class Authenticator {
 private:
     MYSQL con;
+    enum {
+        PASSWORD_LENGTH=56
+    };
+    bool is_valid_password(const std::string &password);
 public:
     Authenticator(const Config &config);
     bool auth(const std::string &password);

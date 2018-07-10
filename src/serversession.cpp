@@ -127,7 +127,7 @@ void ServerSession::in_recv(const string &data) {
                 if (auth && auth->auth(req.password)) {
                     valid = true;
                     auth_password = req.password;
-                    Log::log_with_endpoint(in_endpoint, "authenticated by authenticator", Log::INFO);
+                    Log::log_with_endpoint(in_endpoint, "authenticated by authenticator (" + req.password.substr(0, 7) + ')', Log::INFO);
                 }
             } else {
                 Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
