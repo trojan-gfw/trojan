@@ -30,14 +30,14 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_s
     in_socket(io_service, ssl_context),
     out_socket(io_service),
     udp_resolver(io_service),
-    auth(auth),
-    auth_password() {}
+    auth(auth) {}
 
 tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.lowest_layer();
 }
 
 void ServerSession::start() {
+    start_time = time(NULL);
     in_endpoint = in_socket.lowest_layer().remote_endpoint();
     auto self = shared_from_this();
     in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {

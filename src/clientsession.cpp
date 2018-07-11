@@ -38,6 +38,7 @@ tcp::socket& ClientSession::accept_socket() {
 }
 
 void ClientSession::start() {
+    start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint();
     auto ssl = out_socket.native_handle();
     if (config.ssl.sni != "") {
