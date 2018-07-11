@@ -9,7 +9,7 @@ Install these dependencies before you build:
 - [CMake](https://cmake.org/) >= 2.8.12
 - [Boost](http://www.boost.org/) >= 1.54.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
-- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/) (or libmariadbclient)
+- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/) (or [libmariadbclient](https://mariadb.org/))
 
 ## Clone
 
@@ -37,7 +37,7 @@ sudo make install
 
 to build, test, and install trojan. If everything goes well you'll be able to use trojan.
 
-For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libssl-dev libmysqlclient-dev` before `cmake` to install all the necessary dependencies.
+For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libssl-dev libmariadbclient-dev` before `cmake` to install all the necessary dependencies.
 
 The `cmake ..` command can be extended with the following options:
 
