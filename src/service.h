@@ -22,7 +22,7 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ssl.hpp>
-#include "config.h"
+#include "authenticator.h"
 
 class Service {
 private:
@@ -30,11 +30,13 @@ private:
     boost::asio::io_service io_service;
     boost::asio::ip::tcp::acceptor socket_acceptor;
     boost::asio::ssl::context ssl_context;
+    Authenticator *auth;
     void async_accept();
 public:
     Service(Config &config);
     void run();
     void stop();
+    ~Service();
 };
 
 #endif // _SERVICE_H_

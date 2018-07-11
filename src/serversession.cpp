@@ -24,12 +24,14 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
+ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context, Authenticator *auth) :
     Session(config, io_service),
     status(HANDSHAKE),
     in_socket(io_service, ssl_context),
     out_socket(io_service),
-    udp_resolver(io_service) {}
+    udp_resolver(io_service),
+    auth(auth),
+    auth_password() {}
 
 tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.lowest_layer();
@@ -117,11 +119,23 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
 void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
         TrojanRequest req;
-        bool valid = req.parse(data, config.password) != -1;
+        bool valid = req.parse(data) != -1;
+        if (valid) {
+            auto password_iterator = config.password.find(req.password);
+            if (password_iterator == config.password.end()) {
+                valid = false;
+                if (auth && auth->auth(req.password)) {
+                    valid = true;
+                    auth_password = req.password;
+                    Log::log_with_endpoint(in_endpoint, "authenticated by authenticator (" + req.password.substr(0, 7) + ')', Log::INFO);
+                }
+            } else {
+                Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
+            }
+        }
         tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
                                    to_string(valid ? req.address.port : config.remote_port));
         if (valid) {
-            Log::log_with_endpoint(in_endpoint, "authenticated as " + req.password, Log::INFO);
             out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
                 Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
@@ -254,6 +268,9 @@ void ServerSession::destroy() {
     }
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    if (auth && auth_password.size() > 0) {
+        auth->record(auth_password, recv_len, sent_len);
+    }
     boost::system::error_code ec;
     resolver.cancel();
     udp_resolver.cancel();

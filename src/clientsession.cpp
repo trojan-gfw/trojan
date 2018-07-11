@@ -147,7 +147,7 @@ void ClientSession::in_recv(const string &data) {
             }
             out_write_buf = config.password.cbegin()->first + "\r\n" + data[1] + data.substr(3) + "\r\n";
             TrojanRequest req;
-            if (req.parse(out_write_buf, config.password) == -1) {
+            if (req.parse(out_write_buf) == -1) {
                 Log::log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);
                 in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 status = INVALID;

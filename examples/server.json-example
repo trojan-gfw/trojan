@@ -29,5 +29,13 @@
         "no_delay": true,
         "fast_open": true,
         "fast_open_qlen": 5
+    },
+    "mysql": {
+        "enabled": false,
+        "server_addr": "127.0.0.1",
+        "server_port": 3306,
+        "database": "trojan",
+        "username": "trojan",
+        "password": ""
     }
 }

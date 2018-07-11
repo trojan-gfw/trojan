@@ -17,21 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TROJANREQUEST_H_
-#define _TROJANREQUEST_H_
+#ifndef _AUTHENTICATOR_H_
+#define _AUTHENTICATOR_H_
 
-#include "socks5address.h"
+#include <mysql.h>
+#include "config.h"
 
-class TrojanRequest {
+class Authenticator {
+private:
+    MYSQL con;
+    enum {
+        PASSWORD_LENGTH=56
+    };
+    bool is_valid_password(const std::string &password);
 public:
-    std::string password;
-    enum Command {
-        CONNECT = 1,
-        UDP_ASSOCIATE = 3
-    } command;
-    SOCKS5Address address;
-    std::string payload;
-    int parse(const std::string &data);
+    Authenticator(const Config &config);
+    bool auth(const std::string &password);
+    void record(const std::string &password, uint64_t download, uint64_t upload);
+    ~Authenticator();
 };
 
-#endif // _TROJANREQUEST_H_
+#endif // _AUTHENTICATOR_H_
