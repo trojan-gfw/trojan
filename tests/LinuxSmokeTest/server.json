@@ -24,5 +24,13 @@
         "no_delay": true,
         "fast_open": true,
         "fast_open_qlen": 5
+    },
+    "mysql": {
+        "enabled": false,
+        "server_addr": "",
+        "server_port": 0,
+        "database": "",
+        "username": "",
+        "password": ""
     }
 }

@@ -97,6 +97,14 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
         "no_delay": true,
         "fast_open": true,
         "fast_open_qlen": 5
+    },
+    "mysql": {
+        "enabled": false,
+        "server_addr": "127.0.0.1",
+        "server_port": 3306,
+        "database": "trojan",
+        "username": "trojan",
+        "password": ""
     }
 }
 ```
@@ -125,5 +133,6 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `no_delay`: whether to disable Nagle's algorithm
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
     - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
+- `mysql`: see [Authenticator](authenticator)
 
-[Homepage](.) | [Prev Page](protocol) | [Next Page](build)
+[Homepage](.) | [Prev Page](protocol) | [Next Page](authenticator)
