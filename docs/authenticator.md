@@ -1,6 +1,6 @@
 # Authenticator
 
-Trojan servers can authenticate users according to not only passwords in the config file but also entries in a MySQL (MariaDB) database. To turn this functionality on, set `enabled` field in the MySQL config to true and correctly configure the server address and credentials, etc:
+Trojan servers can authenticate users according to not only passwords in the config file but also entries in a MySQL (MariaDB) database. To turn this functionality on, set `enabled` field in the MySQL config to `true` and correctly configure the server address and credentials, etc:
 
 ```json
 "mysql": {
@@ -28,7 +28,7 @@ CREATE TABLE users (
 );
 ```
 
-Note that trojan will only read/write the `password`, `quota`, `download`, and `upload` fields. Other fields exist for management convenience. The `password`s stored in the table has to be hashed by SHA224 for efficiency and security reasons. You can use [trojan-manager](https://github.com/trojan-gfw/trojan-manager) to manage users in the database.
+Note that trojan will only read/write the `password`, `quota`, `download`, and `upload` fields. Other fields exist for management convenience. The passwords stored in the table have to be hashed by SHA224 for efficiency and security reasons. You can use [trojan-manager](https://github.com/trojan-gfw/trojan-manager) (which stores passwords as `SHA224(username:password)` so that clients have to prepend `username:` to the passwords in their config files) to manage users in the database.
 
 Upon receiving a Trojan Request, **if the server fails to match the password with any passwords set in the config file**, it will query the database for the user. If it succeeds, trojan will check whether `download + upload < quota`; if so, the connection is granted. **A negative `quota` value means infinite quota.** After a connection is closed, trojan will increment `download` and `upload` fields of that user by the amount of data the user has used.
 
