@@ -42,14 +42,19 @@ bool Authenticator::auth(const string &password) {
         return false;
     }
     if (mysql_query(&con, ("SELECT quota, download + upload FROM users WHERE password = '" + password + '\'').c_str())) {
-        Log::log_with_date_time(mysql_error(&con), Log::WARN);
+        Log::log_with_date_time(mysql_error(&con), Log::ERROR);
         return false;
     }
     MYSQL_RES *res = mysql_store_result(&con);
     if (res == NULL) {
+        Log::log_with_date_time(mysql_error(&con), Log::ERROR);
         return false;
     }
     MYSQL_ROW row = mysql_fetch_row(res);
+    if (row == NULL) {
+        mysql_free_result(res);
+        return false;
+    }
     int64_t quota = atoll(row[0]);
     int64_t used = atoll(row[1]);
     mysql_free_result(res);
@@ -61,7 +66,7 @@ void Authenticator::record(const std::string &password, uint64_t download, uint6
         return;
     }
     if (mysql_query(&con, ("UPDATE users SET download = download + " + to_string(download) + ", upload = upload + " + to_string(upload) + " WHERE password = '" + password + '\'').c_str())) {
-        Log::log_with_date_time(mysql_error(&con), Log::WARN);
+        Log::log_with_date_time(mysql_error(&con), Log::ERROR);
     }
 }
 
