@@ -58,7 +58,14 @@ bool Authenticator::auth(const string &password) {
     int64_t quota = atoll(row[0]);
     int64_t used = atoll(row[1]);
     mysql_free_result(res);
-    return quota < 0 || used < quota;
+    if (quota < 0) {
+        return true;
+    }
+    if (used >= quota) {
+        Log::log_with_date_time(password + " ran out of quota", Log::WARN);
+        return false;
+    }
+    return true;
 }
 
 void Authenticator::record(const std::string &password, uint64_t download, uint64_t upload) {
