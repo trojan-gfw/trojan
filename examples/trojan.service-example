@@ -1,7 +1,7 @@
 [Unit]
 Description=trojan
-After=network.target
-Wants=network.target
+Wants=network.target mysqld.service
+After=network.target mysqld.service
 
 [Service]
 Type=simple
