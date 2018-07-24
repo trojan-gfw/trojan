@@ -1,6 +1,5 @@
 [Unit]
 Description=trojan
-Wants=network.target mysqld.service
 After=network.target mysqld.service
 
 [Service]
