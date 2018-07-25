@@ -1,6 +1,6 @@
 [Unit]
 Description=trojan
-After=network.target mysqld.service
+After=network.target mysql.service mariadb.service mysqld.service
 
 [Service]
 Type=simple
