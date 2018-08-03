@@ -41,15 +41,12 @@ to build, test, and install trojan. If everything goes well you'll be able to us
 
 The `cmake ..` command can be extended with the following options:
 
-- `STATIC`
-    - `-DSTATIC=OFF`: don't link any libraries statically (default).
-    - `-DSTATIC=ON`: link Boost and libc (only under Windows) statically.
 - `SYSTEMD_SERVICE`
     - `-DSYSTEMD_SERVICE=AUTO`: detect systemd automatically and decide whether to install service (default).
     - `-DSYSTEMD_SERVICE=ON`: install systemd service unconditionally.
     - `-DSYSTEMD_SERVICE=OFF`: don't install systemd service unconditionally.
 - `-DSYSTEMD_SERVICE_PATH=/path/to/systemd/system`: the path to which the systemd service will be installed (defaults to `/lib/systemd/system`).
 
-After installation, config examples will be installed to `${CMAKE_INSTALL_FULL_SYSCONFDIR}/trojan/` and a server config will be installed to `${CMAKE_INSTALL_FULL_SYSCONFDIR}/trojan/config.json`.
+After installation, config examples will be installed to `${CMAKE_INSTALL_DOCDIR}/examples/` and a server config will be installed to `${CMAKE_INSTALL_FULL_SYSCONFDIR}/trojan/config.json`.
 
 [Homepage](.) | [Prev Page](authenticator) | [Next Page](usage)
