@@ -29,7 +29,7 @@ pid3=$!
 $trojan fake-client.json 2>client.log &
 pid4=$!
 
-sleep 1
+sleep 2
 
 whoami=`curl -v --socks5 127.0.0.1:11080 http://127.0.0.1:10081/whoami.txt`
 whoami2=`curl -v --insecure https://127.0.0.1:10443/whoami.txt`

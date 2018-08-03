@@ -29,7 +29,7 @@ pid3=$!
 $trojan client.json 2>client.log &
 pid4=$!
 
-sleep 1
+sleep 2
 
 whoami=`curl -v --socks5 127.0.0.1:11080 http://127.0.0.1:10081/whoami.txt`
 kill $pid1 $pid2 $pid3 $pid4
