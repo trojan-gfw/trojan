@@ -4,7 +4,7 @@
 
 - coreutils
 - openssl
-- python2
+- python3
 - curl
 
 ## Usage

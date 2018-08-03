@@ -15,12 +15,12 @@ echo true >true/whoami.txt
 echo fake >fake/whoami.txt
 
 cd true
-python2 -m SimpleHTTPServer 10081 >server.log 2>&1 &
+python3 -m http.server 10081 >server.log 2>&1 &
 pid1=$!
 cd ..
 
 cd fake
-python2 -m SimpleHTTPServer 10080 >server.log 2>&1 &
+python3 -m http.server 10080 >server.log 2>&1 &
 pid2=$!
 cd ..
 
