@@ -3,12 +3,31 @@ project(trojan)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
-add_definitions(-std=c++11 -Wall -Wextra)
+add_definitions(-std=c++11 -Wall)
+# MSVC doesn't support -Wextra
+if(NOT WIN32)
+    add_definitions(-Wextra)
+endif(NOT WIN32)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-add_executable(trojan src/authenticator.cpp src/clientsession.cpp src/config.cpp src/log.cpp src/main.cpp src/serversession.cpp src/service.cpp src/session.cpp src/socks5address.cpp src/ssldefaults.cpp src/trojanrequest.cpp src/udppacket.cpp src/version.cpp)
+add_executable(trojan
+	src/authenticator.cpp
+	src/clientsession.cpp
+	src/config.cpp
+	src/log.cpp
+	src/main.cpp
+	src/serversession.cpp
+	src/service.cpp
+	src/session.cpp
+	src/socks5address.cpp
+	src/ssldefaults.cpp
+	src/trojanrequest.cpp
+	src/udppacket.cpp
+	src/version.cpp)
 find_package(Threads REQUIRED)
 target_link_libraries(trojan ${CMAKE_THREAD_LIBS_INIT})
-find_package(Boost 1.54.0 REQUIRED COMPONENTS system)
+# COMPONENTS is used to generate linkage flags, e.g.: MSVC
+# It should match what we are using
+find_package(Boost 1.54.0 REQUIRED COMPONENTS system date_time)
 include_directories(${Boost_INCLUDE_DIR})
 target_link_libraries(trojan ${Boost_LIBRARIES})
 find_package(OpenSSL 1.0.2 REQUIRED)
