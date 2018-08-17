@@ -97,14 +97,10 @@ Authenticator::~Authenticator() {
 
 #else // ENABLE_MYSQL
 
-Authenticator::Authenticator(const Config &config) {}
-
-bool Authenticator::auth(const string &password) { return true; }
-
-void Authenticator::record(const std::string &password, uint64_t download, uint64_t upload) {}
-
-bool Authenticator::is_valid_password(const std::string &password) { return true; }
-
+Authenticator::Authenticator(const Config&) {}
+bool Authenticator::auth(const string&) { return true; }
+void Authenticator::record(const std::string&, uint64_t, uint64_t) {}
+bool Authenticator::is_valid_password(const std::string&) { return true; }
 Authenticator::~Authenticator() {}
 
 #endif // ENABLE_MYSQL
