@@ -22,6 +22,8 @@
 #include <stdexcept>
 using namespace std;
 
+#ifdef ENABLE_MYSQL
+
 Authenticator::Authenticator(const Config &config) {
     mysql_init(&con);
     Log::log_with_date_time("connecting to MySQL server " + config.mysql.server_addr + ':' + to_string(config.mysql.server_port), Log::INFO);
@@ -92,3 +94,13 @@ bool Authenticator::is_valid_password(const std::string &password) {
 Authenticator::~Authenticator() {
     mysql_close(&con);
 }
+
+#else // ENABLE_MYSQL
+
+Authenticator::Authenticator(const Config&) {}
+bool Authenticator::auth(const string&) { return true; }
+void Authenticator::record(const std::string&, uint64_t, uint64_t) {}
+bool Authenticator::is_valid_password(const std::string&) { return true; }
+Authenticator::~Authenticator() {}
+
+#endif // ENABLE_MYSQL

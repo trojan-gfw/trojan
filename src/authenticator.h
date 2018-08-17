@@ -20,12 +20,16 @@
 #ifndef _AUTHENTICATOR_H_
 #define _AUTHENTICATOR_H_
 
+#ifdef ENABLE_MYSQL
 #include <mysql.h>
+#endif // ENABLE_MYSQL
 #include "config.h"
 
 class Authenticator {
 private:
+#ifdef ENABLE_MYSQL
     MYSQL con;
+#endif // ENABLE_MYSQL
     enum {
         PASSWORD_LENGTH=56
     };
