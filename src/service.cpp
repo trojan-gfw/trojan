@@ -104,7 +104,11 @@ Service::Service(Config &config) :
         }
         SSL_CTX_set_ecdh_auto(native_context, 1);
         if (config.mysql.enabled) {
+#ifdef ENABLE_MYSQL
             auth = new Authenticator(config);
+#else // ENABLE_MYSQL
+            Log::log_with_date_time("MySQL is not supported", Log::WARN);
+#endif // ENABLE_MYSQL
         }
     } else {
         if (config.ssl.verify) {

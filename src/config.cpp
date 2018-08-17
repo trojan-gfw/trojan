@@ -63,12 +63,6 @@ void Config::load(const string &filename) {
     tcp.fast_open = tree.get("tcp.fast_open", true);
     tcp.fast_open_qlen = tree.get("tcp.fast_open_qlen", 5);
     mysql.enabled = tree.get("mysql.enabled", false);
-#ifndef ENABLE_MYSQL
-    if (mysql.enabled) {
-        Log::log_with_date_time("MySQL is not supported", Log::WARN);
-        mysql.enabled = false;
-    }
-#endif // ENABLE_MYSQL
     mysql.server_addr = tree.get("mysql.server_addr", string("127.0.0.1"));
     mysql.server_port = tree.get("mysql.server_port", uint16_t(3306));
     mysql.database = tree.get("mysql.database", string("trojan"));
