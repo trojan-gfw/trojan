@@ -20,8 +20,11 @@
 #ifndef _AUTHENTICATOR_H_
 #define _AUTHENTICATOR_H_
 
-#include <mysql.h>
 #include "config.h"
+
+#ifdef ENABLE_MYSQL
+
+#include <mysql.h>
 
 class Authenticator {
 private:
@@ -36,5 +39,19 @@ public:
     void record(const std::string &password, uint64_t download, uint64_t upload);
     ~Authenticator();
 };
+#else  // ENABLE_MYSQL
+class Authenticator {
+private:
+    enum {
+        PASSWORD_LENGTH=56
+    };
+    bool is_valid_password(const std::string &password);
+public:
+    Authenticator(const Config &config);
+    bool auth(const std::string &password);
+    void record(const std::string &password, uint64_t download, uint64_t upload);
+    ~Authenticator();
+};
+#endif // ENABLE_MYSQL
 
 #endif // _AUTHENTICATOR_H_
