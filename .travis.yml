@@ -3,7 +3,7 @@ language: cpp
 
 install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y cmake libboost-system-dev libboost-date-time-dev libssl-dev libmysqlclient-dev realpath
+  - sudo apt-get install -y cmake libboost-system-dev libssl-dev libmysqlclient-dev realpath
 
 script:
   - cmake .
