@@ -70,7 +70,13 @@ Service::Service(Config &config) :
         SSL_CONF_CTX_finish(cctx);
         SSL_CONF_CTX_free(cctx);
     }
-    ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
+    const long ssl_options = context::default_workarounds
+                           | context::no_sslv2
+                           | context::no_sslv3
+                           | context::no_tlsv1
+                           | context::no_tlsv1_1
+                           | context::single_dh_use;
+    ssl_context.set_options(ssl_options);
     if (config.ssl.curves != "") {
         SSL_CTX_set1_curves_list(native_context, config.ssl.curves.c_str());
     }
