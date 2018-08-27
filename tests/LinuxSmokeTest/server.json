@@ -14,16 +14,15 @@
         "prefer_server_cipher": true,
         "alpn": [],
         "reuse_session": false,
-        "session_timeout": 300,
+        "session_timeout": 600,
         "curves": "",
-        "sigalgs": "",
         "dhparam": ""
     },
     "tcp": {
-        "keep_alive": true,
         "no_delay": true,
-        "fast_open": true,
-        "fast_open_qlen": 5
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
     },
     "mysql": {
         "enabled": false,

@@ -217,11 +217,11 @@ void ClientSession::in_sent() {
                     return;
                 }
                 out_socket.lowest_layer().open(iterator->endpoint().protocol());
-                if (config.tcp.keep_alive) {
-                    out_socket.lowest_layer().set_option(boost::asio::socket_base::keep_alive(true));
-                }
                 if (config.tcp.no_delay) {
                     out_socket.lowest_layer().set_option(tcp::no_delay(true));
+                }
+                if (config.tcp.keep_alive) {
+                    out_socket.lowest_layer().set_option(boost::asio::socket_base::keep_alive(true));
                 }
 #ifdef TCP_FASTOPEN_CONNECT
                 if (config.tcp.fast_open) {

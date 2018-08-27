@@ -51,13 +51,12 @@ public:
         bool reuse_session;
         long session_timeout;
         std::string curves;
-        std::string sigalgs;
         std::string dhparam;
     } ssl;
     class TCPConfig {
     public:
-        bool keep_alive;
         bool no_delay;
+        bool keep_alive;
         bool fast_open;
         int fast_open_qlen;
     } tcp;

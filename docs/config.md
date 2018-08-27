@@ -1,6 +1,6 @@
 # Config
 
-In this page, we will look at the config file of trojan. Trojan uses [`JSON`](https://en.wikipedia.org/wiki/JSON) as the format of the config. A config generator can be found [here](https://trojan-gfw.github.io/trojan-config-gen/).
+In this page, we will look at the config file of trojan. Trojan uses [`JSON`](https://en.wikipedia.org/wiki/JSON) as the format of the config.
 
 **Note: all "\\" in the paths under Windows MUST be replaced with "/".**
 
@@ -13,28 +13,29 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     "local_port": 1080,
     "remote_addr": "example.com",
     "remote_port": 443,
-    "password": ["password1"],
+    "password": [
+        "password1"
+    ],
     "append_payload": true,
     "log_level": 1,
     "ssl": {
         "verify": true,
         "verify_hostname": true,
         "cert": "",
-        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
         "sni": "example.com",
         "alpn": [
             "h2",
             "http/1.1"
         ],
         "reuse_session": true,
-        "curves": "",
-        "sigalgs": ""
+        "curves": ""
     },
     "tcp": {
-        "keep_alive": true,
         "no_delay": true,
-        "fast_open": true,
-        "fast_open_qlen": 5
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
     }
 }
 ```
@@ -56,10 +57,9 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `alpn`: a list of `ALPN` protocols to send
     - `reuse_session`: whether to reuse `SSL` session
     - `curves`: `ECC` curves to send and use
-    - `sigalgs`: signature algorithms to send and use
 - `tcp`: `TCP` specific configurations
-    - `keep_alive`: whether to enable TCP Keep Alive
     - `no_delay`: whether to disable Nagle's algorithm
+    - `keep_alive`: whether to enable TCP Keep Alive
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
     - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 
@@ -81,22 +81,21 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
         "cert": "/path/to/certificate.crt",
         "key": "/path/to/private.key",
         "key_password": "",
-        "cipher": "ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS",
+        "cipher": "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256",
         "prefer_server_cipher": true,
         "alpn": [
             "http/1.1"
         ],
         "reuse_session": true,
-        "session_timeout": 300,
+        "session_timeout": 600,
         "curves": "",
-        "sigalgs": "",
         "dhparam": ""
     },
     "tcp": {
-        "keep_alive": true,
         "no_delay": true,
-        "fast_open": true,
-        "fast_open_qlen": 5
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
     },
     "mysql": {
         "enabled": false,
@@ -126,11 +125,10 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `reuse_session`: whether to reuse `SSL` session
     - `session_timeout`: if `reuse_session` is set to `true`, specify `SSL` session timeout
     - `curves`: `ECC` curves to use
-    - `sigalgs`: signature algorithms to use
     - `dhparam`: if left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used
 - `tcp`: `TCP` specific configurations
-    - `keep_alive`: whether to enable TCP Keep Alive
     - `no_delay`: whether to disable Nagle's algorithm
+    - `keep_alive`: whether to enable TCP Keep Alive
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
     - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 - `mysql`: see [Authenticator](authenticator)

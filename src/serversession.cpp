@@ -159,11 +159,11 @@ void ServerSession::in_recv(const string &data) {
                 return;
             }
             out_socket.open(iterator->endpoint().protocol());
-            if (config.tcp.keep_alive) {
-                out_socket.set_option(boost::asio::socket_base::keep_alive(true));
-            }
             if (config.tcp.no_delay) {
                 out_socket.set_option(tcp::no_delay(true));
+            }
+            if (config.tcp.keep_alive) {
+                out_socket.set_option(boost::asio::socket_base::keep_alive(true));
             }
 #ifdef TCP_FASTOPEN_CONNECT
             if (config.tcp.fast_open) {
