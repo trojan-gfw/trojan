@@ -6,6 +6,6 @@ install:
   - sudo apt-get install -y cmake libboost-system-dev libssl-dev libmysqlclient-dev realpath
 
 script:
-  - cmake .
+  - cmake -DCMAKE_INSTALL_PREFIX=/usr -DSYSTEMD_SERVICE=ON .
   - sudo make install
   - ctest
