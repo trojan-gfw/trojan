@@ -6,10 +6,10 @@ We'll only cover the build process on Linux since we will be providing Windows a
 
 Install these dependencies before you build:
 
-- [CMake](https://cmake.org/) >= 3.0.2
+- [CMake](https://cmake.org/) >= 3.1
 - [Boost](http://www.boost.org/) >= 1.54.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
-- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/) (or [libmariadbclient](https://mariadb.org/))
+- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/)
 
 For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libssl-dev default-libmysqlclient-dev` to install all the necessary dependencies.
 

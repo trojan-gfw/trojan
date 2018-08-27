@@ -15,10 +15,10 @@ Installation guide on various platforms can be found in the [wiki](https://githu
 
 ## Dependencies
 
-- [CMake](https://cmake.org/) >= 3.0.2
+- [CMake](https://cmake.org/) >= 3.1
 - [Boost](http://www.boost.org/) >= 1.54.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
-- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/) (or [libmariadbclient](https://mariadb.org/))
+- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/)
 
 ## License
 
