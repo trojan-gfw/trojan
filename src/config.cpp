@@ -27,11 +27,20 @@ using namespace boost::property_tree;
 void Config::load(const string &filename) {
     ptree tree;
     read_json(filename, tree);
-    run_type = (tree.get("run_type", string("client")) == "server") ? SERVER : CLIENT;
+    string rt = tree.get("run_type", string("client"));
+    if (rt == "server") {
+        run_type = SERVER;
+    } else if (rt == "forward") {
+        run_type = FORWARD;
+    } else {
+        run_type = CLIENT;
+    }
     local_addr = tree.get("local_addr", string());
     local_port = tree.get("local_port", uint16_t());
     remote_addr = tree.get("remote_addr", string());
     remote_port = tree.get("remote_port", uint16_t());
+    target_addr = tree.get("target_addr", string());
+    target_port = tree.get("target_port", uint16_t());
     map<string, string>().swap(password);
     for (auto& item: tree.get_child("password")) {
         string p = item.second.get_value<string>();

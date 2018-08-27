@@ -28,12 +28,15 @@ class Config {
 public:
     enum RunType {
         SERVER,
-        CLIENT
+        CLIENT,
+        FORWARD
     } run_type;
     std::string local_addr;
     uint16_t local_port;
     std::string remote_addr;
     uint16_t remote_port;
+    std::string target_addr;
+    uint16_t target_port;
     std::map<std::string, std::string> password;
     bool append_payload;
     Log::Level log_level;

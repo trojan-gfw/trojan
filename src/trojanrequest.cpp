@@ -38,3 +38,13 @@ int TrojanRequest::parse(const string &data) {
     payload = payload.substr(address_len + 3);
     return data.length();
 }
+
+std::string TrojanRequest::generate(const std::string &password, const std::string &domainname, uint16_t port) {
+    string ret = password + "\r\n\x01\x03";
+    ret += char(uint8_t(domainname.length()));
+    ret += domainname;
+    ret += char(uint8_t(port >> 8));
+    ret += char(uint8_t(port & 0xFF));
+    ret += "\r\n";
+    return ret;
+}

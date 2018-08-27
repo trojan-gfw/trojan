@@ -23,6 +23,7 @@
 #endif // _WIN32
 #include "serversession.h"
 #include "clientsession.h"
+#include "forwardsession.h"
 #include "ssldefaults.h"
 using namespace std;
 using namespace boost::asio::ip;
@@ -143,7 +144,15 @@ Service::Service(Config &config) :
 void Service::run() {
     async_accept();
     tcp::endpoint local_endpoint = socket_acceptor.local_endpoint();
-    Log::log_with_date_time(string("trojan service (") + (config.run_type == Config::SERVER ? "server" : "client") + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::FATAL);
+    string rt;
+    if (config.run_type == Config::SERVER) {
+        rt = "server";
+    } else if (config.run_type == Config::FORWARD) {
+        rt = "forward";
+    } else {
+        rt = "client";
+    }
+    Log::log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::FATAL);
     io_service.run();
     Log::log_with_date_time("trojan service stopped", Log::FATAL);
 }
@@ -156,6 +165,8 @@ void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
         session = make_shared<ServerSession>(config, io_service, ssl_context, auth);
+    } else if (config.run_type == Config::FORWARD) {
+        session = make_shared<ForwardSession>(config, io_service, ssl_context);
     } else {
         session = make_shared<ClientSession>(config, io_service, ssl_context);
     }

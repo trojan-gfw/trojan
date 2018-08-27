@@ -63,6 +63,46 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
     - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 
+## A valid forward.json
+
+This forward config is for port forwarding. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint.
+
+```json
+{
+    "run_type": "forward",
+    "local_addr": "127.0.0.1",
+    "local_port": 5901,
+    "remote_addr": "example.com",
+    "remote_port": 443,
+    "target_addr": "127.0.0.1",
+    "target_port": 5901,
+    "password": [
+        "password1"
+    ],
+    "append_payload": true,
+    "log_level": 1,
+    "ssl": {
+        "verify": true,
+        "verify_hostname": true,
+        "cert": "",
+        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
+        "sni": "example.com",
+        "alpn": [
+            "h2",
+            "http/1.1"
+        ],
+        "reuse_session": true,
+        "curves": ""
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
+    }
+}
+```
+
 ## A valid server.json
 
 ```json

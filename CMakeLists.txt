@@ -12,6 +12,7 @@ add_executable(trojan
     src/authenticator.cpp
     src/clientsession.cpp
     src/config.cpp
+    src/forwardsession.cpp
     src/log.cpp
     src/main.cpp
     src/serversession.cpp
