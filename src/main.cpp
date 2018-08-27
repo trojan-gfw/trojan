@@ -41,17 +41,17 @@ int main(int argc, const char *argv[]) {
         Log::log(string("usage: ") + argv[0] + " config_file", Log::FATAL);
         exit(1);
     }
-    signal(SIGINT, handleTermination);
-    signal(SIGTERM, handleTermination);
-#ifndef _WIN32
-    signal(SIGHUP, restartService);
-#endif // _WIN32
     Config config;
     try {
         do {
             restart = false;
             config.load(argv[1]);
             service = new Service(config);
+            signal(SIGINT, handleTermination);
+            signal(SIGTERM, handleTermination);
+#ifndef _WIN32
+            signal(SIGHUP, restartService);
+#endif // _WIN32
             service->run();
             delete service;
             if (restart) {
