@@ -21,6 +21,7 @@
 #ifdef _WIN32
 #include <wincrypt.h>
 #endif // _WIN32
+#include <openssl/opensslv.h>
 #include "serversession.h"
 #include "clientsession.h"
 #include "forwardsession.h"
@@ -68,7 +69,9 @@ Service::Service(Config &config) :
         } else {
             ssl_context.use_tmp_dh_file(config.ssl.dhparam);
         }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         SSL_CTX_set_ecdh_auto(native_context, 1);
+#endif
         if (config.mysql.enabled) {
 #ifdef ENABLE_MYSQL
             auth = new Authenticator(config);
