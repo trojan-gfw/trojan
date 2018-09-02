@@ -17,11 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdlib>
 #include <csignal>
+#include <iostream>
+#include <boost/program_options.hpp>
 #include "service.h"
 #include "version.h"
 using namespace std;
+namespace po = boost::program_options;
 
 Service *service;
 bool restart;
@@ -36,17 +38,58 @@ void restartService(int) {
 }
 
 int main(int argc, const char *argv[]) {
-    Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
-    if (argc != 2) {
-        Log::log(string("usage: ") + argv[0] + " config_file", Log::FATAL);
-        exit(1);
-    }
-    Config config;
     try {
+        Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
+        string config_file;
+        bool test;
+        po::options_description desc("options");
+        desc.add_options()
+        #ifdef _WIN32
+            ("config,c", po::value<string>(&config_file)->default_value("config.json")->value_name("path"), "specify config file")
+        #else // _WIN32
+            ("config,c", po::value<string>(&config_file)->default_value("/etc/trojan/config.json")->value_name("path"), "specify config file")
+        #endif // _WIN32
+            ("help,h", "print help message")
+            ("test,t", po::bool_switch(&test), "test config file")
+            ("version,v", "print version and build info")
+        ;
+        po::positional_options_description pd;
+        pd.add("config", 1);
+        po::variables_map vm;
+        po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
+        po::notify(vm);
+        if (vm.count("help")) {
+            Log::log(string("usage: ") + argv[0] + " [-htv] [[-c] config_file]", Log::FATAL);
+            cout << desc << endl;
+            return 0;
+        }
+        if (vm.count("version")) {
+#ifdef ENABLE_MYSQL
+            Log::log("Trojan is built with MySQL support", Log::FATAL);
+#else // ENABLE_MYSQL
+            Log::log("Trojan is built without MySQL support", Log::FATAL);
+#endif // ENABLE_MYSQL
+#ifdef TCP_FASTOPEN
+            Log::log("Trojan is built with TCP_FASTOPEN support", Log::FATAL);
+#else // TCP_FASTOPEN
+            Log::log("Trojan is built without TCP_FASTOPEN support", Log::FATAL);
+#endif // TCP_FASTOPEN
+#ifdef TCP_FASTOPEN_CONNECT
+            Log::log("Trojan is built with TCP_FASTOPEN_CONNECT support", Log::FATAL);
+#else // TCP_FASTOPEN_CONNECT
+            Log::log("Trojan is built without TCP_FASTOPEN_CONNECT support", Log::FATAL);
+#endif // TCP_FASTOPEN_CONNECT
+            return 0;
+        }
+        Config config;
         do {
             restart = false;
-            config.load(argv[1]);
-            service = new Service(config);
+            config.load(config_file);
+            service = new Service(config, test);
+            if (test) {
+                Log::log("The config file looks good.", Log::FATAL);
+                return 0;
+            }
             signal(SIGINT, handleTermination);
             signal(SIGTERM, handleTermination);
 #ifndef _WIN32
@@ -62,6 +105,6 @@ int main(int argc, const char *argv[]) {
     } catch (const exception &e) {
         Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
         Log::log_with_date_time("exiting. . . ", Log::FATAL);
-        exit(1);
+        return 1;
     }
 }

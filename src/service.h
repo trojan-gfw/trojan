@@ -33,7 +33,7 @@ private:
     Authenticator *auth;
     void async_accept();
 public:
-    Service(Config &config);
+    Service(Config &config, bool test = false);
     void run();
     void stop();
     ~Service();

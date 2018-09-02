@@ -30,11 +30,14 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-Service::Service(Config &config) :
+Service::Service(Config &config, bool test) :
     config(config),
-    socket_acceptor(io_service, tcp::endpoint(address::from_string(config.local_addr), config.local_port)),
+    socket_acceptor(io_service),
     ssl_context(context::sslv23),
     auth(nullptr) {
+    if (!test) {
+        socket_acceptor.bind(tcp::endpoint(address::from_string(config.local_addr), config.local_port));
+    }
     Log::level = config.log_level;
     auto native_context = ssl_context.native_handle();
     ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
@@ -120,28 +123,30 @@ Service::Service(Config &config) :
     if (config.ssl.cipher != "") {
         SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
     }
-    if (config.tcp.no_delay) {
-        socket_acceptor.set_option(tcp::no_delay(true));
-    }
-    if (config.tcp.keep_alive) {
-        socket_acceptor.set_option(boost::asio::socket_base::keep_alive(true));
-    }
+    if (!test) {
+        if (config.tcp.no_delay) {
+            socket_acceptor.set_option(tcp::no_delay(true));
+        }
+        if (config.tcp.keep_alive) {
+            socket_acceptor.set_option(boost::asio::socket_base::keep_alive(true));
+        }
 #ifdef TCP_FASTOPEN
-    if (config.tcp.fast_open) {
-        using fastopen = boost::asio::detail::socket_option::integer<IPPROTO_TCP, TCP_FASTOPEN>;
-        boost::system::error_code ec;
-        socket_acceptor.set_option(fastopen(config.tcp.fast_open_qlen), ec);
-    }
-#else
-    if (config.tcp.fast_open) {
-        Log::log_with_date_time("TCP_FASTOPEN is not supported", Log::WARN);
-    }
+        if (config.tcp.fast_open) {
+            using fastopen = boost::asio::detail::socket_option::integer<IPPROTO_TCP, TCP_FASTOPEN>;
+            boost::system::error_code ec;
+            socket_acceptor.set_option(fastopen(config.tcp.fast_open_qlen), ec);
+        }
+#else // TCP_FASTOPEN
+        if (config.tcp.fast_open) {
+            Log::log_with_date_time("TCP_FASTOPEN is not supported", Log::WARN);
+        }
 #endif // TCP_FASTOPEN
 #ifndef TCP_FASTOPEN_CONNECT
-    if (config.tcp.fast_open) {
-        Log::log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
-    }
+        if (config.tcp.fast_open) {
+            Log::log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
+        }
 #endif // TCP_FASTOPEN_CONNECT
+    }
 }
 
 void Service::run() {
