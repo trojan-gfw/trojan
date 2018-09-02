@@ -67,19 +67,19 @@ int main(int argc, const char *argv[]) {
         }
         if (vm.count("version")) {
 #ifdef ENABLE_MYSQL
-            Log::log("Trojan is built with MySQL support", Log::FATAL);
+            Log::log(" [Enabled] MySQL Support", Log::FATAL);
 #else // ENABLE_MYSQL
-            Log::log("Trojan is built without MySQL support", Log::FATAL);
+            Log::log("[Disabled] MySQL Support", Log::FATAL);
 #endif // ENABLE_MYSQL
 #ifdef TCP_FASTOPEN
-            Log::log("Trojan is built with TCP_FASTOPEN support", Log::FATAL);
+            Log::log(" [Enabled] TCP_FASTOPEN Support", Log::FATAL);
 #else // TCP_FASTOPEN
-            Log::log("Trojan is built without TCP_FASTOPEN support", Log::FATAL);
+            Log::log("[Disabled] TCP_FASTOPEN Support", Log::FATAL);
 #endif // TCP_FASTOPEN
 #ifdef TCP_FASTOPEN_CONNECT
-            Log::log("Trojan is built with TCP_FASTOPEN_CONNECT support", Log::FATAL);
+            Log::log(" [Enabled] TCP_FASTOPEN_CONNECT Support", Log::FATAL);
 #else // TCP_FASTOPEN_CONNECT
-            Log::log("Trojan is built without TCP_FASTOPEN_CONNECT support", Log::FATAL);
+            Log::log("[Disabled] TCP_FASTOPEN_CONNECT Support", Log::FATAL);
 #endif // TCP_FASTOPEN_CONNECT
             return 0;
         }
