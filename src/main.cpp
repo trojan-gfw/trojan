@@ -46,12 +46,12 @@ int main(int argc, const char *argv[]) {
         po::options_description desc("options");
         desc.add_options()
 #ifdef _WIN32
-            ("config,c", po::value<string>(&config_file)->default_value("config.json")->value_name("path"), "specify config file")
+            ("config,c", po::value<string>(&config_file)->default_value("config.json")->value_name("CONFIG"), "specify config file")
 #else // _WIN32
-            ("config,c", po::value<string>(&config_file)->default_value("/etc/trojan/config.json")->value_name("path"), "specify config file")
+            ("config,c", po::value<string>(&config_file)->default_value("/etc/trojan/config.json")->value_name("CONFIG"), "specify config file")
 #endif // _WIN32
             ("help,h", "print help message")
-            ("log,l", po::value<string>(&log_file)->value_name("path"), "specify log file location")
+            ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
             ("test,t", po::bool_switch(&test), "test config file")
             ("version,v", "print version and build info")
         ;
@@ -61,7 +61,7 @@ int main(int argc, const char *argv[]) {
         po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
         po::notify(vm);
         if (vm.count("help")) {
-            Log::log(string("usage: ") + argv[0] + " [-htv] [-l log_file] [[-c] config_file]", Log::FATAL);
+            Log::log(string("usage: ") + argv[0] + " [-htv] [-l LOG] [[-c] CONFIG]", Log::FATAL);
             cout << desc << endl;
             return 0;
         }
