@@ -36,7 +36,10 @@ Service::Service(Config &config, bool test) :
     ssl_context(context::sslv23),
     auth(nullptr) {
     if (!test) {
-        socket_acceptor.bind(tcp::endpoint(address::from_string(config.local_addr), config.local_port));
+        auto listen_endpoint = tcp::endpoint(address::from_string(config.local_addr), config.local_port);
+        socket_acceptor.open(listen_endpoint.protocol());
+        socket_acceptor.bind(listen_endpoint);
+        socket_acceptor.listen();
     }
     Log::level = config.log_level;
     auto native_context = ssl_context.native_handle();
