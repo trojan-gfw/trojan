@@ -41,6 +41,7 @@ int main(int argc, const char *argv[]) {
     try {
         Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
         string config_file;
+        string log_file;
         bool test;
         po::options_description desc("options");
         desc.add_options()
@@ -50,6 +51,7 @@ int main(int argc, const char *argv[]) {
             ("config,c", po::value<string>(&config_file)->default_value("/etc/trojan/config.json")->value_name("path"), "specify config file")
         #endif // _WIN32
             ("help,h", "print help message")
+            ("log,l", po::value<string>(&log_file)->value_name("path"), "specify log file location")
             ("test,t", po::bool_switch(&test), "test config file")
             ("version,v", "print version and build info")
         ;
@@ -59,7 +61,7 @@ int main(int argc, const char *argv[]) {
         po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
         po::notify(vm);
         if (vm.count("help")) {
-            Log::log(string("usage: ") + argv[0] + " [-htv] [[-c] config_file]", Log::FATAL);
+            Log::log(string("usage: ") + argv[0] + " [-htv] [-l log_file] [[-c] config_file]", Log::FATAL);
             cout << desc << endl;
             return 0;
         }
@@ -81,13 +83,16 @@ int main(int argc, const char *argv[]) {
 #endif // TCP_FASTOPEN_CONNECT
             return 0;
         }
+        if (vm.count("log")) {
+            Log::redirect(log_file);
+        }
         Config config;
         do {
             restart = false;
             config.load(config_file);
             service = new Service(config, test);
             if (test) {
-                Log::log("The config file looks good.", Log::FATAL);
+                Log::log("The config file looks good.", Log::OFF);
                 return 0;
             }
             signal(SIGINT, handleTermination);

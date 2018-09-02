@@ -35,13 +35,19 @@ void Log::log(const string &message, Level level) {
 }
 
 void Log::log_with_date_time(const string &message, Level level) {
+    static const char *level_strings[]= {"ALL", "INFO", "WARN", "ERROR", "FATAL", "OFF"};
     time_facet *facet = new time_facet("[%Y-%m-%d %H:%M:%S] ");
     ostringstream stream;
     stream.imbue(locale(stream.getloc(), facet));
     stream << second_clock::local_time();
-    Log::log(stream.str() + message, level);
+    string level_string = '[' + string(level_strings[level]) + "] ";
+    Log::log(stream.str() + level_string + message, level);
 }
 
 void Log::log_with_endpoint(const tcp::endpoint &endpoint, const string &message, Level level) {
     Log::log_with_date_time(endpoint.address().to_string() + ':' + to_string(endpoint.port()) + ' ' + message, level);
+}
+
+void Log::redirect(const string &filename) {
+    freopen(filename.c_str(), "a", stderr);
 }
