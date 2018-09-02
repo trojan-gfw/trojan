@@ -11,7 +11,7 @@ Install these dependencies before you build:
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
 - [libmysqlclient](https://dev.mysql.com/downloads/connector/c/)
 
-For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libssl-dev default-libmysqlclient-dev` to install all the necessary dependencies.
+For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libboost-program-options-dev libssl-dev default-libmysqlclient-dev` to install all the necessary dependencies.
 
 ## Clone
 
