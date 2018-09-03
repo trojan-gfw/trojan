@@ -38,6 +38,7 @@ Service::Service(Config &config, bool test) :
     if (!test) {
         auto listen_endpoint = tcp::endpoint(address::from_string(config.local_addr), config.local_port);
         socket_acceptor.open(listen_endpoint.protocol());
+        socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
     }

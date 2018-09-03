@@ -62,7 +62,7 @@ int main(int argc, const char *argv[]) {
         po::notify(vm);
         if (vm.count("help")) {
             Log::log(string("usage: ") + argv[0] + " [-htv] [-l LOG] [[-c] CONFIG]", Log::FATAL);
-            cout << desc << endl;
+            cout << desc;
             return 0;
         }
         if (vm.count("version")) {
