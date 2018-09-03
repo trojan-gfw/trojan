@@ -18,7 +18,9 @@
  */
 
 #include "config.h"
-#include <boost/property_tree/ptree.hpp>
+#include <cstdlib>
+#include <sstream>
+#include <stdexcept>
 #include <boost/property_tree/json_parser.hpp>
 #include <openssl/sha.h>
 using namespace std;
@@ -27,6 +29,17 @@ using namespace boost::property_tree;
 void Config::load(const string &filename) {
     ptree tree;
     read_json(filename, tree);
+    populate(tree);
+}
+
+void Config::populate(const std::string &JSON) {
+    istringstream s(JSON);
+    ptree tree;
+    read_json(s, tree);
+    populate(tree);
+}
+
+void Config::populate(const ptree &tree) {
     string rt = tree.get("run_type", string("client"));
     if (rt == "server") {
         run_type = SERVER;
@@ -76,6 +89,30 @@ void Config::load(const string &filename) {
     mysql.database = tree.get("mysql.database", string("trojan"));
     mysql.username = tree.get("mysql.username", string("trojan"));
     mysql.password = tree.get("mysql.password", string());
+}
+
+bool Config::sip003() {
+    char *JSON = getenv("SS_PLUGIN_OPTIONS");
+    if (JSON == NULL) {
+        return false;
+    }
+    populate(JSON);
+    switch (run_type) {
+        case SERVER:
+            local_addr = getenv("SS_REMOTE_HOST");
+            local_port = atoi(getenv("SS_REMOTE_PORT"));
+            break;
+        case CLIENT:
+            throw runtime_error("SIP003 with wrong run_type");
+            break;
+        case FORWARD:
+            remote_addr = getenv("SS_REMOTE_HOST");
+            remote_port = atoi(getenv("SS_REMOTE_PORT"));
+            local_addr = getenv("SS_LOCAL_HOST");
+            local_port = atoi(getenv("SS_LOCAL_PORT"));
+            break;
+    }
+    return true;
 }
 
 string Config::SHA224(const string &message) {

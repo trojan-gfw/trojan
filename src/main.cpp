@@ -89,7 +89,11 @@ int main(int argc, const char *argv[]) {
         Config config;
         do {
             restart = false;
-            config.load(config_file);
+            if (config.sip003()) {
+                Log::log("SIP003 is loaded", Log::FATAL);
+            } else {
+                config.load(config_file);
+            }
             service = new Service(config, test);
             if (test) {
                 Log::log("The config file looks good.", Log::OFF);

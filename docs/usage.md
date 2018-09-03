@@ -21,4 +21,6 @@ Here, we will present a list of things you should do before you start a trojan s
 - Apply for or self-sign (**NOT RECOMMENDED**) an `SSL` certificate.
 - Correctly write the [config file](config).
 
+[Shadowsocks SIP003](https://shadowsocks.org/en/spec/Plugin.html) is supported by trojan, but it is added as an experimental feature and is not standard at all, so it will not be documented here.
+
 [Homepage](.) | [Prev Page](build)
