@@ -90,7 +90,7 @@ int main(int argc, const char *argv[]) {
         do {
             restart = false;
             if (config.sip003()) {
-                Log::log("SIP003 is loaded", Log::FATAL);
+                Log::log_with_date_time("SIP003 is loaded", Log::FATAL);
             } else {
                 config.load(config_file);
             }
