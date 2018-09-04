@@ -1,6 +1,6 @@
 # trojan
 
-[![Build Status](https://travis-ci.org/trojan-gfw/trojan.svg?branch=master)](https://travis-ci.org/trojan-gfw/trojan)
+[![Build Status](https://travis-ci.org/trojan-gfw/trojan.svg?branch=master)](https://travis-ci.org/trojan-gfw/trojan) [![Build Status](https://ci.appveyor.com/api/projects/status/e0ulqwb44i7j5gkl/branch/master?svg=true)](https://ci.appveyor.com/project/GreaterFire/trojan/branch/master)
 
 An unidentifiable mechanism that helps you bypass GFW.
 
