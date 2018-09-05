@@ -1,0 +1,30 @@
+{
+    "run_type": "forward",
+    "local_addr": "127.0.0.1",
+    "local_port": 20081,
+    "remote_addr": "127.0.0.1",
+    "remote_port": 10443,
+    "target_addr": "127.0.0.1",
+    "target_port": 10081,
+    "password": [
+        "linux-smoke-test-password"
+    ],
+    "append_payload": true,
+    "log_level": 0,
+    "ssl": {
+        "verify": true,
+        "verify_hostname": false,
+        "cert": "cert.pem",
+        "cipher": "",
+        "sni": "",
+        "alpn": [],
+        "reuse_session": false,
+        "curves": ""
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "fast_open": false,
+        "fast_open_qlen": 20
+    }
+}
