@@ -87,6 +87,9 @@ Service::Service(Config &config, bool test) :
 #endif // ENABLE_MYSQL
         }
     } else {
+        if (config.ssl.sni == "") {
+            config.ssl.sni = config.remote_addr;
+        }
         if (config.ssl.verify) {
             ssl_context.set_verify_mode(verify_peer);
             if (config.ssl.cert == "") {
