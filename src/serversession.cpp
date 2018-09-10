@@ -220,7 +220,7 @@ void ServerSession::out_sent() {
 
 void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) {
     if (status == UDP_FORWARD) {
-        uint16_t length = data.length();
+        size_t length = data.length();
         Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(length) + " bytes from " + endpoint.address().to_string() + ':' + to_string(endpoint.port()));
         recv_len += length;
         in_async_write(UDPPacket::generate(endpoint, data));
