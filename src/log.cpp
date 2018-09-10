@@ -18,7 +18,9 @@
  */
 
 #include "log.h"
-#include <cstdio>
+#include <cstring>
+#include <cerrno>
+#include <stdexcept>
 #include <sstream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
@@ -28,10 +30,12 @@ using namespace boost::asio::ip;
 
 Log::Level Log::level(INFO);
 
+FILE *Log::output_stream(stderr);
+
 void Log::log(const string &message, Level level) {
     if (level >= Log::level) {
-        fprintf(stderr, "%s\n", message.c_str());
-        fflush(stderr);
+        fprintf(output_stream, "%s\n", message.c_str());
+        fflush(output_stream);
     }
 }
 
@@ -42,13 +46,27 @@ void Log::log_with_date_time(const string &message, Level level) {
     stream.imbue(locale(stream.getloc(), facet));
     stream << second_clock::local_time();
     string level_string = '[' + string(level_strings[level]) + "] ";
-    Log::log(stream.str() + level_string + message, level);
+    log(stream.str() + level_string + message, level);
 }
 
 void Log::log_with_endpoint(const tcp::endpoint &endpoint, const string &message, Level level) {
-    Log::log_with_date_time(endpoint.address().to_string() + ':' + to_string(endpoint.port()) + ' ' + message, level);
+    log_with_date_time(endpoint.address().to_string() + ':' + to_string(endpoint.port()) + ' ' + message, level);
 }
 
 void Log::redirect(const string &filename) {
-    freopen(filename.c_str(), "a", stderr);
+    FILE *fp = fopen(filename.c_str(), "a");
+    if (fp == NULL) {
+        throw runtime_error(filename + ": " + strerror(errno));
+    }
+    if (output_stream != stderr) {
+        fclose(output_stream);
+    }
+    output_stream = fp;
+}
+
+void Log::reset() {
+    if (output_stream != stderr) {
+        fclose(output_stream);
+        output_stream = stderr;
+    }
 }
