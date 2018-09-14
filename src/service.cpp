@@ -67,6 +67,9 @@ Service::Service(Config &config, bool test) :
         }
         if (config.ssl.reuse_session) {
             SSL_CTX_set_timeout(native_context, config.ssl.session_timeout);
+            if (!config.ssl.session_ticket) {
+                SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+            }
         } else {
             SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
@@ -122,6 +125,14 @@ Service::Service(Config &config, bool test) :
         }
         if (config.ssl.alpn != "") {
             SSL_CTX_set_alpn_protos(native_context, (unsigned char*)(config.ssl.alpn.c_str()), config.ssl.alpn.length());
+        }
+        if (config.ssl.reuse_session) {
+            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_CLIENT);
+            if (!config.ssl.session_ticket) {
+                SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+            }
+        } else {
+            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
     }
     if (config.ssl.cipher != "") {

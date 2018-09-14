@@ -53,7 +53,9 @@ public:
         std::string sni;
         std::string alpn;
         bool reuse_session;
+        bool session_ticket;
         long session_timeout;
+        std::string plain_http_response;
         std::string curves;
         std::string dhparam;
     } ssl;

@@ -76,7 +76,9 @@ void Config::populate(const ptree &tree) {
         ssl.alpn += proto;
     }
     ssl.reuse_session = tree.get("ssl.reuse_session", true);
+    ssl.session_ticket = tree.get("ssl.session_ticket", false);
     ssl.session_timeout = tree.get("ssl.session_timeout", long(600));
+    ssl.plain_http_response = tree.get("ssl.plain_http_response", string());
     ssl.curves = tree.get("ssl.curves", string());
     ssl.dhparam = tree.get("ssl.dhparam", string());
     tcp.no_delay = tree.get("tcp.no_delay", true);

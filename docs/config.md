@@ -29,6 +29,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
             "http/1.1"
         ],
         "reuse_session": true,
+        "session_ticket": false,
         "curves": ""
     },
     "tcp": {
@@ -56,6 +57,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `sni`: the Server Name Indication field in the `SSL` handshake
     - `alpn`: a list of `ALPN` protocols to send
     - `reuse_session`: whether to reuse `SSL` session
+    - `session_ticket`: whether to use session tickets for session resumption
     - `curves`: `ECC` curves to send and use
 - `tcp`: `TCP` specific configurations
     - `no_delay`: whether to disable Nagle's algorithm
@@ -92,6 +94,7 @@ This forward config is for port forwarding. Everything is the same as the client
             "http/1.1"
         ],
         "reuse_session": true,
+        "session_ticket": false,
         "curves": ""
     },
     "tcp": {
@@ -127,7 +130,9 @@ This forward config is for port forwarding. Everything is the same as the client
             "http/1.1"
         ],
         "reuse_session": true,
+        "session_ticket": false,
         "session_timeout": 600,
+        "plain_http_response": "",
         "curves": "",
         "dhparam": ""
     },
@@ -163,7 +168,9 @@ This forward config is for port forwarding. Everything is the same as the client
     - `prefer_server_cipher`: whether to prefer server cipher list in a connection
     - `alpn`: a list of `ALPN` protocols to reply
     - `reuse_session`: whether to reuse `SSL` session
+    - `session_ticket`: whether to use session tickets for session resumption
     - `session_timeout`: if `reuse_session` is set to `true`, specify `SSL` session timeout
+    - `plain_http_response`: respond to plain http request with this file
     - `curves`: `ECC` curves to use
     - `dhparam`: if left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used
 - `tcp`: `TCP` specific configurations
