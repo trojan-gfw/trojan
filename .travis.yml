@@ -8,4 +8,5 @@ install:
 script:
   - cmake -DCMAKE_INSTALL_PREFIX=/usr -DSYSTEMD_SERVICE=ON .
   - sudo make install
+  - ./trojan -v
   - ctest
