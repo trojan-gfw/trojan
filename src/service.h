@@ -31,6 +31,7 @@ private:
     boost::asio::ip::tcp::acceptor socket_acceptor;
     boost::asio::ssl::context ssl_context;
     Authenticator *auth;
+    std::string plain_http_response;
     void async_accept();
 public:
     Service(Config &config, bool test = false);

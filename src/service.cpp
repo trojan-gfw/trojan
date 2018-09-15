@@ -18,6 +18,9 @@
  */
 
 #include "service.h"
+#include <cstring>
+#include <cerrno>
+#include <fstream>
 #ifdef _WIN32
 #include <wincrypt.h>
 #endif // _WIN32
@@ -74,6 +77,13 @@ Service::Service(Config &config, bool test) :
         } else {
             SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+        }
+        if (config.ssl.plain_http_response != "") {
+            ifstream ifs(config.ssl.plain_http_response, ios::binary);
+            if (!ifs.is_open()) {
+                throw runtime_error(config.ssl.plain_http_response + ": " + strerror(errno));
+            }
+            plain_http_response = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
         }
         if (config.ssl.dhparam == "") {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
