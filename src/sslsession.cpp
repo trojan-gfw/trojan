@@ -28,6 +28,7 @@ int SSLSession::new_session_cb(SSL*, SSL_SESSION *session) {
 }
 
 void SSLSession::remove_session_cb(SSL_CTX*, SSL_SESSION *session) {
+    SSL_SESSION_free(session);
     sessions.remove(session);
 }
 
