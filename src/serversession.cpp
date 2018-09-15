@@ -24,13 +24,14 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context, Authenticator *auth) :
+ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context, Authenticator *auth, const string &plain_http_response) :
     Session(config, io_service),
     status(HANDSHAKE),
     in_socket(io_service, ssl_context),
     out_socket(io_service),
     udp_resolver(io_service),
-    auth(auth) {}
+    auth(auth),
+    plain_http_response(plain_http_response) {}
 
 tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.lowest_layer();
@@ -43,6 +44,13 @@ void ServerSession::start() {
     in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
         if (error) {
             Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
+            if (error.message() == "http request" && plain_http_response != "") {
+                sent_len += plain_http_response.length();
+                boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
+                    destroy();
+                });
+                return;
+            }
             destroy();
             return;
         }

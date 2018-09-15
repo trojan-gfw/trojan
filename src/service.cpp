@@ -202,7 +202,7 @@ void Service::stop() {
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_service, ssl_context, auth);
+        session = make_shared<ServerSession>(config, io_service, ssl_context, auth, plain_http_response);
     } else if (config.run_type == Config::FORWARD) {
         session = make_shared<ForwardSession>(config, io_service, ssl_context);
     } else {
