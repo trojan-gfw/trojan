@@ -37,7 +37,7 @@ private:
     boost::asio::ip::udp::resolver udp_resolver;
     Authenticator *auth;
     std::string auth_password;
-    std::string plain_http_response;
+    const std::string &plain_http_response;
     void destroy();
     void in_async_read();
     void in_async_write(const std::string &data);
