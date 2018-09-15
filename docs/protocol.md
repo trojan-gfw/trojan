@@ -4,7 +4,7 @@ We will now show how a trojan server will react to a **valid Trojan Protocol** a
 
 ## Valid Trojan Protocol
 
-When a trojan client connects to a server, it first performs a **real** `TLS` handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately as any `HTTPS` server would. Then the client sends the following structure:
+When a trojan client connects to a server, it first performs a **real** `TLS` handshake. If the handshake succeeds, all subsequent traffic will be protected by `TLS`; otherwise, the server will close the connection immediately as any `HTTPS` server would. (Trojan now also supports nginx-like response to plain HTTP requests.) Then the client sends the following structure:
 
 ```
 +-----------------------+---------+----------------+---------+----------+
