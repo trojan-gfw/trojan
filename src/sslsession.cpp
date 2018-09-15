@@ -24,11 +24,10 @@ list<SSL_SESSION*>SSLSession::sessions;
 
 int SSLSession::new_session_cb(SSL*, SSL_SESSION *session) {
     sessions.push_front(session);
-    return 1;
+    return 0;
 }
 
 void SSLSession::remove_session_cb(SSL_CTX*, SSL_SESSION *session) {
-    SSL_SESSION_free(session);
     sessions.remove(session);
 }
 
