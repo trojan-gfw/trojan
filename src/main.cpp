@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstdlib>
 #include <csignal>
 #include <iostream>
 #include <boost/program_options.hpp>
@@ -110,10 +111,10 @@ int main(int argc, const char *argv[]) {
                 Log::log_with_date_time("trojan service restarting. . . ", Log::FATAL);
             }
         } while (restart);
-        return 0;
+        exit(EXIT_SUCCESS);
     } catch (const exception &e) {
         Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
         Log::log_with_date_time("exiting. . . ", Log::FATAL);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 }

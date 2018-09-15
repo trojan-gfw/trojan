@@ -23,7 +23,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
         "verify_hostname": true,
         "cert": "",
         "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
-        "sni": "example.com",
+        "sni": "",
         "alpn": [
             "h2",
             "http/1.1"
@@ -54,7 +54,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `verify_hostname`: whether to verify `SSL` hostname (specified in the `sni` field) **STRONGLY RECOMMENDED**
     - `cert`: if `verify` is set to `true`, the same certificate used by the server or a collection of `CA` certificates could be provided. If you leave this field blank, `OpenSSL` will try to look for a system `CA` store and will be likely to fail.
     - `cipher`: a cipher list to send and use
-    - `sni`: the Server Name Indication field in the `SSL` handshake
+    - `sni`: the Server Name Indication field in the `SSL` handshake. If left blank, it will be set to `remote_addr`.
     - `alpn`: a list of `ALPN` protocols to send
     - `reuse_session`: whether to reuse `SSL` session
     - `session_ticket`: whether to use session tickets for session resumption
@@ -88,7 +88,7 @@ This forward config is for port forwarding. Everything is the same as the client
         "verify_hostname": true,
         "cert": "",
         "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-CHACHA20-POLY1305-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RSA-AES128-GCM-SHA256:RSA-AES256-GCM-SHA384:RSA-AES128-SHA:RSA-AES256-SHA:RSA-3DES-EDE-SHA",
-        "sni": "example.com",
+        "sni": "",
         "alpn": [
             "h2",
             "http/1.1"

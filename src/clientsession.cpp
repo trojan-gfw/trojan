@@ -318,7 +318,7 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint&) {
         destroy();
         return;
     }
-    uint16_t length = data.length() - 3 - address_len;
+    size_t length = data.length() - 3 - address_len;
     Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " bytes to " + address.address + ':' + to_string(address.port));
     string packet = data.substr(3, address_len) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data.substr(address_len + 3);
     sent_len += length;
