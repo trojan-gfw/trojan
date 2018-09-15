@@ -19,11 +19,10 @@
 
 #include "forwardsession.h"
 #include "trojanrequest.h"
+#include "sslsession.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
-
-SSL_SESSION *ForwardSession::ssl_session(NULL);
 
 ForwardSession::ForwardSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
     Session(config, io_service),
@@ -43,8 +42,11 @@ void ForwardSession::start() {
     if (config.ssl.sni != "") {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
     }
-    if (config.ssl.reuse_session && ssl_session) {
-        SSL_set_session(ssl, ssl_session);
+    if (config.ssl.reuse_session) {
+        SSL_SESSION *session = SSLSession::get_session();
+        if (session) {
+            SSL_set_session(ssl, session);
+        }
     }
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port);
     if (config.append_payload) {
@@ -91,10 +93,6 @@ void ForwardSession::start() {
                     auto ssl = out_socket.native_handle();
                     if (!SSL_session_reused(ssl)) {
                         Log::log_with_endpoint(in_endpoint, "SSL session not reused");
-                        if (ssl_session) {
-                            SSL_SESSION_free(ssl_session);
-                        }
-                        ssl_session = SSL_get1_session(ssl);
                     } else {
                         Log::log_with_endpoint(in_endpoint, "SSL session reused");
                     }

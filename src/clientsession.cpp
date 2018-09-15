@@ -20,11 +20,10 @@
 #include "clientsession.h"
 #include "trojanrequest.h"
 #include "udppacket.h"
+#include "sslsession.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
-
-SSL_SESSION *ClientSession::ssl_session(NULL);
 
 ClientSession::ClientSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
     Session(config, io_service),
@@ -44,8 +43,11 @@ void ClientSession::start() {
     if (config.ssl.sni != "") {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
     }
-    if (config.ssl.reuse_session && ssl_session) {
-        SSL_set_session(ssl, ssl_session);
+    if (config.ssl.reuse_session) {
+        SSL_SESSION *session = SSLSession::get_session();
+        if (session) {
+            SSL_set_session(ssl, session);
+        }
     }
     in_async_read();
 }
@@ -247,10 +249,6 @@ void ClientSession::in_sent() {
                             auto ssl = out_socket.native_handle();
                             if (!SSL_session_reused(ssl)) {
                                 Log::log_with_endpoint(in_endpoint, "SSL session not reused");
-                                if (ssl_session) {
-                                    SSL_SESSION_free(ssl_session);
-                                }
-                                ssl_session = SSL_get1_session(ssl);
                             } else {
                                 Log::log_with_endpoint(in_endpoint, "SSL session reused");
                             }

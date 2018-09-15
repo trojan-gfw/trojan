@@ -26,6 +26,7 @@
 #include "clientsession.h"
 #include "forwardsession.h"
 #include "ssldefaults.h"
+#include "sslsession.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -128,6 +129,7 @@ Service::Service(Config &config, bool test) :
         }
         if (config.ssl.reuse_session) {
             SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_CLIENT);
+            SSLSession::set_callback(native_context);
             if (!config.ssl.session_ticket) {
                 SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
             }
