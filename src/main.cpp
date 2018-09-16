@@ -69,7 +69,7 @@ int main(int argc, const char *argv[]) {
         if (vm.count("help")) {
             Log::log(string("usage: ") + argv[0] + " [-htv] [-l LOG] [[-c] CONFIG]", Log::FATAL);
             cerr << desc;
-            return 0;
+            exit(EXIT_SUCCESS);
         }
         if (vm.count("version")) {
             Log::log(string("Boost ") + BOOST_LIB_VERSION + ", " + OPENSSL_VERSION_TEXT, Log::FATAL);
@@ -88,7 +88,7 @@ int main(int argc, const char *argv[]) {
 #else // TCP_FASTOPEN_CONNECT
             Log::log("[Disabled] TCP_FASTOPEN_CONNECT Support", Log::FATAL);
 #endif // TCP_FASTOPEN_CONNECT
-            return 0;
+            exit(EXIT_SUCCESS);
         }
         if (vm.count("log")) {
             Log::redirect(log_file);
@@ -104,7 +104,7 @@ int main(int argc, const char *argv[]) {
             service = new Service(config, test);
             if (test) {
                 Log::log("The config file looks good.", Log::OFF);
-                return 0;
+                exit(EXIT_SUCCESS);
             }
             signal(SIGINT, handleTermination);
             signal(SIGTERM, handleTermination);
