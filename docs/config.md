@@ -170,7 +170,7 @@ This forward config is for port forwarding. Everything is the same as the client
     - `reuse_session`: whether to reuse `SSL` session
     - `session_ticket`: whether to use session tickets for session resumption
     - `session_timeout`: if `reuse_session` is set to `true`, specify `SSL` session timeout
-    - `plain_http_response`: respond to plain http request with this file
+    - `plain_http_response`: respond to plain http request with this file (raw TCP)
     - `curves`: `ECC` curves to use
     - `dhparam`: if left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used
 - `tcp`: `TCP` specific configurations
