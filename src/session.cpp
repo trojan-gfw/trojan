@@ -24,3 +24,5 @@ Session::Session(const Config &config, boost::asio::io_service &io_service) : co
                                                                               sent_len(0),
                                                                               resolver(io_service),
                                                                               udp_socket(io_service) {}
+
+Session::~Session() {}
