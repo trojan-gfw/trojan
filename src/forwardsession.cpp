@@ -54,6 +54,7 @@ void ForwardSession::start() {
     } else {
         first_packet_recv = true;
     }
+    Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
     auto self = shared_from_this();
     resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
