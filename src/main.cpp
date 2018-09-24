@@ -54,7 +54,10 @@ int main(int argc, const char *argv[]) {
 #ifdef _WIN32
             ("config,c", po::value<string>(&config_file)->default_value("config.json")->value_name("CONFIG"), "specify config file")
 #else // _WIN32
-            ("config,c", po::value<string>(&config_file)->default_value("/etc/trojan/config.json")->value_name("CONFIG"), "specify config file")
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/etc"
+#endif // SYSCONFDIR
+            ("config,c", po::value<string>(&config_file)->default_value(string(SYSCONFDIR) + "/trojan/config.json")->value_name("CONFIG"), "specify config file")
 #endif // _WIN32
             ("help,h", "print help message")
             ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")

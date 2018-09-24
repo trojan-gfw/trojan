@@ -10,7 +10,7 @@ options:
   -v [ --version ]       print version and build info
 ```
 
-The default value for CONFIG is `/etc/trojan/config.json` in Linux and `config.json` in Windows. Trojan will not terminate if you leave it in the background.
+The default value for CONFIG is where the default config is installed in Linux and `config.json` in Windows. Trojan will not terminate if you leave it in the background.
 
 Make sure your [config file](config) is valid. Configuring trojan is not trivial: there are several ideas you need to understand and several pitfalls you might fall into. Unless you are an expert, you shouldn't configure a trojan server all by yourself.
 
