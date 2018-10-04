@@ -31,6 +31,10 @@
 using namespace std;
 namespace po = boost::program_options;
 
+#ifndef DEFAULT_CONFIG
+#define DEFAULT_CONFIG "config.json"
+#endif // DEFAULT_CONFIG
+
 Service *service;
 bool restart;
 
@@ -51,14 +55,7 @@ int main(int argc, const char *argv[]) {
         bool test;
         po::options_description desc("options");
         desc.add_options()
-#ifdef _WIN32
-            ("config,c", po::value<string>(&config_file)->default_value("config.json")->value_name("CONFIG"), "specify config file")
-#else // _WIN32
-#ifndef SYSCONFDIR
-#define SYSCONFDIR "/etc"
-#endif // SYSCONFDIR
-            ("config,c", po::value<string>(&config_file)->default_value(string(SYSCONFDIR) + "/trojan/config.json")->value_name("CONFIG"), "specify config file")
-#endif // _WIN32
+            ("config,c", po::value<string>(&config_file)->default_value(DEFAULT_CONFIG)->value_name("CONFIG"), "specify config file")
             ("help,h", "print help message")
             ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
             ("test,t", po::bool_switch(&test), "test config file")
