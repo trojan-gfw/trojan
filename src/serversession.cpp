@@ -160,9 +160,9 @@ void ServerSession::in_recv(const string &data) {
         }
         sent_len += out_write_buf.length();
         auto self = shared_from_this();
-        resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+        resolver.async_resolve(query, [this, self, query](const boost::system::error_code error, tcp::resolver::iterator iterator) {
             if (error) {
-                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname: " + error.message(), Log::ERROR);
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
             }
@@ -180,9 +180,9 @@ void ServerSession::in_recv(const string &data) {
                 out_socket.set_option(fastopen_connect(true), ec);
             }
 #endif // TCP_FASTOPEN_CONNECT
-            out_socket.async_connect(*iterator, [this, self](const boost::system::error_code error) {
+            out_socket.async_connect(*iterator, [this, self, query](const boost::system::error_code error) {
                 if (error) {
-                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server: " + error.message(), Log::ERROR);
+                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query.host_name() + ':' + query.service_name() + ": " + error.message(), Log::ERROR);
                     destroy();
                     return;
                 }
@@ -252,9 +252,9 @@ void ServerSession::udp_sent() {
         udp_data_buf = udp_data_buf.substr(packet_len);
         udp::resolver::query query(packet.address.address, to_string(packet.address.port));
         auto self = shared_from_this();
-        udp_resolver.async_resolve(query, [this, self, packet](const boost::system::error_code error, udp::resolver::iterator iterator) {
+        udp_resolver.async_resolve(query, [this, self, packet, query](const boost::system::error_code error, udp::resolver::iterator iterator) {
             if (error) {
-                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname: " + error.message(), Log::ERROR);
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
             }
