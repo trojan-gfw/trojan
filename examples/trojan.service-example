@@ -1,5 +1,6 @@
 [Unit]
 Description=trojan
+Documentation=man:trojan(1)
 After=network.target mysql.service mariadb.service mysqld.service
 
 [Service]
