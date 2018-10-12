@@ -6,7 +6,7 @@ We'll only cover the build process on Linux since we will be providing Windows a
 
 Install these dependencies before you build:
 
-- [CMake](https://cmake.org/) >= 3.1
+- [CMake](https://cmake.org/) >= 3.7.2
 - [Boost](http://www.boost.org/) >= 1.54.0
 - [OpenSSL](https://www.openssl.org/) >= 1.0.2
 - [libmysqlclient](https://dev.mysql.com/downloads/connector/c/)
@@ -44,6 +44,12 @@ The `cmake ..` command can be extended with the following options:
 - `ENABLE_MYSQL`
     - `-DENABLE_MYSQL=ON`: build with MySQL support (default).
     - `-DENABLE_MYSQL=OFF`: build without MySQL support.
+- `ENABLE_SSL_KEYLOG` (OpenSSL >= 1.1.1)
+    - `-DENABLE_SSL_KEYLOG=ON`: build with SSL KeyLog support (default).
+    - `-DENABLE_SSL_KEYLOG=OFF`: build without SSL KeyLog support.
+- `FORCE_TCP_FASTOPEN`
+    - `-DFORCE_TCP_FASTOPEN=ON`: force build with TCP_FASTOPEN support.
+    - `-DFORCE_TCP_FASTOPEN=OFF`: build with TCP_FASTOPEN support based on system capacity (default).
 - `SYSTEMD_SERVICE`
     - `-DSYSTEMD_SERVICE=AUTO`: detect systemd automatically and decide whether to install service (default).
     - `-DSYSTEMD_SERVICE=ON`: install systemd service unconditionally.

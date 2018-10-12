@@ -3,7 +3,7 @@
 trojan \- an unidentifiable mechanism that helps you bypass GFW
 .SH SYNOPSIS
 .B trojan
-[\fB\-htv\fR] [\fB\-l\fR \fILOG\fR] [[\fB\-c\fR] \fICONFIG\fR]
+[\fB\-htv\fR] [\fB\-l\fR \fILOG\fR] [\fB\-k\fR \fIKEYLOG\fR] [[\fB\-c\fR] \fICONFIG\fR]
 .SH DESCRIPTION
 .B trojan
 is an unidentifiable mechanism that helps you bypass GFW. It will load the config file located in
@@ -16,6 +16,9 @@ Set the config file to be loaded. Default is \fI/etc/trojan/config.json\fR.
 .TP
 .BR \-h, " " \-\-help
 Print help message.
+.TP
+.BR \-k, " " \-\-keylog=\fIKEYLOG\fR
+Set the keylog file to be written.
 .TP
 .BR \-l, " " \-\-log=\fILOG\fR
 Set the log file to be written. If not specified, the log will be outputted to stderr.

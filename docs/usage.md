@@ -1,10 +1,11 @@
 # Usage
 
 ```
-usage: ./trojan [-htv] [-l LOG] [[-c] CONFIG]
+usage: ./trojan [-htv] [-l LOG] [-k KEYLOG] [[-c] CONFIG]
 options:
   -c [ --config ] CONFIG specify config file
   -h [ --help ]          print help message
+  -k [ --keylog ] KEYLOG specify keylog file location (OpenSSL >= 1.1.1)
   -l [ --log ] LOG       specify log file location
   -t [ --test ]          test config file
   -v [ --version ]       print version and build info
