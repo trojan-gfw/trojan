@@ -29,7 +29,7 @@ using namespace boost::posix_time;
 using namespace boost::asio::ip;
 
 Log::Level Log::level(INFO);
-
+FILE *Log::keylog(NULL);
 FILE *Log::output_stream(stderr);
 
 void Log::log(const string &message, Level level) {
@@ -64,9 +64,24 @@ void Log::redirect(const string &filename) {
     output_stream = fp;
 }
 
+void Log::redirect_keylog(const string &filename) {
+    FILE *fp = fopen(filename.c_str(), "a");
+    if (fp == NULL) {
+        throw runtime_error(filename + ": " + strerror(errno));
+    }
+    if (keylog != NULL) {
+        fclose(keylog);
+    }
+    keylog = fp;
+}
+
 void Log::reset() {
     if (output_stream != stderr) {
         fclose(output_stream);
         output_stream = stderr;
+    }
+    if (keylog != NULL) {
+        fclose(keylog);
+        keylog = NULL;
     }
 }

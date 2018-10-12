@@ -39,10 +39,12 @@ public:
         OFF = 5
     };
     static Level level;
+    static FILE *keylog;
     static void log(const std::string &message, Level level = ALL);
     static void log_with_date_time(const std::string &message, Level level = ALL);
     static void log_with_endpoint(const boost::asio::ip::tcp::endpoint &endpoint, const std::string &message, Level level = ALL);
     static void redirect(const std::string &filename);
+    static void redirect_keylog(const std::string &filename);
     static void reset();
 private:
     static FILE *output_stream;

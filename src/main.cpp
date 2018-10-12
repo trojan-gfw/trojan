@@ -52,11 +52,13 @@ int main(int argc, const char *argv[]) {
         Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
         string config_file;
         string log_file;
+        string keylog_file;
         bool test;
         po::options_description desc("options");
         desc.add_options()
             ("config,c", po::value<string>(&config_file)->default_value(DEFAULT_CONFIG)->value_name("CONFIG"), "specify config file")
             ("help,h", "print help message")
+            ("keylog,k", po::value<string>(&keylog_file)->value_name("KEYLOG"), "specify keylog file location (OpenSSL >= 1.1.1)")
             ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
             ("test,t", po::bool_switch(&test), "test config file")
             ("version,v", "print version and build info")
@@ -67,7 +69,7 @@ int main(int argc, const char *argv[]) {
         po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
         po::notify(vm);
         if (vm.count("help")) {
-            Log::log(string("usage: ") + argv[0] + " [-htv] [-l LOG] [[-c] CONFIG]", Log::FATAL);
+            Log::log(string("usage: ") + argv[0] + " [-htv] [-l LOG] [-k KEYLOG] [[-c] CONFIG]", Log::FATAL);
             cerr << desc;
             exit(EXIT_SUCCESS);
         }
@@ -88,10 +90,18 @@ int main(int argc, const char *argv[]) {
 #else // TCP_FASTOPEN_CONNECT
             Log::log("[Disabled] TCP_FASTOPEN_CONNECT Support", Log::FATAL);
 #endif // TCP_FASTOPEN_CONNECT
+#if ENABLE_SSL_KEYLOG
+            Log::log(" [Enabled] SSL KeyLog Support", Log::FATAL);
+#else // ENABLE_SSL_KEYLOG
+            Log::log("[Disabled] SSL KeyLog Support", Log::FATAL);
+#endif // ENABLE_SSL_KEYLOG
             exit(EXIT_SUCCESS);
         }
         if (vm.count("log")) {
             Log::redirect(log_file);
+        }
+        if (vm.count("keylog")) {
+            Log::redirect_keylog(keylog_file);
         }
         Config config;
         do {
@@ -117,6 +127,7 @@ int main(int argc, const char *argv[]) {
                 Log::log_with_date_time("trojan service restarting. . . ", Log::FATAL);
             }
         } while (restart);
+        Log::reset();
         exit(EXIT_SUCCESS);
     } catch (const exception &e) {
         Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);

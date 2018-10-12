@@ -20,6 +20,7 @@
 #include "service.h"
 #include <cstring>
 #include <cerrno>
+#include <stdexcept>
 #include <fstream>
 #ifdef _WIN32
 #include <wincrypt.h>
@@ -176,6 +177,16 @@ Service::Service(Config &config, bool test) :
             Log::log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
         }
 #endif // TCP_FASTOPEN_CONNECT
+    }
+    if (Log::keylog) {
+#ifdef ENABLE_SSL_KEYLOG
+        SSL_CTX_set_keylog_callback(native_context, [](const SSL*, const char *line) {
+            fprintf(Log::keylog, "%s\n", line);
+            fflush(Log::keylog);
+        });
+#else // ENABLE_SSL_KEYLOG
+        Log::log_with_date_time("SSL KeyLog is not supported", Log::WARN);
+#endif // ENABLE_SSL_KEYLOG
     }
 }
 
