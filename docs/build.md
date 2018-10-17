@@ -49,7 +49,7 @@ The `cmake ..` command can be extended with the following options:
     - `-DENABLE_SSL_KEYLOG=OFF`: build without SSL KeyLog support.
 - `FORCE_TCP_FASTOPEN`
     - `-DFORCE_TCP_FASTOPEN=ON`: force build with TCP_FASTOPEN support.
-    - `-DFORCE_TCP_FASTOPEN=OFF`: build with TCP_FASTOPEN support based on system capacity (default).
+    - `-DFORCE_TCP_FASTOPEN=OFF`: build with TCP_FASTOPEN support based on system capabilities (default).
 - `SYSTEMD_SERVICE`
     - `-DSYSTEMD_SERVICE=AUTO`: detect systemd automatically and decide whether to install service (default).
     - `-DSYSTEMD_SERVICE=ON`: install systemd service unconditionally.
