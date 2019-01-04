@@ -8,7 +8,7 @@ When a trojan client connects to a server, it first performs a **real** `TLS` ha
 
 ```
 +-----------------------+---------+----------------+---------+----------+
-| hex(ssh224(password)) |  CRLF   | Trojan Request |  CRLF   | Payload  |
+| hex(SHA224(password)) |  CRLF   | Trojan Request |  CRLF   | Payload  |
 +-----------------------+---------+----------------+---------+----------+
 |          56           | X'0D0A' |    Variable    | X'0D0A' | Variable |
 +-----------------------+---------+----------------+---------+----------+
