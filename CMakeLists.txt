@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.7.2)
 project(trojan)
+set(Boost_INCLUDE_DIR /opt/boost/include)
+set(Boost_LIBRARIES /opt/boost/lib)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -27,6 +30,7 @@ add_executable(trojan
     src/version.cpp)
 find_package(Threads REQUIRED)
 target_link_libraries(trojan ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(trojan microhttpd)
 find_package(Boost 1.54.0 REQUIRED COMPONENTS system program_options)
 include_directories(${Boost_INCLUDE_DIR})
 target_link_libraries(trojan ${Boost_LIBRARIES})

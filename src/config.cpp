@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <boost/property_tree/json_parser.hpp>
 #include <openssl/sha.h>
+
 using namespace std;
 using namespace boost::property_tree;
 
@@ -50,12 +51,14 @@ void Config::populate(const ptree &tree) {
     }
     local_addr = tree.get("local_addr", string());
     local_port = tree.get("local_port", uint16_t());
+    pac_server_port = tree.get("pac_server_port", uint16_t());
+    pac_server_flag = tree.get("pac_server_flag", string());
     remote_addr = tree.get("remote_addr", string());
     remote_port = tree.get("remote_port", uint16_t());
     target_addr = tree.get("target_addr", string());
     target_port = tree.get("target_port", uint16_t());
     map<string, string>().swap(password);
-    for (auto& item: tree.get_child("password")) {
+    for (auto &item: tree.get_child("password")) {
         string p = item.second.get_value<string>();
         password[SHA224(p)] = p;
     }
@@ -70,9 +73,9 @@ void Config::populate(const ptree &tree) {
     ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
     ssl.sni = tree.get("ssl.sni", string());
     ssl.alpn = "";
-    for (auto& item: tree.get_child("ssl.alpn")) {
+    for (auto &item: tree.get_child("ssl.alpn")) {
         string proto = item.second.get_value<string>();
-        ssl.alpn += (char)((unsigned char)(proto.length()));
+        ssl.alpn += (char) ((unsigned char) (proto.length()));
         ssl.alpn += proto;
     }
     ssl.reuse_session = tree.get("ssl.reuse_session", true);
@@ -125,7 +128,7 @@ string Config::SHA224(const string &message) {
     SHA224_Final(digest, &ctx);
     char mdString[(SHA224_DIGEST_LENGTH << 1) + 1];
     for (int i = 0; i < SHA224_DIGEST_LENGTH; ++i) {
-        sprintf(mdString + (i << 1), "%02x", (unsigned int)digest[i]);
+        sprintf(mdString + (i << 1), "%02x", (unsigned int) digest[i]);
     }
     return string(mdString);
 }

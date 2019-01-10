@@ -23,11 +23,19 @@
 #include <boost/program_options.hpp>
 #include <boost/version.hpp>
 #include <openssl/opensslv.h>
+
+#include <microhttpd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
+
 #include "service.h"
 #include "version.h"
+
 using namespace std;
 namespace po = boost::program_options;
 
@@ -35,8 +43,16 @@ namespace po = boost::program_options;
 #define DEFAULT_CONFIG "config.json"
 #endif // DEFAULT_CONFIG
 
+#ifndef DEFAULT_PAC_CONFIG
+#define DEFAULT_PAC_CONFIG "pac.conf"
+#endif // DEFAULT_PAC_CONFIG
+char *pac_fcontent = NULL;
+
+int startPacServer(uint16_t pacServerPort, std::string pac_server_flag, std::string local_addr, uint16_t localSockPort);
+
 Service *service;
 bool restart;
+uint16_t pac_local_port;
 
 void handleTermination(int) {
     service->stop();
@@ -56,13 +72,14 @@ int main(int argc, const char *argv[]) {
         bool test;
         po::options_description desc("options");
         desc.add_options()
-            ("config,c", po::value<string>(&config_file)->default_value(DEFAULT_CONFIG)->value_name("CONFIG"), "specify config file")
-            ("help,h", "print help message")
-            ("keylog,k", po::value<string>(&keylog_file)->value_name("KEYLOG"), "specify keylog file location (OpenSSL >= 1.1.1)")
-            ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
-            ("test,t", po::bool_switch(&test), "test config file")
-            ("version,v", "print version and build info")
-        ;
+                ("config,c", po::value<string>(&config_file)->default_value(DEFAULT_CONFIG)->value_name("CONFIG"),
+                 "specify config file")
+                ("help,h", "print help message")
+                ("keylog,k", po::value<string>(&keylog_file)->value_name("KEYLOG"),
+                 "specify keylog file location (OpenSSL >= 1.1.1)")
+                ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
+                ("test,t", po::bool_switch(&test), "test config file")
+                ("version,v", "print version and build info");
         po::positional_options_description pd;
         pd.add("config", 1);
         po::variables_map vm;
@@ -111,6 +128,7 @@ int main(int argc, const char *argv[]) {
             } else {
                 config.load(config_file);
             }
+            pac_local_port = config.local_port;
             service = new Service(config, test);
             if (test) {
                 Log::log("The config file looks good.", Log::OFF);
@@ -121,6 +139,17 @@ int main(int argc, const char *argv[]) {
 #ifndef _WIN32
             signal(SIGHUP, restartService);
 #endif // _WIN32
+
+            // start pac http server
+
+            int pacServerStat = startPacServer(config.pac_server_port, config.pac_server_flag, config.local_addr,
+                                               config.local_port);
+            if (pacServerStat != 0) {
+                Log::log_with_date_time("Pac server failed to open.", Log::FATAL);
+            } else {
+                Log::log_with_date_time("Start PAC Server : http://127.0.0.1:" + std::to_string(config.pac_server_port), Log::INFO);
+            }
+
             service->run();
             delete service;
             if (restart) {
@@ -135,3 +164,72 @@ int main(int argc, const char *argv[]) {
         exit(EXIT_FAILURE);
     }
 }
+
+char *createPacPage(const char *fileUri) {
+
+    FILE *fp;
+    fp = fopen(fileUri, "r");
+    char *fcontent = NULL;
+    if (fp == NULL) {
+        return NULL;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if (size) {
+        fcontent = (char *) malloc(size * sizeof(char) + 100);
+        int point = sprintf(fcontent, "var proxy = \"SOCKS5 127.0.0.1:%d\"; \n", pac_local_port);
+
+        if (point > 0) {
+            long readsize = fread(fcontent + point, 1, size, fp);
+        }
+
+    }
+    fclose(fp);
+
+    return fcontent;
+}
+
+static int
+answer_to_connection(void *cls, struct MHD_Connection *connection,
+                     const char *url, const char *method,
+                     const char *version, const char *upload_data,
+                     size_t *upload_data_size, void **con_cls) {
+
+
+    if (pac_fcontent == NULL) {
+        pac_fcontent = createPacPage(DEFAULT_PAC_CONFIG);
+    }
+
+    struct MHD_Response *response;
+    int ret;
+
+    response =
+            MHD_create_response_from_buffer(strlen(pac_fcontent), (void *) pac_fcontent,
+                                            MHD_RESPMEM_PERSISTENT);
+    ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    MHD_destroy_response(response);
+
+    return ret;
+}
+
+int
+startPacServer(uint16_t pacServerPort, std::string pac_server_flag, std::string local_addr, uint16_t localSockPort) {
+
+    struct MHD_Daemon *daemon;
+
+    daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, pacServerPort, NULL, NULL,
+                              &answer_to_connection, NULL, MHD_OPTION_END);
+    if (NULL == daemon)
+        return -1;
+
+    //getchar ();
+
+    //MHD_stop_daemon (daemon);
+    return 0;
+
+
+}
+
