@@ -24,15 +24,12 @@
 #include <boost/version.hpp>
 #include <openssl/opensslv.h>
 
-#include <microhttpd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
 
+#include "pacServer.h"
 #include "service.h"
 #include "version.h"
 
@@ -43,19 +40,15 @@ namespace po = boost::program_options;
 #define DEFAULT_CONFIG "config.json"
 #endif // DEFAULT_CONFIG
 
-#ifndef DEFAULT_PAC_CONFIG
-#define DEFAULT_PAC_CONFIG "pac.conf"
-#endif // DEFAULT_PAC_CONFIG
-char *pac_fcontent = NULL;
-
-int startPacServer(uint16_t pacServerPort, std::string pac_server_flag, std::string local_addr, uint16_t localSockPort);
-
 Service *service;
 bool restart;
-uint16_t pac_local_port;
 
 void handleTermination(int) {
     service->stop();
+    if (pac_fcontent != NULL) {
+        free(pac_fcontent);
+        pac_fcontent = NULL;
+    }
 }
 
 void restartService(int) {
@@ -141,13 +134,14 @@ int main(int argc, const char *argv[]) {
 #endif // _WIN32
 
             // start pac http server
-
-            int pacServerStat = startPacServer(config.pac_server_port, config.pac_server_flag, config.local_addr,
-                                               config.local_port);
-            if (pacServerStat != 0) {
-                Log::log_with_date_time("Pac server failed to open.", Log::FATAL);
-            } else {
-                Log::log_with_date_time("Start PAC Server : http://127.0.0.1:" + std::to_string(config.pac_server_port), Log::INFO);
+            if (config.run_type == Config::CLIENT){
+                int pacServerStat = startPacServer(config.pac_server_port);
+                if (pacServerStat != 0) {
+                    Log::log_with_date_time("Pac server failed to open.", Log::FATAL);
+                } else {
+                    Log::log_with_date_time("Start PAC Server : http://127.0.0.1:" + std::to_string(config.pac_server_port),
+                                            Log::INFO);
+                }
             }
 
             service->run();
@@ -163,73 +157,5 @@ int main(int argc, const char *argv[]) {
         Log::log_with_date_time("exiting. . . ", Log::FATAL);
         exit(EXIT_FAILURE);
     }
-}
-
-char *createPacPage(const char *fileUri) {
-
-    FILE *fp;
-    fp = fopen(fileUri, "r");
-    char *fcontent = NULL;
-    if (fp == NULL) {
-        return NULL;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    if (size) {
-        fcontent = (char *) malloc(size * sizeof(char) + 100);
-        int point = sprintf(fcontent, "var proxy = \"SOCKS5 127.0.0.1:%d\"; \n", pac_local_port);
-
-        if (point > 0) {
-            long readsize = fread(fcontent + point, 1, size, fp);
-        }
-
-    }
-    fclose(fp);
-
-    return fcontent;
-}
-
-static int
-answer_to_connection(void *cls, struct MHD_Connection *connection,
-                     const char *url, const char *method,
-                     const char *version, const char *upload_data,
-                     size_t *upload_data_size, void **con_cls) {
-
-
-    if (pac_fcontent == NULL) {
-        pac_fcontent = createPacPage(DEFAULT_PAC_CONFIG);
-    }
-
-    struct MHD_Response *response;
-    int ret;
-
-    response =
-            MHD_create_response_from_buffer(strlen(pac_fcontent), (void *) pac_fcontent,
-                                            MHD_RESPMEM_PERSISTENT);
-    ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-
-    return ret;
-}
-
-int
-startPacServer(uint16_t pacServerPort, std::string pac_server_flag, std::string local_addr, uint16_t localSockPort) {
-
-    struct MHD_Daemon *daemon;
-
-    daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, pacServerPort, NULL, NULL,
-                              &answer_to_connection, NULL, MHD_OPTION_END);
-    if (NULL == daemon)
-        return -1;
-
-    //getchar ();
-
-    //MHD_stop_daemon (daemon);
-    return 0;
-
-
 }
 

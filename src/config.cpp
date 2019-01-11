@@ -52,7 +52,6 @@ void Config::populate(const ptree &tree) {
     local_addr = tree.get("local_addr", string());
     local_port = tree.get("local_port", uint16_t());
     pac_server_port = tree.get("pac_server_port", uint16_t());
-    pac_server_flag = tree.get("pac_server_flag", string());
     remote_addr = tree.get("remote_addr", string());
     remote_port = tree.get("remote_port", uint16_t());
     target_addr = tree.get("target_addr", string());

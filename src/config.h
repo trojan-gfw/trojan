@@ -35,7 +35,6 @@ public:
     std::string local_addr;
     uint16_t local_port;
     uint16_t pac_server_port;
-    std::string pac_server_flag;
     std::string remote_addr;
     uint16_t remote_port;
     std::string target_addr;

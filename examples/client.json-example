@@ -4,6 +4,7 @@
     "local_port": 1080,
     "remote_addr": "example.com",
     "remote_port": 443,
+    "pac_server_port":1090,
     "password": [
         "password1"
     ],
