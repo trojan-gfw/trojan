@@ -26,6 +26,7 @@
         "dhparam": ""
     },
     "tcp": {
+        "prefer_ipv4": false,
         "no_delay": true,
         "keep_alive": true,
         "fast_open": false,

@@ -137,6 +137,7 @@ This forward config is for port forwarding. Everything is the same as the client
         "dhparam": ""
     },
     "tcp": {
+        "prefer_ipv4": false,
         "no_delay": true,
         "keep_alive": true,
         "fast_open": false,
@@ -174,6 +175,7 @@ This forward config is for port forwarding. Everything is the same as the client
     - `curves`: `ECC` curves to use
     - `dhparam`: if left blank, default (RFC 3526) dhparam will be used, otherwise the specified dhparam file will be used
 - `tcp`: `TCP` specific configurations
+    - `prefer_ipv4`: whether to connect to the IPv4 address when there are both IPv6 and IPv4 addresses for a domain
     - `no_delay`: whether to disable Nagle's algorithm
     - `keep_alive`: whether to enable TCP Keep Alive
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
