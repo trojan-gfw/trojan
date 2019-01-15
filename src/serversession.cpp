@@ -166,6 +166,15 @@ void ServerSession::in_recv(const string &data) {
                 destroy();
                 return;
             }
+            if (config.tcp.prefer_ipv4) {
+                for (auto it = iterator; it != tcp::resolver::iterator(); ++it) {
+                    const auto &addr = it->endpoint().address();
+                    if (addr.is_v4()) {
+                        iterator = it;
+                        break;
+                    }
+                }
+            }
             out_socket.open(iterator->endpoint().protocol());
             if (config.tcp.no_delay) {
                 out_socket.set_option(tcp::no_delay(true));
@@ -257,6 +266,15 @@ void ServerSession::udp_sent() {
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
+            }
+            if (config.tcp.prefer_ipv4) {
+                for (auto it = iterator; it != udp::resolver::iterator(); ++it) {
+                    const auto &addr = it->endpoint().address();
+                    if (addr.is_v4()) {
+                        iterator = it;
+                        break;
+                    }
+                }
             }
             if (!udp_socket.is_open()) {
                 auto protocol = iterator->endpoint().protocol();

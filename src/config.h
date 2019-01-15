@@ -61,6 +61,7 @@ public:
     } ssl;
     class TCPConfig {
     public:
+        bool prefer_ipv4;
         bool no_delay;
         bool keep_alive;
         bool fast_open;

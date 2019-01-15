@@ -81,6 +81,7 @@ void Config::populate(const ptree &tree) {
     ssl.plain_http_response = tree.get("ssl.plain_http_response", string());
     ssl.curves = tree.get("ssl.curves", string());
     ssl.dhparam = tree.get("ssl.dhparam", string());
+    tcp.prefer_ipv4 = tree.get("tcp.prefer_ipv4", false);
     tcp.no_delay = tree.get("tcp.no_delay", true);
     tcp.keep_alive = tree.get("tcp.keep_alive", true);
     tcp.fast_open = tree.get("tcp.fast_open", false);
