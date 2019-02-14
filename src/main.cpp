@@ -107,7 +107,7 @@ int main(int argc, const char *argv[]) {
         do {
             restart = false;
             if (config.sip003()) {
-                Log::log_with_date_time("SIP003 is loaded", Log::FATAL);
+                Log::log_with_date_time("SIP003 is loaded", Log::WARN);
             } else {
                 config.load(config_file);
             }
@@ -124,7 +124,7 @@ int main(int argc, const char *argv[]) {
             service->run();
             delete service;
             if (restart) {
-                Log::log_with_date_time("trojan service restarting. . . ", Log::FATAL);
+                Log::log_with_date_time("trojan service restarting. . . ", Log::WARN);
             }
         } while (restart);
         Log::reset();
