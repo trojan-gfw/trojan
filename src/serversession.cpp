@@ -16,6 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <openssl/err.h>
+#include <openssl/opensslconf.h>
+
+#include <boost/lexical_cast.hpp>
 
 #include "serversession.h"
 #include "trojanrequest.h"
@@ -43,7 +47,22 @@ void ServerSession::start() {
     auto self = shared_from_this();
     in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
         if (error) {
-            Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
+            string errstr = error.message();
+#ifdef OPENSSL_NO_ERR
+#warning OpenSSL ERR disabled
+#else // OPENSSL_NO_ERR
+            if (error.category() == boost::asio::error::get_ssl_category()) {
+                // override 'asio.ssl error' error message
+                errstr = string(" (")
+                    + boost::lexical_cast<string>(ERR_GET_LIB(error.value()))+ ","
+                    + boost::lexical_cast<string>(ERR_GET_FUNC(error.value()))+ ","
+                    + boost::lexical_cast<string>(ERR_GET_REASON(error.value()))+ ") ";
+                char buf[128];
+                ::ERR_error_string_n(error.value(), buf, sizeof(buf));
+                errstr += buf;
+            }
+#endif // OPENSSL_NO_ERR
+            Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + errstr, Log::ERROR);
             if (error.message() == "http request" && plain_http_response != "") {
                 sent_len += plain_http_response.length();
                 boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
