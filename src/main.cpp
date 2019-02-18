@@ -38,11 +38,13 @@ namespace po = boost::program_options;
 Service *service;
 bool restart;
 
-void handleTermination(int) {
+void handleTermination(int signum) {
+    Log::log_with_date_time("got signal: " + to_string(signum), Log::WARN);
     service->stop();
 }
 
-void restartService(int) {
+void restartService(int signum) {
+    Log::log_with_date_time("got signal: " + to_string(signum), Log::WARN);
     restart = true;
     service->stop();
 }
