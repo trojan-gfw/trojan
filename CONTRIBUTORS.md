@@ -14,3 +14,6 @@
     - Add conditional MySQL compilation.
     - Remove `SSL_CTX_set_ecdh_auto(native_context, 1)` call in new versions of OpenSSL.
     - Fix a typo in the documentation.
+    - Add a functionality to log received signals.
+    - Fix a bug that causes trojan to crash if the connection is terminated before a session is established.
+    - Add android log facility.
