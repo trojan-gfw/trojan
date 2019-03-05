@@ -34,8 +34,13 @@ FILE *Log::output_stream(stderr);
 
 void Log::log(const string &message, Level level) {
     if (level >= Log::level) {
+#if defined(ANDROID) || defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "trojan", "%s\n",
+                            message.c_str());
+#else
         fprintf(output_stream, "%s\n", message.c_str());
         fflush(output_stream);
+#endif
     }
 }
 

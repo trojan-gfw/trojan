@@ -24,6 +24,10 @@
 #include <string>
 #include <boost/asio/ip/tcp.hpp>
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#include <android/log.h>
+#endif
+
 #ifdef ERROR // windows.h
 #undef ERROR
 #endif // ERROR
