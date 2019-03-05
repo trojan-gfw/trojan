@@ -38,8 +38,13 @@ tcp::socket& ServerSession::accept_socket() {
 }
 
 void ServerSession::start() {
+    boost::system::error_code ec;
     start_time = time(NULL);
-    in_endpoint = in_socket.lowest_layer().remote_endpoint();
+    in_endpoint = in_socket.lowest_layer().remote_endpoint(ec);
+    if (ec) {
+        destroy();
+        return;
+    }
     auto self = shared_from_this();
     in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
         if (error) {
