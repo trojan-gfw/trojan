@@ -36,8 +36,13 @@ tcp::socket& ForwardSession::accept_socket() {
 }
 
 void ForwardSession::start() {
+    boost::system::error_code ec;
     start_time = time(NULL);
-    in_endpoint = in_socket.remote_endpoint();
+    in_endpoint = in_socket.remote_endpoint(ec);
+    if (ec) {
+        destroy();
+        return;
+    }
     auto ssl = out_socket.native_handle();
     if (config.ssl.sni != "") {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
