@@ -207,6 +207,8 @@ void Service::run() {
 }
 
 void Service::stop() {
+    boost::system::error_code ec;
+    socket_acceptor.cancel(ec);
     io_service.stop();
 }
 
@@ -220,6 +222,10 @@ void Service::async_accept() {
         session = make_shared<ClientSession>(config, io_service, ssl_context);
     }
     socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
+        if (error == boost::asio::error::operation_aborted) {
+            // got cancel signal, stop calling myself
+            return;
+        }
         if (!error) {
             boost::system::error_code ec;
             auto endpoint = session->accept_socket().remote_endpoint(ec);
