@@ -68,21 +68,21 @@ void ForwardSession::start() {
             destroy();
             return;
         }
-        out_socket.lowest_layer().open(iterator->endpoint().protocol());
+        out_socket.next_layer().open(iterator->endpoint().protocol());
         if (config.tcp.no_delay) {
-            out_socket.lowest_layer().set_option(tcp::no_delay(true));
+            out_socket.next_layer().set_option(tcp::no_delay(true));
         }
         if (config.tcp.keep_alive) {
-            out_socket.lowest_layer().set_option(boost::asio::socket_base::keep_alive(true));
+            out_socket.next_layer().set_option(boost::asio::socket_base::keep_alive(true));
         }
 #ifdef TCP_FASTOPEN_CONNECT
         if (config.tcp.fast_open) {
             using fastopen_connect = boost::asio::detail::socket_option::boolean<IPPROTO_TCP, TCP_FASTOPEN_CONNECT>;
             boost::system::error_code ec;
-            out_socket.lowest_layer().set_option(fastopen_connect(true), ec);
+            out_socket.next_layer().set_option(fastopen_connect(true), ec);
         }
 #endif // TCP_FASTOPEN_CONNECT
-        out_socket.lowest_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
+        out_socket.next_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
             if (error) {
                 Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
                 destroy();
@@ -202,13 +202,13 @@ void ForwardSession::destroy() {
         in_socket.shutdown(tcp::socket::shutdown_both, ec);
         in_socket.close(ec);
     }
-    if (out_socket.lowest_layer().is_open()) {
-        out_socket.lowest_layer().cancel(ec);
+    if (out_socket.next_layer().is_open()) {
+        out_socket.next_layer().cancel(ec);
         auto self = shared_from_this();
         out_socket.async_shutdown([this, self](const boost::system::error_code) {
             boost::system::error_code ec;
-            out_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
-            out_socket.lowest_layer().close(ec);
+            out_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
+            out_socket.next_layer().close(ec);
         });
     }
 }
