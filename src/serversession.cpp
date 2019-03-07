@@ -34,13 +34,13 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_s
     plain_http_response(plain_http_response) {}
 
 tcp::socket& ServerSession::accept_socket() {
-    return (tcp::socket&)in_socket.lowest_layer();
+    return (tcp::socket&)in_socket.next_layer();
 }
 
 void ServerSession::start() {
     boost::system::error_code ec;
     start_time = time(NULL);
-    in_endpoint = in_socket.lowest_layer().remote_endpoint(ec);
+    in_endpoint = in_socket.next_layer().remote_endpoint(ec);
     if (ec) {
         destroy();
         return;
@@ -314,13 +314,13 @@ void ServerSession::destroy() {
         udp_socket.cancel(ec);
         udp_socket.close(ec);
     }
-    if (in_socket.lowest_layer().is_open()) {
-        in_socket.lowest_layer().cancel(ec);
+    if (in_socket.next_layer().is_open()) {
+        in_socket.next_layer().cancel(ec);
         auto self = shared_from_this();
         in_socket.async_shutdown([this, self](const boost::system::error_code) {
             boost::system::error_code ec;
-            in_socket.lowest_layer().shutdown(tcp::socket::shutdown_both, ec);
-            in_socket.lowest_layer().close(ec);
+            in_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
+            in_socket.next_layer().close(ec);
         });
     }
 }
