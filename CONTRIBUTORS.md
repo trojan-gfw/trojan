@@ -19,3 +19,4 @@
     - Add android log facility.
     - Refer to `basic_stream_socket` instead of `basic_socket` in SSL sockets.
     - Cancel async tasks when stopping the service.
+    - Fix fd leak.
