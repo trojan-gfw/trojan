@@ -326,11 +326,11 @@ void ServerSession::destroy() {
     }
     if (in_socket.next_layer().is_open()) {
         in_socket.next_layer().cancel(ec);
-        auto self = shared_from_this();
-        in_socket.async_shutdown([this, self](const boost::system::error_code) {
-            boost::system::error_code ec;
-            in_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
-            in_socket.next_layer().close(ec);
-        });
+        // only do unidirectional shutdown and don't wait for other side's close_notify
+        // a.k.a. call SSL_shutdown() once and discard its return value
+        ::SSL_set_shutdown(in_socket.native_handle(), SSL_RECEIVED_SHUTDOWN);
+        in_socket.shutdown(ec);
+        in_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
+        in_socket.next_layer().close(ec);
     }
 }
