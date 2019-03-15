@@ -68,7 +68,12 @@ void ForwardSession::start() {
             destroy();
             return;
         }
-        out_socket.next_layer().open(iterator->endpoint().protocol());
+        boost::system::error_code ec;
+        out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
+        if (ec) {
+            destroy();
+            return;
+        }
         if (config.tcp.no_delay) {
             out_socket.next_layer().set_option(tcp::no_delay(true));
         }

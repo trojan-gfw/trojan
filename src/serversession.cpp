@@ -180,7 +180,12 @@ void ServerSession::in_recv(const string &data) {
                     }
                 }
             }
-            out_socket.open(iterator->endpoint().protocol());
+            boost::system::error_code ec;
+            out_socket.open(iterator->endpoint().protocol(), ec);
+            if (ec) {
+                destroy();
+                return;
+            }
             if (config.tcp.no_delay) {
                 out_socket.set_option(tcp::no_delay(true));
             }
@@ -283,7 +288,12 @@ void ServerSession::udp_sent() {
             }
             if (!udp_socket.is_open()) {
                 auto protocol = iterator->endpoint().protocol();
-                udp_socket.open(protocol);
+                boost::system::error_code ec;
+                udp_socket.open(protocol, ec);
+                if (ec) {
+                    destroy();
+                    return;
+                }
                 udp_socket.bind(udp::endpoint(protocol, 0));
                 udp_async_read();
             }

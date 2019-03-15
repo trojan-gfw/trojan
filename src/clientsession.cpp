@@ -164,7 +164,12 @@ void ClientSession::in_recv(const string &data) {
             is_udp = req.command == TrojanRequest::UDP_ASSOCIATE;
             if (is_udp) {
                 udp::endpoint bindpoint(in_socket.local_endpoint().address(), 0);
-                udp_socket.open(bindpoint.protocol());
+                boost::system::error_code ec;
+                udp_socket.open(bindpoint.protocol(), ec);
+                if (ec) {
+                    destroy();
+                    return;
+                }
                 udp_socket.bind(bindpoint);
                 Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port) + ", open UDP socket " + udp_socket.local_endpoint().address().to_string() + ':' + to_string(udp_socket.local_endpoint().port()) + " for relay", Log::INFO);
                 in_async_write(string("\x05\x00\x00", 3) + SOCKS5Address::generate(udp_socket.local_endpoint()));
@@ -223,7 +228,12 @@ void ClientSession::in_sent() {
                     destroy();
                     return;
                 }
-                out_socket.next_layer().open(iterator->endpoint().protocol());
+                boost::system::error_code ec;
+                out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
+                if (ec) {
+                    destroy();
+                    return;
+                }
                 if (config.tcp.no_delay) {
                     out_socket.next_layer().set_option(tcp::no_delay(true));
                 }
