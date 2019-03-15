@@ -17,3 +17,5 @@
     - Add a functionality to log received signals.
     - Fix a bug that causes trojan to crash if the connection is terminated before a session is established.
     - Add android log facility.
+    - Refer to `basic_stream_socket` instead of `basic_socket` in SSL sockets.
+    - Cancel async tasks when stopping the service.
