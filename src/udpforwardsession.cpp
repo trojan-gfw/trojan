@@ -53,7 +53,7 @@ void UDPForwardSession::start() {
         }
     }
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, false);
-    Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "forwarding UDP packets to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
     auto self = shared_from_this();
     resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
@@ -146,8 +146,10 @@ void UDPForwardSession::timer_async_wait()
     gc_timer.expires_from_now(boost::asio::chrono::seconds(config.udp_timeout));
     auto self = shared_from_this();
     gc_timer.async_wait([this, self](const boost::system::error_code error) {
-        if (!error)
+        if (!error) {
+            Log::log_with_endpoint(in_endpoint, "UDP session timeout");
             destroy();
+        }
     });
 }
 
@@ -158,7 +160,9 @@ void UDPForwardSession::in_recv(const string &data) {
     gc_timer.cancel();
     timer_async_wait();
     string packet = UDPPacket::generate(config.target_addr, config.target_port, data);
-    sent_len += data.length();
+    size_t length = data.length();
+    Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " bytes to " + config.target_addr + ':' + to_string(config.target_port));
+    sent_len += length;
     if (status == FORWARD) {
         status = FORWARDING;
         out_async_write(packet);
