@@ -29,6 +29,7 @@ public:
     std::string payload;
     int parse(const std::string &data);
     static std::string generate(const boost::asio::ip::udp::endpoint &endpoint, const std::string &payload);
+    static std::string generate(const std::string &domainname, uint16_t port, const std::string &payload);
 };
 
 #endif // _UDPPACKET_H_

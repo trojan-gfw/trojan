@@ -42,3 +42,16 @@ string UDPPacket::generate(const udp::endpoint &endpoint, const string &payload)
     ret += payload;
     return ret;
 }
+
+string UDPPacket::generate(const string &domainname, uint16_t port, const string &payload) {
+    string ret = "\x03";
+    ret += char(uint8_t(domainname.length()));
+    ret += domainname;
+    ret += char(uint8_t(port >> 8));
+    ret += char(uint8_t(port & 0xFF));
+    ret += char(uint8_t(payload.length() >> 8));
+    ret += char(uint8_t(payload.length() & 0xFF));
+    ret += "\r\n";
+    ret += payload;
+    return ret;
+}

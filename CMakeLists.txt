@@ -23,6 +23,7 @@ add_executable(trojan
     src/ssldefaults.cpp
     src/sslsession.cpp
     src/trojanrequest.cpp
+    src/udpforwardsession.cpp
     src/udppacket.cpp
     src/version.cpp)
 find_package(Threads REQUIRED)

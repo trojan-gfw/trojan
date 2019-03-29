@@ -39,13 +39,19 @@ Service::Service(Config &config, bool test) :
     config(config),
     socket_acceptor(io_service),
     ssl_context(context::sslv23),
-    auth(nullptr) {
+    auth(nullptr),
+    udp_socket(io_service) {
     if (!test) {
         auto listen_endpoint = tcp::endpoint(address::from_string(config.local_addr), config.local_port);
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
+        if (config.run_type == Config::FORWARD) {
+            auto udp_bind_endpoint = udp::endpoint(address::from_string(config.local_addr), config.local_port);
+            udp_socket.open(udp_bind_endpoint.protocol());
+            udp_socket.bind(udp_bind_endpoint);
+        }
     }
     Log::level = config.log_level;
     auto native_context = ssl_context.native_handle();
@@ -192,6 +198,9 @@ Service::Service(Config &config, bool test) :
 
 void Service::run() {
     async_accept();
+    if (config.run_type == Config::FORWARD) {
+        udp_async_read();
+    }
     tcp::endpoint local_endpoint = socket_acceptor.local_endpoint();
     string rt;
     if (config.run_type == Config::SERVER) {
@@ -209,6 +218,10 @@ void Service::run() {
 void Service::stop() {
     boost::system::error_code ec;
     socket_acceptor.cancel(ec);
+    if (udp_socket.is_open()) {
+        udp_socket.cancel(ec);
+        udp_socket.close(ec);
+    }
     io_service.stop();
 }
 
@@ -235,6 +248,38 @@ void Service::async_accept() {
             }
         }
         async_accept();
+    });
+}
+
+void Service::udp_async_read() {
+    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this](const boost::system::error_code error, size_t length) {
+        if (error == boost::asio::error::operation_aborted) {
+            // got cancel signal, stop calling myself
+            return;
+        }
+        if (error) {
+            stop();
+            return;
+        }
+        string data((const char *)udp_read_buf, length);
+        for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
+            auto next = ++it;
+            --it;
+            if (it->expired()) {
+                udp_sessions.erase(it);
+            } else if (it->lock()->process(udp_recv_endpoint, data)) {
+                udp_async_read();
+                return;
+            }
+            it = next;
+        }
+        auto session = make_shared<UDPForwardSession>(config, io_service, ssl_context, udp_recv_endpoint, [this](const udp::endpoint &endpoint, const string &data) {
+            udp_socket.send_to(boost::asio::buffer(data), endpoint);
+        });
+        udp_sessions.emplace_back(session);
+        session->start();
+        session->process(udp_recv_endpoint, data);
+        udp_async_read();
     });
 }
 

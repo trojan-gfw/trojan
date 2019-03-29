@@ -17,32 +17,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "forwardsession.h"
-#include "trojanrequest.h"
+#include "udpforwardsession.h"
 #include "sslsession.h"
+#include "trojanrequest.h"
+#include "udppacket.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ForwardSession::ForwardSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
+UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context, const udp::endpoint &endpoint, const UDPWrite &in_write) :
     Session(config, io_service),
     status(CONNECT),
-    first_packet_recv(false),
-    in_socket(io_service),
-    out_socket(io_service, ssl_context) {}
-
-tcp::socket& ForwardSession::accept_socket() {
-    return in_socket;
+    in_write(in_write),
+    out_socket(io_service, ssl_context) {
+    udp_recv_endpoint = endpoint;
+    in_endpoint = tcp::endpoint(endpoint.address(), endpoint.port());
 }
 
-void ForwardSession::start() {
-    boost::system::error_code ec;
+tcp::socket& UDPForwardSession::accept_socket() {
+    return *(tcp::socket*)nullptr;
+}
+
+void UDPForwardSession::start() {
     start_time = time(NULL);
-    in_endpoint = in_socket.remote_endpoint(ec);
-    if (ec) {
-        destroy();
-        return;
-    }
     auto ssl = out_socket.native_handle();
     if (config.ssl.sni != "") {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
@@ -53,12 +50,7 @@ void ForwardSession::start() {
             SSL_set_session(ssl, session);
         }
     }
-    out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, true);
-    if (config.append_payload) {
-        in_async_read();
-    } else {
-        first_packet_recv = true;
-    }
+    out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, false);
     Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
     auto self = shared_from_this();
@@ -108,41 +100,24 @@ void ForwardSession::start() {
                         Log::log_with_endpoint(in_endpoint, "SSL session reused");
                     }
                 }
-                boost::system::error_code ec;
-                if (!first_packet_recv) {
-                    in_socket.cancel(ec);
-                }
-                status = FORWARD;
+                status = FORWARDING;
                 out_async_read();
                 out_async_write(out_write_buf);
+                out_write_buf.clear();
             });
         });
     });
 }
 
-void ForwardSession::in_async_read() {
-    auto self = shared_from_this();
-    in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
-        if (error && error != boost::asio::error::operation_aborted) {
-            destroy();
-            return;
-        }
-        in_recv(string((const char*)in_read_buf, length));
-    });
+bool UDPForwardSession::process(const udp::endpoint &endpoint, const string &data) {
+    if (endpoint != udp_recv_endpoint) {
+        return false;
+    }
+    in_recv(data);
+    return true;
 }
 
-void ForwardSession::in_async_write(const string &data) {
-    auto self = shared_from_this();
-    boost::asio::async_write(in_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
-        if (error) {
-            destroy();
-            return;
-        }
-        in_sent();
-    });
-}
-
-void ForwardSession::out_async_read() {
+void UDPForwardSession::out_async_read() {
     auto self = shared_from_this();
     out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
@@ -153,7 +128,7 @@ void ForwardSession::out_async_read() {
     });
 }
 
-void ForwardSession::out_async_write(const string &data) {
+void UDPForwardSession::out_async_write(const string &data) {
     auto self = shared_from_this();
     boost::asio::async_write(out_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
         if (error) {
@@ -164,37 +139,55 @@ void ForwardSession::out_async_write(const string &data) {
     });
 }
 
-void ForwardSession::in_recv(const string &data) {
-    if (status == CONNECT) {
-        sent_len += data.length();
-        first_packet_recv = true;
-        out_write_buf += data;
-    } else if (status == FORWARD) {
-        sent_len += data.length();
-        out_async_write(data);
+void UDPForwardSession::in_recv(const string &data) {
+    if (status == DESTROY) {
+        return;
+    }
+    string packet = UDPPacket::generate(config.target_addr, config.target_port, data);
+    sent_len += data.length();
+    if (status == FORWARD) {
+        status = FORWARDING;
+        out_async_write(packet);
+    } else {
+        out_write_buf += packet;
     }
 }
 
-void ForwardSession::in_sent() {
-    if (status == FORWARD) {
+void UDPForwardSession::out_recv(const string &data) {
+    if (status == FORWARD || status == FORWARDING) {
+        udp_data_buf += data;
+        for (;;) {
+            UDPPacket packet;
+            int packet_len = packet.parse(udp_data_buf);
+            if (packet_len == -1) {
+                if (udp_data_buf.length() > MAX_LENGTH) {
+                    Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
+                    destroy();
+                    return;
+                }
+                break;
+            }
+            Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
+            udp_data_buf = udp_data_buf.substr(packet_len);
+            recv_len += packet.length;
+            in_write(udp_recv_endpoint, packet.payload);
+        }
         out_async_read();
     }
 }
 
-void ForwardSession::out_recv(const string &data) {
-    if (status == FORWARD) {
-        recv_len += data.length();
-        in_async_write(data);
+void UDPForwardSession::out_sent() {
+    if (status == FORWARDING) {
+        if (out_write_buf.length() == 0) {
+            status = FORWARD;
+        } else {
+            out_async_write(out_write_buf);
+            out_write_buf.clear();
+        }
     }
 }
 
-void ForwardSession::out_sent() {
-    if (status == FORWARD) {
-        in_async_read();
-    }
-}
-
-void ForwardSession::destroy() {
+void UDPForwardSession::destroy() {
     if (status == DESTROY) {
         return;
     }
@@ -202,11 +195,6 @@ void ForwardSession::destroy() {
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
-    if (in_socket.is_open()) {
-        in_socket.cancel(ec);
-        in_socket.shutdown(tcp::socket::shutdown_both, ec);
-        in_socket.close(ec);
-    }
     if (out_socket.next_layer().is_open()) {
         out_socket.next_layer().cancel(ec);
         // only do unidirectional shutdown and don't wait for other side's close_notify
