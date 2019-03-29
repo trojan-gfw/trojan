@@ -167,7 +167,9 @@ void UDPForwardSession::in_recv(const string &data) {
         status = FORWARDING;
         out_async_write(packet);
     } else {
-        out_write_buf += packet;
+        if (out_write_buf.size() < MAX_LENGTH) {
+            out_write_buf += packet;
+        }
     }
 }
 
