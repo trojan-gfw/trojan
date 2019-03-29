@@ -29,7 +29,8 @@ UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_servi
     Session(config, io_service),
     status(CONNECT),
     in_write(in_write),
-    out_socket(io_service, ssl_context) {
+    out_socket(io_service, ssl_context),
+    gc_timer(io_service) {
     udp_recv_endpoint = endpoint;
     in_endpoint = tcp::endpoint(endpoint.address(), endpoint.port());
 }
@@ -39,6 +40,7 @@ tcp::socket& UDPForwardSession::accept_socket() {
 }
 
 void UDPForwardSession::start() {
+    timer_async_wait();
     start_time = time(NULL);
     auto ssl = out_socket.native_handle();
     if (config.ssl.sni != "") {
@@ -139,10 +141,22 @@ void UDPForwardSession::out_async_write(const string &data) {
     });
 }
 
+void UDPForwardSession::timer_async_wait()
+{
+    gc_timer.expires_from_now(boost::asio::chrono::seconds(config.udp_timeout));
+    auto self = shared_from_this();
+    gc_timer.async_wait([this, self](const boost::system::error_code error) {
+        if (!error)
+            destroy();
+    });
+}
+
 void UDPForwardSession::in_recv(const string &data) {
     if (status == DESTROY) {
         return;
     }
+    gc_timer.cancel();
+    timer_async_wait();
     string packet = UDPPacket::generate(config.target_addr, config.target_port, data);
     sent_len += data.length();
     if (status == FORWARD) {
@@ -155,6 +169,8 @@ void UDPForwardSession::in_recv(const string &data) {
 
 void UDPForwardSession::out_recv(const string &data) {
     if (status == FORWARD || status == FORWARDING) {
+        gc_timer.cancel();
+        timer_async_wait();
         udp_data_buf += data;
         for (;;) {
             UDPPacket packet;
@@ -195,6 +211,7 @@ void UDPForwardSession::destroy() {
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
+    gc_timer.cancel(ec);
     if (out_socket.next_layer().is_open()) {
         out_socket.next_layer().cancel(ec);
         // only do unidirectional shutdown and don't wait for other side's close_notify

@@ -22,6 +22,7 @@
 
 #include "session.h"
 #include <boost/asio/ssl.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 class UDPForwardSession : public Session {
 public:
@@ -35,12 +36,14 @@ private:
     } status;
     UDPWrite in_write;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
+    boost::asio::steady_timer gc_timer;
     void destroy();
     void in_recv(const std::string &data);
     void out_async_read();
     void out_async_write(const std::string &data);
     void out_recv(const std::string &data);
     void out_sent();
+    void timer_async_wait();
 public:
     UDPForwardSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context, const boost::asio::ip::udp::endpoint &endpoint, const UDPWrite &in_write);
     boost::asio::ip::tcp::socket& accept_socket();
