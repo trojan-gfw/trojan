@@ -67,7 +67,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 
 ## A valid forward.json
 
-This forward config is for port forwarding. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint.
+This forward config is for port forwarding. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint, and `udp_timeout`, which controls how long (in seconds) a UDP session will last in idle.
 
 ```json
 {
@@ -82,6 +82,7 @@ This forward config is for port forwarding. Everything is the same as the client
         "password1"
     ],
     "append_payload": true,
+    "udp_timeout": 60,
     "log_level": 1,
     "ssl": {
         "verify": true,

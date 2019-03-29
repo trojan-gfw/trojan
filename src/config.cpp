@@ -60,6 +60,7 @@ void Config::populate(const ptree &tree) {
         password[SHA224(p)] = p;
     }
     append_payload = tree.get("append_payload", true);
+    udp_timeout = tree.get("udp_timeout", 60);
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     ssl.verify = tree.get("ssl.verify", true);
     ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
