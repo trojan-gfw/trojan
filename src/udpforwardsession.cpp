@@ -143,7 +143,7 @@ void UDPForwardSession::out_async_write(const string &data) {
 
 void UDPForwardSession::timer_async_wait()
 {
-    gc_timer.expires_from_now(boost::asio::chrono::seconds(config.udp_timeout));
+    gc_timer.expires_from_now(chrono::seconds(config.udp_timeout));
     auto self = shared_from_this();
     gc_timer.async_wait([this, self](const boost::system::error_code error) {
         if (!error) {
