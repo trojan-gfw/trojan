@@ -18,6 +18,7 @@
  */
 
 #include "udpforwardsession.h"
+#include <stdexcept>
 #include "sslsession.h"
 #include "trojanrequest.h"
 #include "udppacket.h"
@@ -36,7 +37,7 @@ UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_servi
 }
 
 tcp::socket& UDPForwardSession::accept_socket() {
-    return *(tcp::socket*)nullptr;
+    throw logic_error("accept_socket does not exist in UDPForwardSession");
 }
 
 void UDPForwardSession::start() {
