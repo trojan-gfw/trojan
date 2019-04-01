@@ -259,7 +259,7 @@ void Service::udp_async_read() {
         }
         if (error) {
             stop();
-            raise runtime_error(error.message());
+            throw runtime_error(error.message());
         }
         string data((const char *)udp_read_buf, length);
         for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
