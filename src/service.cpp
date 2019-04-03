@@ -275,7 +275,8 @@ void Service::udp_async_read() {
         }
         Log::log_with_endpoint(tcp::endpoint(udp_recv_endpoint.address(), udp_recv_endpoint.port()), "new UDP session");
         auto session = make_shared<UDPForwardSession>(config, io_service, ssl_context, udp_recv_endpoint, [this](const udp::endpoint &endpoint, const string &data) {
-            udp_socket.send_to(boost::asio::buffer(data), endpoint);
+            boost::system::error_code ec;
+            udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
         });
         udp_sessions.emplace_back(session);
         session->start();
