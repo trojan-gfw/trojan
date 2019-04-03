@@ -6,6 +6,8 @@
     - Fix incorrect systemd service path in the documentation.
 - [GreaterFire](https://github.com/GreaterFire)
     - Author of this project.
+- [KCCat](https://github.com/KCCat)
+    - Fix an ambiguity in the documentation.
 - [klzgrad](https://github.com/klzgrad)
     - Add Linux smoke test.
 - [WeidiDeng](https://github.com/WeidiDeng)
