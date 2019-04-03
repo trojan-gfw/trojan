@@ -158,8 +158,8 @@ This forward config is for port forwarding. Everything is the same as the client
 - `run_type`: running trojan as `server`
 - `local_addr`: trojan server will be bound to the specified interface. Feel free to change this to `::` or other addresses, if you know what you are doing.
 - `local_port`: trojan server will be bound to this port
-- `remote_addr`: the endpoint address that trojan server will connect to when encountering other protocols
-- `remote_port`: the endpoint port that trojan server will connect when encountering other protocols
+- `remote_addr`: the endpoint address that trojan server will connect to when encountering [other protocols](protocol#other-protocols)
+- `remote_port`: the endpoint port that trojan server will connect when encountering [other protocols](protocol#other-protocols)
 - `password`: an array of passwords used for verification
 - `log_level`: how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 - `ssl`: `SSL` specific configurations
