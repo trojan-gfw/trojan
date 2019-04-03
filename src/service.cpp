@@ -277,6 +277,11 @@ void Service::udp_async_read() {
         auto session = make_shared<UDPForwardSession>(config, io_service, ssl_context, udp_recv_endpoint, [this](const udp::endpoint &endpoint, const string &data) {
             boost::system::error_code ec;
             udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
+            if (ec == boost::asio::error::no_permission) {
+                Log::log_with_endpoint(tcp::endpoint(endpoint.address(), endpoint.port()), "dropped a UDP packet due to firewall policy or rate limit");
+            } else if (ec) {
+                throw runtime_error(ec.message());
+            }
         });
         udp_sessions.emplace_back(session);
         session->start();
