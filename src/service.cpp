@@ -24,6 +24,7 @@
 #include <fstream>
 #ifdef _WIN32
 #include <wincrypt.h>
+#include <tchar.h>
 #endif // _WIN32
 #include <openssl/opensslv.h>
 #include "serversession.h"
@@ -116,7 +117,7 @@ Service::Service(Config &config, bool test) :
             if (config.ssl.cert == "") {
                 ssl_context.set_default_verify_paths();
 #ifdef _WIN32
-                HCERTSTORE h_store = CertOpenSystemStore(0, "ROOT");
+                HCERTSTORE h_store = CertOpenSystemStore(0, _T("ROOT"));
                 if (h_store) {
                     X509_STORE *store = SSL_CTX_get_cert_store(native_context);
                     PCCERT_CONTEXT p_context = NULL;
