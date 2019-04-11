@@ -43,13 +43,14 @@ Service::Service(Config &config, bool test) :
     auth(nullptr),
     udp_socket(io_service) {
     if (!test) {
-        auto listen_endpoint = tcp::endpoint(address::from_string(config.local_addr), config.local_port);
+        tcp::resolver resolver(io_service);
+        tcp::endpoint listen_endpoint = *resolver.resolve(tcp::resolver::query(config.local_addr, to_string(config.local_port)));
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
         if (config.run_type == Config::FORWARD) {
-            auto udp_bind_endpoint = udp::endpoint(address::from_string(config.local_addr), config.local_port);
+            auto udp_bind_endpoint = udp::endpoint(listen_endpoint.address(), listen_endpoint.port());
             udp_socket.open(udp_bind_endpoint.protocol());
             udp_socket.bind(udp_bind_endpoint);
         }
