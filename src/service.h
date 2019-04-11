@@ -48,6 +48,7 @@ public:
     Service(Config &config, bool test = false);
     void run();
     void stop();
+    boost::asio::io_service &service();
     ~Service();
 };
 

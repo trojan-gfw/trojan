@@ -291,6 +291,10 @@ void Service::udp_async_read() {
     });
 }
 
+boost::asio::io_service &Service::service() {
+    return io_service;
+}
+
 Service::~Service() {
     if (auth) {
         delete auth;
