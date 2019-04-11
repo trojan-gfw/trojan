@@ -295,6 +295,20 @@ boost::asio::io_service &Service::service() {
     return io_service;
 }
 
+void Service::reload_cert() {
+    if (config.run_type == Config::SERVER) {
+        Log::log_with_date_time("reloading certificate and private key. . . ", Log::WARN);
+        ssl_context.use_certificate_chain_file(config.ssl.cert);
+        ssl_context.use_private_key_file(config.ssl.key, context::pem);
+        boost::system::error_code ec;
+        socket_acceptor.cancel(ec);
+        async_accept();
+        Log::log_with_date_time("certificate and private key reloaded", Log::WARN);
+    } else {
+        Log::log_with_date_time("cannot reload certificate and private key: wrong run_type", Log::ERROR);
+    }
+}
+
 Service::~Service() {
     if (auth) {
         delete auth;

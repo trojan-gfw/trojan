@@ -49,6 +49,7 @@ public:
     void run();
     void stop();
     boost::asio::io_service &service();
+    void reload_cert();
     ~Service();
 };
 

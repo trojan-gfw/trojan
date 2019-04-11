@@ -36,6 +36,31 @@ namespace po = boost::program_options;
 #define DEFAULT_CONFIG "config.json"
 #endif // DEFAULT_CONFIG
 
+void signal_async_wait(signal_set &sig, Service &service, bool &restart) {
+    sig.async_wait([&](const boost::system::error_code error, int signum) {
+        if (error) {
+            return;
+        }
+        Log::log_with_date_time("got signal: " + to_string(signum), Log::WARN);
+        switch (signum) {
+            case SIGINT:
+            case SIGTERM:
+                service.stop();
+                break;
+#ifndef _WIN32
+            case SIGHUP:
+                restart = true;
+                service.stop();
+                break;
+            case SIGUSR1:
+                service.reload_cert();
+                signal_async_wait(sig, service, restart);
+                break;
+#endif // _WIN32
+        }
+    });
+}
+
 int main(int argc, const char *argv[]) {
     try {
         Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
@@ -111,26 +136,9 @@ int main(int argc, const char *argv[]) {
             sig.add(SIGTERM);
 #ifndef _WIN32
             sig.add(SIGHUP);
+            sig.add(SIGUSR1);
 #endif // _WIN32
-            auto sig_cb = [&](const boost::system::error_code error, int signum) {
-                if (error) {
-                    return;
-                }
-                Log::log_with_date_time("got signal: " + to_string(signum), Log::WARN);
-                switch (signum) {
-                    case SIGINT:
-                    case SIGTERM:
-                        service.stop();
-                        break;
-#ifndef _WIN32
-                    case SIGHUP:
-                        restart = true;
-                        service.stop();
-                        break;
-#endif // _WIN32
-                }
-            };
-            sig.async_wait(sig_cb);
+            signal_async_wait(sig, service, restart);
             service.run();
             if (restart) {
                 Log::log_with_date_time("trojan service restarting. . . ", Log::WARN);
