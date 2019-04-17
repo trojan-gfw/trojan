@@ -146,8 +146,8 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
             }
         }
-        tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
-                                   to_string(valid ? req.address.port : config.remote_port));
+        string query_addr = valid ? req.address.address : config.remote_addr;
+        string query_port = to_string(valid ? req.address.port : config.remote_port);
         if (valid) {
             out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
@@ -165,14 +165,15 @@ void ServerSession::in_recv(const string &data) {
         }
         sent_len += out_write_buf.length();
         auto self = shared_from_this();
-        resolver.async_resolve(query, [this, self, query](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+        resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, tcp::resolver::results_type results) {
             if (error) {
-                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
             }
+            auto iterator = results.begin();
             if (config.tcp.prefer_ipv4) {
-                for (auto it = iterator; it != tcp::resolver::iterator(); ++it) {
+                for (auto it = results.begin(); it != results.end(); ++it) {
                     const auto &addr = it->endpoint().address();
                     if (addr.is_v4()) {
                         iterator = it;
@@ -199,9 +200,9 @@ void ServerSession::in_recv(const string &data) {
                 out_socket.set_option(fastopen_connect(true), ec);
             }
 #endif // TCP_FASTOPEN_CONNECT
-            out_socket.async_connect(*iterator, [this, self, query](const boost::system::error_code error) {
+            out_socket.async_connect(*iterator, [this, self, query_addr, query_port](const boost::system::error_code error) {
                 if (error) {
-                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query.host_name() + ':' + query.service_name() + ": " + error.message(), Log::ERROR);
+                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query_addr + ':' + query_port + ": " + error.message(), Log::ERROR);
                     destroy();
                     return;
                 }
@@ -269,16 +270,17 @@ void ServerSession::udp_sent() {
         }
         Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.length) + " bytes to " + packet.address.address + ':' + to_string(packet.address.port));
         udp_data_buf = udp_data_buf.substr(packet_len);
-        udp::resolver::query query(packet.address.address, to_string(packet.address.port));
+        string query_addr = packet.address.address;
         auto self = shared_from_this();
-        udp_resolver.async_resolve(query, [this, self, packet, query](const boost::system::error_code error, udp::resolver::iterator iterator) {
+        udp_resolver.async_resolve(query_addr, to_string(packet.address.port), [this, self, packet, query_addr](const boost::system::error_code error, udp::resolver::results_type results) {
             if (error) {
-                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
             }
+            auto iterator = results.begin();
             if (config.tcp.prefer_ipv4) {
-                for (auto it = iterator; it != udp::resolver::iterator(); ++it) {
+                for (auto it = results.begin(); it != results.end(); ++it) {
                     const auto &addr = it->endpoint().address();
                     if (addr.is_v4()) {
                         iterator = it;

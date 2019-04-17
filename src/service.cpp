@@ -44,7 +44,7 @@ Service::Service(Config &config, bool test) :
     udp_socket(io_context) {
     if (!test) {
         tcp::resolver resolver(io_context);
-        tcp::endpoint listen_endpoint = *resolver.resolve(tcp::resolver::query(config.local_addr, to_string(config.local_port)));
+        tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port)).begin();
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
         socket_acceptor.bind(listen_endpoint);
