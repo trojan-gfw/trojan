@@ -146,8 +146,13 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
             }
         }
+#if BOOST_VERSION >= 106600
+        std::string resolv_host = valid ? req.address.address : config.remote_addr;
+        std::string resolv_service = std::to_string(valid ? req.address.port : config.remote_port);
+#else
         tcp::resolver::query query(valid ? req.address.address : config.remote_addr,
                                    to_string(valid ? req.address.port : config.remote_port));
+#endif
         if (valid) {
             out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
@@ -165,9 +170,17 @@ void ServerSession::in_recv(const string &data) {
         }
         sent_len += out_write_buf.length();
         auto self = shared_from_this();
+#if BOOST_VERSION >= 106600
+        resolver.async_resolve(resolv_host, resolv_service, [this, self, resolv_host, resolv_service](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+#else
         resolver.async_resolve(query, [this, self, query](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+#endif
             if (error) {
+#if BOOST_VERSION >= 106600
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + resolv_host + ": " + error.message(), Log::ERROR);
+#else
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
+#endif
                 destroy();
                 return;
             }
@@ -199,9 +212,17 @@ void ServerSession::in_recv(const string &data) {
                 out_socket.set_option(fastopen_connect(true), ec);
             }
 #endif // TCP_FASTOPEN_CONNECT
+#if BOOST_VERSION >= 106600
+            out_socket.async_connect(*iterator, [this, self, resolv_host, resolv_service](const boost::system::error_code error) {
+#else
             out_socket.async_connect(*iterator, [this, self, query](const boost::system::error_code error) {
+#endif
                 if (error) {
+#if BOOST_VERSION >= 106600
+                    Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + resolv_host + ':' + resolv_service + ": " + error.message(), Log::ERROR);
+#else
                     Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query.host_name() + ':' + query.service_name() + ": " + error.message(), Log::ERROR);
+#endif
                     destroy();
                     return;
                 }
@@ -269,11 +290,24 @@ void ServerSession::udp_sent() {
         }
         Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(packet.length) + " bytes to " + packet.address.address + ':' + to_string(packet.address.port));
         udp_data_buf = udp_data_buf.substr(packet_len);
+#if BOOST_VERSION >= 106600
+        std::string resolv_host = packet.address.address;
+        std::string resolv_service = to_string(packet.address.port);
+#else
         udp::resolver::query query(packet.address.address, to_string(packet.address.port));
+#endif
         auto self = shared_from_this();
+#if BOOST_VERSION >= 106600
+        udp_resolver.async_resolve(resolv_host, resolv_service, [this, self, packet, resolv_host](const boost::system::error_code error, udp::resolver::iterator iterator) {
+#else
         udp_resolver.async_resolve(query, [this, self, packet, query](const boost::system::error_code error, udp::resolver::iterator iterator) {
+#endif
             if (error) {
+#if BOOST_VERSION >= 106600
+                Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + resolv_host + ": " + error.message(), Log::ERROR);
+#else
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query.host_name() + ": " + error.message(), Log::ERROR);
+#endif
                 destroy();
                 return;
             }

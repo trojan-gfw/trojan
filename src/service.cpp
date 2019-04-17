@@ -44,7 +44,11 @@ Service::Service(Config &config, bool test) :
     udp_socket(io_service) {
     if (!test) {
         tcp::resolver resolver(io_service);
+#if BOOST_VERSION >= 106600
+        tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port));
+#else
         tcp::endpoint listen_endpoint = *resolver.resolve(tcp::resolver::query(config.local_addr, to_string(config.local_port)));
+#endif
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
         socket_acceptor.bind(listen_endpoint);

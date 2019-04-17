@@ -22,6 +22,7 @@
 
 #include <ctime>
 #include <memory>
+#include <boost/version.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include "config.h"

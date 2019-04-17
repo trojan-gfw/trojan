@@ -60,11 +60,24 @@ void ForwardSession::start() {
         first_packet_recv = true;
     }
     Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
+#if BOOST_VERSION >= 106600
+    std::string resolv_host = config.remote_addr;
+    std::string resolv_service = std::to_string(config.remote_port);
+#else
     tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
+#endif
     auto self = shared_from_this();
+#if BOOST_VERSION >= 106600
+    resolver.async_resolve(resolv_host, resolv_service, [this, self, resolv_host](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+#else
     resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+#endif
         if (error) {
+#if BOOST_VERSION >= 106600
+            Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + resolv_host + ": " + error.message(), Log::ERROR);
+#else
             Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
+#endif
             destroy();
             return;
         }
