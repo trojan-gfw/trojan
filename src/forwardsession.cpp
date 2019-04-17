@@ -24,12 +24,12 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ForwardSession::ForwardSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
-    Session(config, io_service),
+ForwardSession::ForwardSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context) :
+    Session(config, io_context),
     status(CONNECT),
     first_packet_recv(false),
-    in_socket(io_service),
-    out_socket(io_service, ssl_context) {}
+    in_socket(io_context),
+    out_socket(io_context, ssl_context) {}
 
 tcp::socket& ForwardSession::accept_socket() {
     return in_socket;

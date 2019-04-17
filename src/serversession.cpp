@@ -24,12 +24,12 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ServerSession::ServerSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context, Authenticator *auth, const string &plain_http_response) :
-    Session(config, io_service),
+ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, Authenticator *auth, const string &plain_http_response) :
+    Session(config, io_context),
     status(HANDSHAKE),
-    in_socket(io_service, ssl_context),
-    out_socket(io_service),
-    udp_resolver(io_service),
+    in_socket(io_context, ssl_context),
+    out_socket(io_context),
+    udp_resolver(io_context),
     auth(auth),
     plain_http_response(plain_http_response) {}
 

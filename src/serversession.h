@@ -52,7 +52,7 @@ private:
     void udp_recv(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_sent();
 public:
-    ServerSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
+    ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
 };

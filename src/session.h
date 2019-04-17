@@ -22,7 +22,7 @@
 
 #include <ctime>
 #include <memory>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include "config.h"
 
@@ -45,7 +45,7 @@ protected:
     boost::asio::ip::udp::socket udp_socket;
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
 public:
-    Session(const Config &config, boost::asio::io_service &io_service);
+    Session(const Config &config, boost::asio::io_context &io_context);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
     virtual void start() = 0;
     virtual ~Session();
