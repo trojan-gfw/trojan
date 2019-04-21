@@ -54,11 +54,7 @@ void ForwardSession::start() {
         }
     }
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, true);
-    if (config.append_payload) {
-        in_async_read();
-    } else {
-        first_packet_recv = true;
-    }
+    in_async_read();
     Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
     auto self = shared_from_this();
