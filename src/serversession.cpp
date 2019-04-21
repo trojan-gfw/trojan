@@ -76,7 +76,8 @@ void ServerSession::in_async_read() {
 
 void ServerSession::in_async_write(const string &data) {
     auto self = shared_from_this();
-    boost::asio::async_write(in_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
+    auto data_copy = make_shared<string>(data);
+    boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
             destroy();
             return;
@@ -98,7 +99,8 @@ void ServerSession::out_async_read() {
 
 void ServerSession::out_async_write(const string &data) {
     auto self = shared_from_this();
-    boost::asio::async_write(out_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
+    auto data_copy = make_shared<string>(data);
+    boost::asio::async_write(out_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
             destroy();
             return;
@@ -120,7 +122,8 @@ void ServerSession::udp_async_read() {
 
 void ServerSession::udp_async_write(const string &data, const udp::endpoint &endpoint) {
     auto self = shared_from_this();
-    udp_socket.async_send_to(boost::asio::buffer(data), endpoint, [this, self](const boost::system::error_code error, size_t) {
+    auto data_copy = make_shared<string>(data);
+    udp_socket.async_send_to(boost::asio::buffer(*data_copy), endpoint, [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
             destroy();
             return;

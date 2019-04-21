@@ -133,7 +133,8 @@ void ForwardSession::in_async_read() {
 
 void ForwardSession::in_async_write(const string &data) {
     auto self = shared_from_this();
-    boost::asio::async_write(in_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
+    auto data_copy = make_shared<string>(data);
+    boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
             destroy();
             return;
@@ -155,7 +156,8 @@ void ForwardSession::out_async_read() {
 
 void ForwardSession::out_async_write(const string &data) {
     auto self = shared_from_this();
-    boost::asio::async_write(out_socket, boost::asio::buffer(data), [this, self](const boost::system::error_code error, size_t) {
+    auto data_copy = make_shared<string>(data);
+    boost::asio::async_write(out_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
             destroy();
             return;
