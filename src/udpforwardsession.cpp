@@ -169,12 +169,7 @@ void UDPForwardSession::in_recv(const string &data) {
         status = FORWARDING;
         out_async_write(packet);
     } else {
-        if (out_write_buf.size() < MAX_LENGTH) {
-            out_write_buf += packet;
-        } else {
-            Log::log_with_endpoint(in_endpoint, "dropped a UDP packet due to rate limit");
-            sent_len -= length;
-        }
+        out_write_buf += packet;
     }
 }
 
