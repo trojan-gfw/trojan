@@ -39,6 +39,7 @@ public:
     std::string target_addr;
     uint16_t target_port;
     std::map<std::string, std::string> password;
+    bool append_payload;
     int udp_timeout;
     Log::Level log_level;
     class SSLConfig {

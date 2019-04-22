@@ -7,6 +7,7 @@
     "password": [
         "password1"
     ],
+    "append_payload": true,
     "log_level": 1,
     "ssl": {
         "verify": true,

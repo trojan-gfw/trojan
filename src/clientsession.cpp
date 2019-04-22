@@ -214,10 +214,14 @@ void ClientSession::in_sent() {
             if (is_udp) {
                 in_async_read();
             }
-            if (is_udp) {
-                udp_async_read();
+            if (config.append_payload) {
+                if (is_udp) {
+                    udp_async_read();
+                } else {
+                    in_async_read();
+                }
             } else {
-                in_async_read();
+                first_packet_recv = true;
             }
             tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
             auto self = shared_from_this();
