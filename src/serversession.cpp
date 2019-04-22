@@ -50,7 +50,7 @@ void ServerSession::start() {
         if (error) {
             Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
             if (error.message() == "http request" && plain_http_response != "") {
-                sent_len += plain_http_response.length();
+                recv_len += plain_http_response.length();
                 boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
                     destroy();
                 });
