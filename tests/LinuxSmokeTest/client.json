@@ -7,7 +7,7 @@
     "password": [
         "linux-smoke-test-password"
     ],
-    "append_payload": true,
+    "append_payload": false,
     "log_level": 0,
     "ssl": {
         "verify": true,

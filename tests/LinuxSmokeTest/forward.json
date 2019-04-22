@@ -9,7 +9,7 @@
     "password": [
         "linux-smoke-test-password"
     ],
-    "append_payload": true,
+    "append_payload": false,
     "udp_timeout": 60,
     "log_level": 0,
     "ssl": {
