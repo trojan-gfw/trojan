@@ -38,13 +38,13 @@ using namespace boost::asio::ssl;
 
 Service::Service(Config &config, bool test) :
     config(config),
-    socket_acceptor(io_service),
+    socket_acceptor(io_context),
     ssl_context(context::sslv23),
     auth(nullptr),
-    udp_socket(io_service) {
+    udp_socket(io_context) {
     if (!test) {
-        tcp::resolver resolver(io_service);
-        tcp::endpoint listen_endpoint = *resolver.resolve(tcp::resolver::query(config.local_addr, to_string(config.local_port)));
+        tcp::resolver resolver(io_context);
+        tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port)).begin();
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
         socket_acceptor.bind(listen_endpoint);
@@ -213,7 +213,7 @@ void Service::run() {
         rt = "client";
     }
     Log::log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::WARN);
-    io_service.run();
+    io_context.run();
     Log::log_with_date_time("trojan service stopped", Log::WARN);
 }
 
@@ -224,17 +224,17 @@ void Service::stop() {
         udp_socket.cancel(ec);
         udp_socket.close(ec);
     }
-    io_service.stop();
+    io_context.stop();
 }
 
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_service, ssl_context, auth, plain_http_response);
+        session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
     } else if (config.run_type == Config::FORWARD) {
-        session = make_shared<ForwardSession>(config, io_service, ssl_context);
+        session = make_shared<ForwardSession>(config, io_context, ssl_context);
     } else {
-        session = make_shared<ClientSession>(config, io_service, ssl_context);
+        session = make_shared<ClientSession>(config, io_context, ssl_context);
     }
     socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
         if (error == boost::asio::error::operation_aborted) {
@@ -276,7 +276,7 @@ void Service::udp_async_read() {
             it = next;
         }
         Log::log_with_endpoint(tcp::endpoint(udp_recv_endpoint.address(), udp_recv_endpoint.port()), "new UDP session");
-        auto session = make_shared<UDPForwardSession>(config, io_service, ssl_context, udp_recv_endpoint, [this](const udp::endpoint &endpoint, const string &data) {
+        auto session = make_shared<UDPForwardSession>(config, io_context, ssl_context, udp_recv_endpoint, [this](const udp::endpoint &endpoint, const string &data) {
             boost::system::error_code ec;
             udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
             if (ec == boost::asio::error::no_permission) {
@@ -292,8 +292,8 @@ void Service::udp_async_read() {
     });
 }
 
-boost::asio::io_service &Service::service() {
-    return io_service;
+boost::asio::io_context &Service::service() {
+    return io_context;
 }
 
 void Service::reload_cert() {

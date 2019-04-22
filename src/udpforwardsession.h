@@ -45,7 +45,7 @@ private:
     void out_sent();
     void timer_async_wait();
 public:
-    UDPForwardSession(const Config &config, boost::asio::io_service &io_service, boost::asio::ssl::context &ssl_context, const boost::asio::ip::udp::endpoint &endpoint, const UDPWrite &in_write);
+    UDPForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, const boost::asio::ip::udp::endpoint &endpoint, const UDPWrite &in_write);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
     bool process(const boost::asio::ip::udp::endpoint &endpoint, const std::string &data);

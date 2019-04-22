@@ -24,12 +24,12 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ForwardSession::ForwardSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context) :
-    Session(config, io_service),
+ForwardSession::ForwardSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context) :
+    Session(config, io_context),
     status(CONNECT),
     first_packet_recv(false),
-    in_socket(io_service),
-    out_socket(io_service, ssl_context) {}
+    in_socket(io_context),
+    out_socket(io_context, ssl_context) {}
 
 tcp::socket& ForwardSession::accept_socket() {
     return in_socket;
@@ -60,14 +60,14 @@ void ForwardSession::start() {
         first_packet_recv = true;
     }
     Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
-    tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
     auto self = shared_from_this();
-    resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
         if (error) {
             Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
             destroy();
             return;
         }
+        auto iterator = results.begin();
         boost::system::error_code ec;
         out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
         if (ec) {

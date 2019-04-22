@@ -21,7 +21,7 @@
 #define _SERVICE_H_
 
 #include <list>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include "authenticator.h"
@@ -33,7 +33,7 @@ private:
         MAX_LENGTH = 8192
     };
     const Config &config;
-    boost::asio::io_service io_service;
+    boost::asio::io_context io_context;
     boost::asio::ip::tcp::acceptor socket_acceptor;
     boost::asio::ssl::context ssl_context;
     Authenticator *auth;
@@ -48,7 +48,7 @@ public:
     Service(Config &config, bool test = false);
     void run();
     void stop();
-    boost::asio::io_service &service();
+    boost::asio::io_context &service();
     void reload_cert();
     ~Service();
 };

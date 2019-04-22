@@ -26,12 +26,12 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_service &io_service, context &ssl_context, const udp::endpoint &endpoint, const UDPWrite &in_write) :
-    Session(config, io_service),
+UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, const udp::endpoint &endpoint, const UDPWrite &in_write) :
+    Session(config, io_context),
     status(CONNECT),
     in_write(in_write),
-    out_socket(io_service, ssl_context),
-    gc_timer(io_service) {
+    out_socket(io_context, ssl_context),
+    gc_timer(io_context) {
     udp_recv_endpoint = endpoint;
     in_endpoint = tcp::endpoint(endpoint.address(), endpoint.port());
 }
@@ -55,14 +55,14 @@ void UDPForwardSession::start() {
     }
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, false);
     Log::log_with_endpoint(in_endpoint, "forwarding UDP packets to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
-    tcp::resolver::query query(config.remote_addr, to_string(config.remote_port));
     auto self = shared_from_this();
-    resolver.async_resolve(query, [this, self](const boost::system::error_code error, tcp::resolver::iterator iterator) {
+    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
         if (error) {
             Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
             destroy();
             return;
         }
+        auto iterator = results.begin();
         boost::system::error_code ec;
         out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
         if (ec) {
@@ -145,7 +145,7 @@ void UDPForwardSession::out_async_write(const string &data) {
 
 void UDPForwardSession::timer_async_wait()
 {
-    gc_timer.expires_from_now(chrono::seconds(config.udp_timeout));
+    gc_timer.expires_after(chrono::seconds(config.udp_timeout));
     auto self = shared_from_this();
     gc_timer.async_wait([this, self](const boost::system::error_code error) {
         if (!error) {
@@ -215,10 +215,10 @@ void UDPForwardSession::destroy() {
     }
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
-    boost::system::error_code ec;
     resolver.cancel();
-    gc_timer.cancel(ec);
+    gc_timer.cancel();
     if (out_socket.next_layer().is_open()) {
+        boost::system::error_code ec;
         out_socket.next_layer().cancel(ec);
         // only do unidirectional shutdown and don't wait for other side's close_notify
         // a.k.a. call SSL_shutdown() once and discard its return value
