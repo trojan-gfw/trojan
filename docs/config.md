@@ -16,7 +16,6 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     "password": [
         "password1"
     ],
-    "append_payload": true,
     "log_level": 1,
     "ssl": {
         "verify": true,
@@ -47,7 +46,6 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 - `remote_addr`: server address (hostname)
 - `remote_port`: server port
 - `password`: password used for verification (only the first password in the array will be used)
-- `append_payload`: whether to append the first packet to trojan request. It can reduce length patterns of sessions, but may cause stability issues, in which case set it to `false`. For example, if you are running trojan server and trojan client on the same machine, you should set this option to `false`, because there is a race condition at the time the client receives its first packet.
 - `log_level`: how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 - `ssl`: `SSL` specific configurations
     - `verify`: whether to verify `SSL` certificate **STRONGLY RECOMMENDED**
@@ -81,7 +79,6 @@ This forward config is for port forwarding. Everything is the same as the client
     "password": [
         "password1"
     ],
-    "append_payload": true,
     "udp_timeout": 60,
     "log_level": 1,
     "ssl": {

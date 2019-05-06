@@ -54,11 +54,7 @@ void ForwardSession::start() {
         }
     }
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, true);
-    if (config.append_payload) {
-        in_async_read();
-    } else {
-        first_packet_recv = true;
-    }
+    in_async_read();
     Log::log_with_endpoint(in_endpoint, "forwarding to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     auto self = shared_from_this();
     resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
@@ -123,7 +119,10 @@ void ForwardSession::start() {
 void ForwardSession::in_async_read() {
     auto self = shared_from_this();
     in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
-        if (error && error != boost::asio::error::operation_aborted) {
+        if (error == boost::asio::error::operation_aborted) {
+            return;
+        }
+        if (error) {
             destroy();
             return;
         }

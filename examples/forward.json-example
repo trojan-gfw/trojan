@@ -9,7 +9,6 @@
     "password": [
         "password1"
     ],
-    "append_payload": true,
     "udp_timeout": 60,
     "log_level": 1,
     "ssl": {

@@ -7,7 +7,6 @@
     "password": [
         "wrong-password"
     ],
-    "append_payload": false,
     "log_level": 0,
     "ssl": {
         "verify": true,

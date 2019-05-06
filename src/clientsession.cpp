@@ -60,7 +60,10 @@ void ClientSession::start() {
 void ClientSession::in_async_read() {
     auto self = shared_from_this();
     in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
-        if (error && error != boost::asio::error::operation_aborted) {
+        if (error == boost::asio::error::operation_aborted) {
+            return;
+        }
+        if (error) {
             destroy();
             return;
         }
@@ -106,7 +109,10 @@ void ClientSession::out_async_write(const string &data) {
 void ClientSession::udp_async_read() {
     auto self = shared_from_this();
     udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
-        if (error && error != boost::asio::error::operation_aborted) {
+        if (error == boost::asio::error::operation_aborted) {
+            return;
+        }
+        if (error) {
             destroy();
             return;
         }
@@ -211,17 +217,9 @@ void ClientSession::in_sent() {
         }
         case REQUEST: {
             status = CONNECT;
+            in_async_read();
             if (is_udp) {
-                in_async_read();
-            }
-            if (config.append_payload) {
-                if (is_udp) {
-                    udp_async_read();
-                } else {
-                    in_async_read();
-                }
-            } else {
-                first_packet_recv = true;
+                udp_async_read();
             }
             auto self = shared_from_this();
             resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
