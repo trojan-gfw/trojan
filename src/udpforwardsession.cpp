@@ -218,13 +218,21 @@ void UDPForwardSession::destroy() {
     resolver.cancel();
     gc_timer.cancel();
     if (out_socket.next_layer().is_open()) {
+        auto self = shared_from_this();
+        auto ssl_shutdown_cb = [this, self](const boost::system::error_code error) {
+            if (error == boost::asio::error::operation_aborted) {
+                return;
+            }
+            boost::system::error_code ec;
+            ssl_shutdown_timer.cancel();
+            out_socket.next_layer().cancel(ec);
+            out_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
+            out_socket.next_layer().close(ec);
+        };
         boost::system::error_code ec;
         out_socket.next_layer().cancel(ec);
-        // only do unidirectional shutdown and don't wait for other side's close_notify
-        // a.k.a. call SSL_shutdown() once and discard its return value
-        ::SSL_set_shutdown(out_socket.native_handle(), SSL_RECEIVED_SHUTDOWN);
-        out_socket.shutdown(ec);
-        out_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
-        out_socket.next_layer().close(ec);
+        out_socket.async_shutdown(ssl_shutdown_cb);
+        ssl_shutdown_timer.expires_after(chrono::seconds(SSL_SHUTDOWN_TIMEOUT));
+        ssl_shutdown_timer.async_wait(ssl_shutdown_cb);
     }
 }
