@@ -34,7 +34,7 @@ Authenticator::Authenticator(const Config &config) {
                                  config.mysql.server_port, NULL, 0) == NULL) {
         throw runtime_error(mysql_error(&con));
     }
-    my_bool reconnect = 1;
+    bool reconnect = 1;
     mysql_options(&con, MYSQL_OPT_RECONNECT, &reconnect);
     Log::log_with_date_time("connected to MySQL server", Log::INFO);
 }
