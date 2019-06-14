@@ -148,6 +148,9 @@ void ServerSession::in_recv(const string &data) {
             } else {
                 Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
             }
+            if (!valid) {
+                Log::log_with_endpoint(in_endpoint, "valid trojan request structure but possibly incorrect password (" + req.password + ')', Log::WARN);
+            }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;
         string query_port = to_string(valid ? req.address.port : config.remote_port);
