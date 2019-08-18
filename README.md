@@ -1,6 +1,6 @@
 # trojan
 
-[![CircleCI](https://circleci.com/gh/trojan-gfw/trojan/tree/master.svg?style=svg)](https://circleci.com/gh/trojan-gfw/trojan/tree/master) [![Build Status](https://ci.appveyor.com/api/projects/status/e0ulqwb44i7j5gkl/branch/master?svg=true)](https://ci.appveyor.com/project/GreaterFire/trojan/branch/master)
+[![Build Status](https://dev.azure.com/GreaterFire/Trojan-GFW/_apis/build/status/trojan-gfw.trojan?branchName=master)](https://dev.azure.com/GreaterFire/Trojan-GFW/_build/latest?definitionId=3&branchName=master)
 
 An unidentifiable mechanism that helps you bypass GFW.
 

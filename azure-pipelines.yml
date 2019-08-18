@@ -1,0 +1,141 @@
+stages:
+
+- stage: Build
+  jobs:
+
+  - job: Linux
+    pool:
+      vmImage: ubuntu-latest
+    container:
+      image: trojangfw/centos-build:latest
+    steps:
+    - script: |
+        set -euo pipefail
+        echo 'target_link_libraries(trojan dl)' >> CMakeLists.txt
+        cmake -DMYSQL_INCLUDE_DIR=/usr/local/include/mariadb -DMYSQL_LIBRARY=/usr/local/lib/mariadb/libmysqlclient.a -DDEFAULT_CONFIG=config.json -DFORCE_TCP_FASTOPEN=ON .
+        make
+        strip -s trojan
+    - publish: $(System.DefaultWorkingDirectory)/trojan
+      artifact: LinuxBinary
+
+  - job: macOS
+    pool:
+      vmImage: macOS-latest
+    steps:
+    - script: |
+        set -euo pipefail
+        brew install boost openssl@1.1
+        cmake -DBoost_USE_STATIC_LIBS=ON -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@1.1/include -DOPENSSL_CRYPTO_LIBRARY=/usr/local/opt/openssl@1.1/lib/libcrypto.a -DOPENSSL_SSL_LIBRARY=/usr/local/opt/openssl@1.1/lib/libssl.a -DDEFAULT_CONFIG=config.json -DENABLE_MYSQL=OFF .
+        make
+        strip -SXTx trojan
+    - publish: $(System.DefaultWorkingDirectory)/trojan
+      artifact: macOSBinary
+
+  - job: Windows
+    pool:
+      vmImage: windows-latest
+    steps:
+    - bash: |
+        set -euo pipefail
+        curl -LO https://slproweb.com/download/Win64OpenSSL-1_1_1c.exe
+        powershell ".\\Win64OpenSSL-1_1_1c.exe /silent /sp- /suppressmsgboxes /DIR='C:\\Program Files\\OpenSSL-Win64'"
+        cmake -DBoost_USE_STATIC_LIBS=ON -DOPENSSL_ROOT_DIR='C:/Program Files/OpenSSL-Win64' -DOPENSSL_USE_STATIC_LIBS=ON -DENABLE_MYSQL=OFF .
+        cmake --build . --config Release
+    - publish: $(System.DefaultWorkingDirectory)/Release/trojan.exe
+      artifact: WindowsBinary
+
+- stage: Test
+  jobs:
+
+  - job: Linux
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - download: current
+      artifact: LinuxBinary
+    - script: |
+        set -uo pipefail
+        BINARY="$PIPELINE_WORKSPACE/LinuxBinary/trojan"
+        chmod +x "$BINARY"
+        mkdir results
+        cp -r "$(tests/LinuxSmokeTest/basic.sh "$BINARY")" results/basic
+        cp -r "$(tests/LinuxSmokeTest/fake-client.sh "$BINARY")" results/fake-client
+      env:
+        PIPELINE_WORKSPACE: $(Pipeline.Workspace)
+    - publish: $(System.DefaultWorkingDirectory)/results
+      artifact: LinuxTest
+
+- stage: Package
+  jobs:
+
+  - job: Linux
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - download: current
+      artifact: LinuxBinary
+    - script: |
+        set -euo pipefail
+        BINARY="$PIPELINE_WORKSPACE/LinuxBinary/trojan"
+        chmod +x "$BINARY"
+        mkdir trojan
+        cp "$BINARY" trojan/trojan
+        cp -r examples CONTRIBUTORS.md LICENSE README.md trojan
+        cp examples/server.json-example trojan/config.json
+        tar cf trojan-linux-amd64.tar trojan
+        xz trojan-linux-amd64.tar
+      env:
+        PIPELINE_WORKSPACE: $(Pipeline.Workspace)
+    - publish: $(System.DefaultWorkingDirectory)/trojan-linux-amd64.tar.xz
+      artifact: LinuxRelease
+
+  - job: macOS
+    pool:
+      vmImage: macOS-latest
+    steps:
+    - download: current
+      artifact: macOSBinary
+    - script: |
+        set -euo pipefail
+        BINARY="$PIPELINE_WORKSPACE/macOSBinary/trojan"
+        chmod +x "$BINARY"
+        mkdir trojan
+        cp "$BINARY" trojan/trojan
+        cp -r examples CONTRIBUTORS.md LICENSE README.md trojan
+        cp examples/client.json-example trojan/config.json
+        rm trojan/examples/trojan.service-example
+        cat > trojan/start.command <<EOF
+        #!/bin/sh
+
+        cd "\$(dirname "\$0")"
+        ./trojan
+        EOF
+        chmod +x trojan/start.command
+        sed -i '' "s/\"cert\": \"\"/\"cert\": \"\/etc\/ssl\/cert.pem\"/" trojan/config.json
+        sed -i '' "s/\"cert\": \"\"/\"cert\": \"\/etc\/ssl\/cert.pem\"/" trojan/examples/client.json-example
+        sed -i '' "s/\"cert\": \"\"/\"cert\": \"\/etc\/ssl\/cert.pem\"/" trojan/examples/forward.json-example
+        zip -r9 trojan-macos.zip trojan
+      env:
+        PIPELINE_WORKSPACE: $(Pipeline.Workspace)
+    - publish: $(System.DefaultWorkingDirectory)/trojan-macos.zip
+      artifact: macOSRelease
+
+  - job: Windows
+    pool:
+      vmImage: windows-latest
+    steps:
+    - download: current
+      artifact: WindowsBinary
+    - bash: |
+        set -euo pipefail
+        BINARY="$PIPELINE_WORKSPACE/WindowsBinary/trojan.exe"
+        mkdir trojan
+        cp "$BINARY" trojan/trojan.exe
+        cp -r examples CONTRIBUTORS.md LICENSE README.md trojan
+        cp examples/client.json-example trojan/config.json
+        rm trojan/examples/trojan.service-example
+        7z a -mx=9 trojan-win.zip trojan
+      env:
+        PIPELINE_WORKSPACE: $(Pipeline.Workspace)
+    - publish: $(System.DefaultWorkingDirectory)/trojan-win.zip
+      artifact: WindowsRelease
