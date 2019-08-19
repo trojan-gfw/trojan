@@ -2,10 +2,10 @@
 
 ## Dependencies
 
-- coreutils
+- curl
+- netcat
 - openssl
 - python3
-- curl
 
 ## Usage
 

@@ -63,7 +63,8 @@ else()
     include(GNUInstallDirs)
     install(TARGETS trojan DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES examples/server.json-example DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/trojan RENAME config.json)
-    add_definitions(-DDEFAULT_CONFIG="${CMAKE_INSTALL_FULL_SYSCONFDIR}/trojan/config.json")
+    set(DEFAULT_CONFIG ${CMAKE_INSTALL_FULL_SYSCONFDIR}/trojan/config.json CACHE STRING "Default config path")
+    add_definitions(-DDEFAULT_CONFIG="${DEFAULT_CONFIG}")
     install(FILES docs/trojan.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
     install(DIRECTORY docs/ DESTINATION ${CMAKE_INSTALL_DOCDIR} FILES_MATCHING PATTERN "*.md")
     install(DIRECTORY examples DESTINATION ${CMAKE_INSTALL_DOCDIR} FILES_MATCHING PATTERN "*.json-example")
@@ -85,9 +86,7 @@ else()
     endif()
     enable_testing()
     add_test(NAME LinuxSmokeTest-basic
-             COMMAND sh ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/basic.sh ${CMAKE_BINARY_DIR}/trojan
-             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest)
+             COMMAND bash ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/basic.sh ${CMAKE_BINARY_DIR}/trojan)
     add_test(NAME LinuxSmokeTest-fake-client
-             COMMAND sh ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/fake-client.sh ${CMAKE_BINARY_DIR}/trojan
-             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest)
+             COMMAND bash ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/fake-client.sh ${CMAKE_BINARY_DIR}/trojan)
 endif()
