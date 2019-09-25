@@ -12,7 +12,7 @@ stages:
     - script: |
         set -euo pipefail
         echo 'target_link_libraries(trojan dl)' >> CMakeLists.txt
-        cmake -DMYSQL_INCLUDE_DIR=/usr/local/include/mariadb -DMYSQL_LIBRARY=/usr/local/lib/mariadb/libmysqlclient.a -DDEFAULT_CONFIG=config.json -DFORCE_TCP_FASTOPEN=ON .
+        cmake -DMYSQL_INCLUDE_DIR=/usr/local/include/mariadb -DMYSQL_LIBRARY=/usr/local/lib/mariadb/libmysqlclient.a -DDEFAULT_CONFIG=config.json -DFORCE_TCP_FASTOPEN=ON -DBoost_USE_STATIC_LIBS=ON .
         make
         strip -s trojan
     - publish: $(System.DefaultWorkingDirectory)/trojan
