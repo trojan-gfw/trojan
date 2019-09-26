@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -u
 
 source "$(dirname "$0")/common.sh"
 
