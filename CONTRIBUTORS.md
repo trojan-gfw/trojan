@@ -12,8 +12,6 @@
     - Fix an ambiguity in the documentation.
 - [klzgrad](https://github.com/klzgrad)
     - Add Linux smoke test.
-- UzminTid
-    - Fix type error in MinGW.
 - [WeidiDeng](https://github.com/WeidiDeng)
     - Fix incorrect Debian dependency in the documentation.
 - [wongsyrone](https://github.com/wongsyrone)
