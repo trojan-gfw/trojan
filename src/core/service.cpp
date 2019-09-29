@@ -27,11 +27,11 @@
 #include <tchar.h>
 #endif // _WIN32
 #include <openssl/opensslv.h>
-#include "serversession.h"
-#include "clientsession.h"
-#include "forwardsession.h"
-#include "ssldefaults.h"
-#include "sslsession.h"
+#include "session/serversession.h"
+#include "session/clientsession.h"
+#include "session/forwardsession.h"
+#include "ssl/ssldefaults.h"
+#include "ssl/sslsession.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;

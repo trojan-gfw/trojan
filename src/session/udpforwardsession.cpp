@@ -19,9 +19,9 @@
 
 #include "udpforwardsession.h"
 #include <stdexcept>
-#include "sslsession.h"
-#include "trojanrequest.h"
-#include "udppacket.h"
+#include "ssl/sslsession.h"
+#include "proto/trojanrequest.h"
+#include "proto/udppacket.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;

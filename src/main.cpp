@@ -26,8 +26,8 @@
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
-#include "service.h"
-#include "version.h"
+#include "core/service.h"
+#include "core/version.h"
 using namespace std;
 using namespace boost::asio;
 namespace po = boost::program_options;

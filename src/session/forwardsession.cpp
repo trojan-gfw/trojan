@@ -18,8 +18,8 @@
  */
 
 #include "forwardsession.h"
-#include "trojanrequest.h"
-#include "sslsession.h"
+#include "proto/trojanrequest.h"
+#include "ssl/sslsession.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;

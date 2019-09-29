@@ -10,22 +10,23 @@ if(NOT MSVC)
 endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_executable(trojan
-    src/authenticator.cpp
-    src/clientsession.cpp
-    src/config.cpp
-    src/forwardsession.cpp
-    src/log.cpp
+    src/core/authenticator.cpp
+    src/core/config.cpp
+    src/core/log.cpp
+    src/core/service.cpp
+    src/core/version.cpp
     src/main.cpp
-    src/serversession.cpp
-    src/service.cpp
-    src/session.cpp
-    src/socks5address.cpp
-    src/ssldefaults.cpp
-    src/sslsession.cpp
-    src/trojanrequest.cpp
-    src/udpforwardsession.cpp
-    src/udppacket.cpp
-    src/version.cpp)
+    src/proto/socks5address.cpp
+    src/proto/trojanrequest.cpp
+    src/proto/udppacket.cpp
+    src/session/clientsession.cpp
+    src/session/forwardsession.cpp
+    src/session/serversession.cpp
+    src/session/session.cpp
+    src/session/udpforwardsession.cpp
+    src/ssl/ssldefaults.cpp
+    src/ssl/sslsession.cpp)
+include_directories(src)
 find_package(Threads REQUIRED)
 target_link_libraries(trojan ${CMAKE_THREAD_LIBS_INIT})
 find_package(Boost 1.66.0 REQUIRED COMPONENTS system program_options)
