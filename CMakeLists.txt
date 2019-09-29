@@ -21,6 +21,7 @@ add_executable(trojan
     src/proto/udppacket.cpp
     src/session/clientsession.cpp
     src/session/forwardsession.cpp
+    src/session/natsession.cpp
     src/session/serversession.cpp
     src/session/session.cpp
     src/session/udpforwardsession.cpp

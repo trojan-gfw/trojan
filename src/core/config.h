@@ -30,7 +30,8 @@ public:
     enum RunType {
         SERVER,
         CLIENT,
-        FORWARD
+        FORWARD,
+        NAT
     } run_type;
     std::string local_addr;
     uint16_t local_port;
