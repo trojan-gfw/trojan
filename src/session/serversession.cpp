@@ -187,6 +187,7 @@ void ServerSession::in_recv(const string &data) {
                     }
                 }
             }
+            Log::log_with_endpoint(in_endpoint, query_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
             boost::system::error_code ec;
             out_socket.open(iterator->endpoint().protocol(), ec);
             if (ec) {
@@ -294,6 +295,7 @@ void ServerSession::udp_sent() {
                     }
                 }
             }
+            Log::log_with_endpoint(in_endpoint, query_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
             if (!udp_socket.is_open()) {
                 auto protocol = iterator->endpoint().protocol();
                 boost::system::error_code ec;
