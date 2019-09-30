@@ -43,6 +43,11 @@ Service::Service(Config &config, bool test) :
     ssl_context(context::sslv23),
     auth(nullptr),
     udp_socket(io_context) {
+#ifndef ENABLE_NAT
+    if (config.run_type == Config::NAT) {
+        throw runtime_error("NAT is not supported");
+    }
+#endif // ENABLE_NAT
     if (!test) {
         tcp::resolver resolver(io_context);
         tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port)).begin();

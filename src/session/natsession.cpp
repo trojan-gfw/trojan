@@ -47,6 +47,7 @@ tcp::socket& NATSession::accept_socket() {
 }
 
 pair<string, uint16_t> NATSession::get_target_endpoint() {
+#ifdef ENABLE_NAT
     int fd = in_socket.native_handle();
     // Taken from https://github.com/shadowsocks/shadowsocks-libev/blob/v3.3.1/src/redir.c.
     sockaddr_storage destaddr;
@@ -70,6 +71,9 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
         port = ntohs(sa->sin6_port);
     }
     return make_pair(ipstr, port);
+#else // ENABLE_NAT
+    return make_pair("", 0);
+#endif // ENABLE_NAT
 }
 
 void NATSession::start() {
