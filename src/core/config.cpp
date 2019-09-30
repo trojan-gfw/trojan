@@ -45,6 +45,8 @@ void Config::populate(const ptree &tree) {
         run_type = SERVER;
     } else if (rt == "forward") {
         run_type = FORWARD;
+    } else if (rt == "nat") {
+        run_type = NAT;
     } else {
         run_type = CLIENT;
     }
@@ -106,6 +108,7 @@ bool Config::sip003() {
             local_port = atoi(getenv("SS_REMOTE_PORT"));
             break;
         case CLIENT:
+        case NAT:
             throw runtime_error("SIP003 with wrong run_type");
             break;
         case FORWARD:

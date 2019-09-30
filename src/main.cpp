@@ -109,6 +109,11 @@ int main(int argc, const char *argv[]) {
 #else // ENABLE_SSL_KEYLOG
             Log::log("[Disabled] SSL KeyLog Support", Log::FATAL);
 #endif // ENABLE_SSL_KEYLOG
+#ifdef ENABLE_NAT
+            Log::log(" [Enabled] NAT Support", Log::FATAL);
+#else // ENABLE_NAT
+            Log::log("[Disabled] NAT Support", Log::FATAL);
+#endif // ENABLE_NAT
             Log::log("OpenSSL Information", Log::FATAL);
             if (OpenSSL_version_num() != OPENSSL_VERSION_NUMBER) {
                 Log::log(string("\tCompile-time Version: ") + OPENSSL_VERSION_TEXT, Log::FATAL);

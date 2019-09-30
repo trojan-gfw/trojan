@@ -103,7 +103,7 @@ stages:
         cp "$BINARY" trojan/trojan
         cp -r examples CONTRIBUTORS.md LICENSE README.md trojan
         cp examples/client.json-example trojan/config.json
-        rm trojan/examples/trojan.service-example
+        rm trojan/examples/nat.json-example trojan/examples/trojan.service-example
         cat > trojan/start.command <<EOF
         #!/bin/sh
 
@@ -133,7 +133,7 @@ stages:
         cp "$BINARY" trojan/trojan.exe
         cp -r examples CONTRIBUTORS.md LICENSE README.md trojan
         cp examples/client.json-example trojan/config.json
-        rm trojan/examples/trojan.service-example
+        rm trojan/examples/nat.json-example trojan/examples/trojan.service-example
         7z a -mx=9 trojan-win.zip trojan
       env:
         PIPELINE_WORKSPACE: $(Pipeline.Workspace)

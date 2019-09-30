@@ -30,6 +30,7 @@
 #include "session/serversession.h"
 #include "session/clientsession.h"
 #include "session/forwardsession.h"
+#include "session/natsession.h"
 #include "ssl/ssldefaults.h"
 #include "ssl/sslsession.h"
 using namespace std;
@@ -42,6 +43,11 @@ Service::Service(Config &config, bool test) :
     ssl_context(context::sslv23),
     auth(nullptr),
     udp_socket(io_context) {
+#ifndef ENABLE_NAT
+    if (config.run_type == Config::NAT) {
+        throw runtime_error("NAT is not supported");
+    }
+#endif // ENABLE_NAT
     if (!test) {
         tcp::resolver resolver(io_context);
         tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port)).begin();
@@ -209,6 +215,8 @@ void Service::run() {
         rt = "server";
     } else if (config.run_type == Config::FORWARD) {
         rt = "forward";
+    } else if (config.run_type == Config::NAT) {
+        rt = "nat";
     } else {
         rt = "client";
     }
@@ -233,6 +241,8 @@ void Service::async_accept() {
         session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
     } else if (config.run_type == Config::FORWARD) {
         session = make_shared<ForwardSession>(config, io_context, ssl_context);
+    } else if (config.run_type == Config::NAT) {
+        session = make_shared<NATSession>(config, io_context, ssl_context);
     } else {
         session = make_shared<ClientSession>(config, io_context, ssl_context);
     }
