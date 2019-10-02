@@ -47,8 +47,10 @@ void Config::populate(const ptree &tree) {
         run_type = FORWARD;
     } else if (rt == "nat") {
         run_type = NAT;
-    } else {
+    } else if (rt == "client") {
         run_type = CLIENT;
+    } else {
+        throw runtime_error("wrong run_type in config file");
     }
     local_addr = tree.get("local_addr", string());
     local_port = tree.get("local_port", uint16_t());
