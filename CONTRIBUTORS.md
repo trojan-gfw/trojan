@@ -4,6 +4,8 @@
     - Add Debian build instructions in the documentation.
 - [felixonmars](https://github.com/felixonmars)
     - Fix incorrect systemd service path in the documentation.
+- [ffftwo](https://github.com/ffftwo)
+    - Throw an exception when `run_type` is wrong.
 - [GreaterFire](https://github.com/GreaterFire)
     - Author of this project.
 - [JonathanHouten](https://github.com/JonathanHouten)
