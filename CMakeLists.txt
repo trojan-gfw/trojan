@@ -30,6 +30,10 @@ add_executable(trojan
     src/session/udpforwardsession.cpp
     src/ssl/ssldefaults.cpp
     src/ssl/sslsession.cpp)
+if(MSVC)
+    set_property(TARGET trojan PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 include_directories(src)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
