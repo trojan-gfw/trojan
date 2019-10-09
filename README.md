@@ -23,3 +23,7 @@ Installation guide on various platforms can be found in the [wiki](https://githu
 ## License
 
 [GPLv3](LICENSE)
+
+## Flag Counter
+
+[![Flag Counter](https://s04.flagcounter.com/countxl/svnh/bg_FFFFFF/txt_000000/border_CCCCCC/columns_5/maxflags_20/viewers_Trojan/labels_1/pageviews_1/flags_0/percent_0/)](https://info.flagcounter.com/svnh)
