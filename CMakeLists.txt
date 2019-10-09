@@ -31,7 +31,14 @@ add_executable(trojan
     src/ssl/ssldefaults.cpp
     src/ssl/sslsession.cpp)
 if(MSVC)
-    set_property(TARGET trojan PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    message(STATUS "Using static MSVC CRT")
+    # http://stackoverflow.com/a/32128977/486990
+    add_compile_options(
+        "$<$<CONFIG:Debug>:/MTd>"
+        "$<$<CONFIG:RelWithDebInfo>:/MT>"
+        "$<$<CONFIG:Release>:/MT>"
+        "$<$<CONFIG:MinSizeRel>:/MT>"
+    )
 endif()
 
 include_directories(src)
