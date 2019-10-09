@@ -8,6 +8,14 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    message(STATUS "Using static MSVC CRT")
+    # http://stackoverflow.com/a/32128977/486990
+    add_compile_options(
+        "$<$<CONFIG:Debug>:/MTd>"
+        "$<$<CONFIG:RelWithDebInfo>:/MT>"
+        "$<$<CONFIG:Release>:/MT>"
+        "$<$<CONFIG:MinSizeRel>:/MT>"
+    )
 else()
     add_definitions(-Wall -Wextra)
 endif()
@@ -30,16 +38,6 @@ add_executable(trojan
     src/session/udpforwardsession.cpp
     src/ssl/ssldefaults.cpp
     src/ssl/sslsession.cpp)
-if(MSVC)
-    message(STATUS "Using static MSVC CRT")
-    # http://stackoverflow.com/a/32128977/486990
-    add_compile_options(
-        "$<$<CONFIG:Debug>:/MTd>"
-        "$<$<CONFIG:RelWithDebInfo>:/MT>"
-        "$<$<CONFIG:Release>:/MT>"
-        "$<$<CONFIG:MinSizeRel>:/MT>"
-    )
-endif()
 
 include_directories(src)
 
