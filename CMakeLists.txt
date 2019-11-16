@@ -73,6 +73,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     endif()
 endif()
 
+if (APPLE)
+	find_library(CoreFoundation CoreFoundation)
+    find_library(Security Security)
+	target_link_libraries(trojan ${CoreFoundation} ${Security})
+endif()
+
 if(WIN32)
     target_link_libraries(trojan wsock32 ws2_32 crypt32)
 else()

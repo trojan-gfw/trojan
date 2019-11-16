@@ -26,6 +26,9 @@
 #include <wincrypt.h>
 #include <tchar.h>
 #endif // _WIN32
+#ifdef __MACH__
+#include <Security/Security.h>
+#endif
 #include <openssl/opensslv.h>
 #include "session/serversession.h"
 #include "session/clientsession.h"
@@ -139,6 +142,56 @@ Service::Service(Config &config, bool test) :
                     CertCloseStore(h_store, 0);
                 }
 #endif // _WIN32
+#ifdef __MACH__
+                SecKeychainSearchRef pSecKeychainSearch = NULL;
+                SecKeychainRef pSecKeychain;
+                OSStatus status = noErr;
+                X509 *cert = NULL;
+
+                // Leopard and above store location
+                status = SecKeychainOpen ("/System/Library/Keychains/SystemRootCertificates.keychain", &pSecKeychain);
+                if (status == noErr) {
+                    X509_STORE *store = SSL_CTX_get_cert_store(native_context);
+                    status = SecKeychainSearchCreateFromAttributes (pSecKeychain, kSecCertificateItemClass, NULL, &pSecKeychainSearch);
+                     for (;;) {
+                        SecKeychainItemRef pSecKeychainItem = nil;
+
+                        status = SecKeychainSearchCopyNext (pSecKeychainSearch, &pSecKeychainItem);
+                        if (status == errSecItemNotFound) {
+                            break;
+                        }
+                        
+                        if (status == noErr) {
+                            void *_pCertData;
+                            UInt32 _pCertLength;
+                            status = SecKeychainItemCopyAttributesAndData (pSecKeychainItem, NULL, NULL, NULL, &_pCertLength, &_pCertData);
+
+                            if (status == noErr && _pCertData != NULL) {
+                                unsigned char *ptr;
+
+                                ptr = (unsigned char *)_pCertData;       /*required because d2i_X509 is modifying pointer */
+                                cert = d2i_X509 (NULL, (const unsigned char **) &ptr, _pCertLength);
+                                if (cert == NULL) {
+                                    continue;
+                                }
+   
+                                if (!X509_STORE_add_cert (store, cert)) {
+                                    X509_free (cert);
+                                    continue;
+                                }
+                                X509_free (cert);
+
+                                status = SecKeychainItemFreeAttributesAndData (NULL, _pCertData);
+                            }
+                        }
+                        if (pSecKeychainItem != NULL) {
+                            CFRelease (pSecKeychainItem);
+                        }
+                    }
+                    CFRelease (pSecKeychainSearch);
+                    CFRelease (pSecKeychain);
+                }
+#endif
             } else {
                 ssl_context.load_verify_file(config.ssl.cert);
             }
