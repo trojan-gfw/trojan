@@ -48,9 +48,15 @@ The `cmake ..` command can be extended with the following options:
 - `ENABLE_NAT` (Only on Linux)
     - `-DENABLE_NAT=ON`: build with NAT support (default).
     - `-DENABLE_NAT=OFF`: build without NAT support.
+- `ENABLE_REUSE_PORT` (Only on Linux)
+    - `-DENABLE_REUSE_PORT=ON`: build with TCP_REUSEPORT support (default).
+    - `-DENABLE_REUSE_PORT=OFF`: build without TCP_REUSEPORT support.
 - `ENABLE_SSL_KEYLOG` (OpenSSL >= 1.1.1)
     - `-DENABLE_SSL_KEYLOG=ON`: build with SSL KeyLog support (default).
     - `-DENABLE_SSL_KEYLOG=OFF`: build without SSL KeyLog support.
+- `ENABLE_TLS13_CIPHERSUITES` (OpenSSL >= 1.1.1)
+    - `-DENABLE_TLS13_CIPHERSUITES=ON`: build with TLS1.3 ciphersuites customize support (default).
+    - `-DENABLE_TLS13_CIPHERSUITES=OFF`: build without TLS1.3 ciphersuites customize support.
 - `FORCE_TCP_FASTOPEN`
     - `-DFORCE_TCP_FASTOPEN=ON`: force build with TCP_FASTOPEN support.
     - `-DFORCE_TCP_FASTOPEN=OFF`: build with TCP_FASTOPEN support based on system capabilities (default).
