@@ -71,6 +71,7 @@ void Config::populate(const ptree &tree) {
     ssl.key = tree.get("ssl.key", string());
     ssl.key_password = tree.get("ssl.key_password", string());
     ssl.cipher = tree.get("ssl.cipher", string());
+    ssl.cipher_tls13 = tree.get("ssl.cipher_tls13", string());
     ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
     ssl.sni = tree.get("ssl.sni", string());
     ssl.alpn = "";

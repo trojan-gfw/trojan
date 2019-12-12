@@ -51,6 +51,11 @@ if(OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     if(ENABLE_SSL_KEYLOG)
         add_definitions(-DENABLE_SSL_KEYLOG)
     endif()
+
+    option(ENABLE_TLS13_CIPHERSUITES "Build with TLS1.3 Ciphersuites" ON)
+    if(ENABLE_TLS13_CIPHERSUITES)
+        add_definitions(-DENABLE_TLS13_CIPHERSUITES)
+    endif()
 endif()
 
 option(ENABLE_MYSQL "Build with MySQL support" ON)
