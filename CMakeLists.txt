@@ -71,6 +71,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     if(ENABLE_NAT)
         add_definitions(-DENABLE_NAT)
     endif()
+
+    option(ENABLE_REUSE_PORT "Build with REUSE_PORT support" ON)
+    if (ENABLE_REUSE_PORT)
+        add_definitions(-DENABLE_REUSE_PORT)
+    endif()
 endif()
 
 if(WIN32)

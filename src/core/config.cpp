@@ -90,6 +90,7 @@ void Config::populate(const ptree &tree) {
     tcp.keep_alive = tree.get("tcp.keep_alive", true);
     tcp.fast_open = tree.get("tcp.fast_open", false);
     tcp.fast_open_qlen = tree.get("tcp.fast_open_qlen", 20);
+    tcp.reuse_port = tree.get("tcp.reuse_port", false);
     mysql.enabled = tree.get("mysql.enabled", false);
     mysql.server_addr = tree.get("mysql.server_addr", string("127.0.0.1"));
     mysql.server_port = tree.get("mysql.server_port", uint16_t(3306));

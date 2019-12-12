@@ -37,6 +37,10 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
+#ifdef ENABLE_REUSE_PORT
+typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
+#endif
+
 Service::Service(Config &config, bool test) :
     config(config),
     socket_acceptor(io_context),
@@ -53,6 +57,17 @@ Service::Service(Config &config, bool test) :
         tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port)).begin();
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
+
+#ifdef ENABLE_REUSE_PORT
+        if (config.tcp.reuse_port) {
+            socket_acceptor.set_option(reuse_port(true));
+        }
+#else
+        if (config.tcp.reuse_port) {
+            Log::log_with_date_time("TCP_REUSEPORT is not supported", Log::WARN);
+        }
+#endif
+
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
         if (config.run_type == Config::FORWARD) {

@@ -67,6 +67,7 @@ public:
         bool keep_alive;
         bool fast_open;
         int fast_open_qlen;
+        bool reuse_port;
     } tcp;
     class MySQLConfig {
     public:
