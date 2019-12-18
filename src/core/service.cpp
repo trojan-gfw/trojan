@@ -37,7 +37,9 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-Service::Service(Config &config, bool test) :
+Service::Service(const io_context_deque& iocontexts, Config &config, bool test) :
+    io_contexts_(iocontexts),
+    io_context(*io_contexts_.front()),
     config(config),
     socket_acceptor(io_context),
     ssl_context(context::sslv23),
@@ -221,8 +223,6 @@ void Service::run() {
         rt = "client";
     }
     Log::log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::WARN);
-    io_context.run();
-    Log::log_with_date_time("trojan service stopped", Log::WARN);
 }
 
 void Service::stop() {
@@ -236,17 +236,20 @@ void Service::stop() {
 }
 
 void Service::async_accept() {
-    shared_ptr<Session>session(nullptr);
+    
+    std::shared_ptr<Session>session(nullptr);
+    io_contexts_.push_back(io_contexts_.front());
+    io_contexts_.pop_front();
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
+        session = make_shared<ServerSession>(config, *io_contexts_.front(), ssl_context, auth, plain_http_response);
     } else if (config.run_type == Config::FORWARD) {
-        session = make_shared<ForwardSession>(config, io_context, ssl_context);
+        session = make_shared<ForwardSession>(config, *io_contexts_.front(), ssl_context);
     } else if (config.run_type == Config::NAT) {
-        session = make_shared<NATSession>(config, io_context, ssl_context);
+        session = make_shared<NATSession>(config, *io_contexts_.front(), ssl_context);
     } else {
-        session = make_shared<ClientSession>(config, io_context, ssl_context);
+        session = make_shared<ClientSession>(config, *io_contexts_.front(), ssl_context);
     }
-    socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
+    socket_acceptor.async_accept(session->accept_socket(), [this,session](const boost::system::error_code error) {
         if (error == boost::asio::error::operation_aborted) {
             // got cancel signal, stop calling myself
             return;

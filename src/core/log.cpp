@@ -22,6 +22,7 @@
 #include <cerrno>
 #include <stdexcept>
 #include <sstream>
+#include<thread>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #ifdef ENABLE_ANDROID_LOG
@@ -54,6 +55,7 @@ void Log::log_with_date_time(const string &message, Level level) {
     stream.imbue(locale(stream.getloc(), facet));
     stream << second_clock::local_time();
     string level_string = '[' + string(level_strings[level]) + "] ";
+    stream <<"[thread num:"<< std::this_thread::get_id()<<"]";
     log(stream.str() + level_string + message, level);
 }
 
