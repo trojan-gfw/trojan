@@ -183,15 +183,14 @@ Service::Service(Config &config, bool test) :
     if (config.ssl.cipher != "") {
         SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
     }
+    if (config.ssl.cipher_tls13 != "") {
 #ifdef ENABLE_TLS13_CIPHERSUITES
-    if (config.ssl.cipher_tls13 != "") {
         SSL_CTX_set_ciphersuites(native_context, config.ssl.cipher_tls13.c_str());
-    }
-#else
-    if (config.ssl.cipher_tls13 != "") {
+#else  // ENABLE_TLS13_CIPHERSUITES
         Log::log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
+#endif // ENABLE_TLS13_CIPHERSUITES
     }
-#endif
+
     if (!test) {
         if (config.tcp.no_delay) {
             socket_acceptor.set_option(tcp::no_delay(true));
