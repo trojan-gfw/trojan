@@ -58,15 +58,13 @@ Service::Service(Config &config, bool test) :
         socket_acceptor.open(listen_endpoint.protocol());
         socket_acceptor.set_option(tcp::acceptor::reuse_address(true));
 
+        if (config.tcp.reuse_port) {
 #ifdef ENABLE_REUSE_PORT
-        if (config.tcp.reuse_port) {
             socket_acceptor.set_option(reuse_port(true));
-        }
-#else // ENABLE_REUSE_PORT
-        if (config.tcp.reuse_port) {
+#else  // ENABLE_REUSE_PORT
             Log::log_with_date_time("TCP_REUSEPORT is not supported", Log::WARN);
-        }
 #endif // ENABLE_REUSE_PORT
+        }
 
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
