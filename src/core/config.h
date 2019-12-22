@@ -66,9 +66,9 @@ public:
         bool prefer_ipv4;
         bool no_delay;
         bool keep_alive;
+        bool reuse_port;
         bool fast_open;
         int fast_open_qlen;
-        bool reuse_port;
     } tcp;
     class MySQLConfig {
     public:

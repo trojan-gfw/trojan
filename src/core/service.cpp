@@ -39,7 +39,7 @@ using namespace boost::asio::ssl;
 
 #ifdef ENABLE_REUSE_PORT
 typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
-#endif
+#endif // ENABLE_REUSE_PORT
 
 Service::Service(Config &config, bool test) :
     config(config),
@@ -62,11 +62,11 @@ Service::Service(Config &config, bool test) :
         if (config.tcp.reuse_port) {
             socket_acceptor.set_option(reuse_port(true));
         }
-#else
+#else // ENABLE_REUSE_PORT
         if (config.tcp.reuse_port) {
             Log::log_with_date_time("TCP_REUSEPORT is not supported", Log::WARN);
         }
-#endif
+#endif // ENABLE_REUSE_PORT
 
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
@@ -189,7 +189,7 @@ Service::Service(Config &config, bool test) :
     }
 #else
     if (config.ssl.cipher_tls13 != "") {
-        Log::log_with_date_time("TLS1.3 ciphersuites is not supported", Log::WARN);
+        Log::log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
     }
 #endif
     if (!test) {

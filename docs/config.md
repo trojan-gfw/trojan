@@ -103,6 +103,7 @@ This forward config is for port forwarding. Everything is the same as the client
     "tcp": {
         "no_delay": true,
         "keep_alive": true,
+        "reuse_port": false,
         "fast_open": false,
         "fast_open_qlen": 20
     }
@@ -142,6 +143,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
     "tcp": {
         "no_delay": true,
         "keep_alive": true,
+        "reuse_port": false,
         "fast_open": false,
         "fast_open_qlen": 20
     }
@@ -183,6 +185,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
         "prefer_ipv4": false,
         "no_delay": true,
         "keep_alive": true,
+        "reuse_port": false,
         "fast_open": false,
         "fast_open_qlen": 20
     },
