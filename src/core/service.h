@@ -26,17 +26,14 @@
 #include <boost/asio/ip/udp.hpp>
 #include "authenticator.h"
 #include "session/udpforwardsession.h"
-#include "session/session.h"
-#include<deque>
+#include "io_context_pool.h"
 
-using io_context_ptr =  std::shared_ptr<boost::asio::io_context>;
-using io_context_deque = std::deque<io_context_ptr>;
-class Service {
+class Service: private boost::noncopyable{
 private:
     enum {
         MAX_LENGTH = 8192
     };
-    io_context_deque io_contexts_;
+    io_context_pool context_pool;
     boost::asio::io_context& io_context;
     const Config &config;
     boost::asio::ip::tcp::acceptor socket_acceptor;
@@ -50,7 +47,7 @@ private:
     void async_accept();
     void udp_async_read();
 public:
-    Service(const io_context_deque& iocontexts, Config &config, bool test = false);
+    Service(Config &config,uint16_t thread_num, bool test = false);
     void run();
     void stop();
     boost::asio::io_context &service();

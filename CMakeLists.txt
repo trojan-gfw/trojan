@@ -18,6 +18,7 @@ add_executable(trojan
     src/core/log.cpp
     src/core/service.cpp
     src/core/version.cpp
+    src/core/io_context_pool.cpp
     src/main.cpp
     src/proto/socks5address.cpp
     src/proto/trojanrequest.cpp
@@ -35,8 +36,7 @@ include_directories(src)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(trojan ${CMAKE_THREAD_LIBS_INIT})
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.66.0 REQUIRED COMPONENTS thread system program_options)
+find_package(Boost 1.66.0 REQUIRED COMPONENTS  system program_options)
 include_directories(${Boost_INCLUDE_DIR})
 target_link_libraries(trojan ${Boost_LIBRARIES})
 if(MSVC)

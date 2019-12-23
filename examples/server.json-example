@@ -9,6 +9,7 @@
         "password2"
     ],
     "log_level": 1,
+    "thread_num": 4,
     "ssl": {
         "cert": "/path/to/certificate.crt",
         "key": "/path/to/private.key",

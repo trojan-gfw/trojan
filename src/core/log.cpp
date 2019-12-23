@@ -55,7 +55,7 @@ void Log::log_with_date_time(const string &message, Level level) {
     stream.imbue(locale(stream.getloc(), facet));
     stream << second_clock::local_time();
     string level_string = '[' + string(level_strings[level]) + "] ";
-    stream <<"[thread num:"<< std::this_thread::get_id()<<"]";
+    stream <<"[thread ID:"<< std::this_thread::get_id()<<"]";
     log(stream.str() + level_string + message, level);
 }
 

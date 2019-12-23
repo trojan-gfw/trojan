@@ -23,8 +23,6 @@
 #include <boost/program_options.hpp>
 #include <boost/version.hpp>
 #include <openssl/opensslv.h>
-#include<boost/thread/thread.hpp>
-#include<boost/bind.hpp>
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
@@ -70,7 +68,7 @@ int main(int argc, const char *argv[]) {
         string log_file;
         string keylog_file;
         bool test;
-        unsigned int thread_num = 1;
+        uint16_t thread_num = 1;
         po::options_description desc("options");
         desc.add_options()
             ("config,c", po::value<string>(&config_file)->default_value(DEFAULT_CONFIG)->value_name("CONFIG"), "specify config file")
@@ -79,7 +77,6 @@ int main(int argc, const char *argv[]) {
             ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
             ("test,t", po::bool_switch(&test), "test config file")
             ("version,v", "print version and build info")
-            ("threads,i",po::value<unsigned int>(&thread_num), "Start number of threads")
         ;
         po::positional_options_description pd;
         pd.add("config", 1);
@@ -133,33 +130,23 @@ int main(int argc, const char *argv[]) {
         }
         bool restart;
         Config config;
-        io_context_deque io_contexts;
-        std::deque<boost::asio::io_context::work> io_service_work;
-                
-        boost::thread_group thr_grp;
-                        
-        for (unsigned int i = 0; i < thread_num; ++i) 
-        {
-            std::shared_ptr<boost::asio::io_context> ios(new boost::asio::io_context);
-         
-            io_contexts.push_back(ios);
-            io_service_work.push_back(boost::asio::io_context::work(*ios));
-            thr_grp.create_thread(boost::bind(&boost::asio::io_context::run, ios));
-                                                                            
-         }
         do {
             restart = false;
             if (config.sip003()) {
                 Log::log_with_date_time("SIP003 is loaded", Log::WARN);
             } else {
                 config.load(config_file);
+            }   
+            if (config.thread_num > 0){
+                thread_num = config.thread_num;
             }
-            Service service(io_contexts, config, test);
+        
+            Service service(config, thread_num, test);
             if (test) {
                 Log::log("The config file looks good.", Log::OFF);
                 exit(EXIT_SUCCESS);
             }
-            signal_set sig(service.service());
+           signal_set sig(service.service());
             sig.add(SIGINT);
             sig.add(SIGTERM);
 #ifndef _WIN32
@@ -169,14 +156,11 @@ int main(int argc, const char *argv[]) {
             signal_async_wait(sig, service, restart);
             
             service.run();
-            thr_grp.join_all();
             if (restart) {
                 Log::log_with_date_time("trojan service restarting. . . ", Log::WARN);
             }
         } while (restart);
         Log::reset();
-
-    Log::log_with_date_time("trojan service stopped", Log::WARN);
         exit(EXIT_SUCCESS);
     } catch (const exception &e) {
         Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
