@@ -191,7 +191,7 @@ Service::Service(Config &config, bool test) :
                     CFRelease (pSecKeychainSearch);
                     CFRelease (pSecKeychain);
                 }
-#endif
+#endif // __MACH__
             } else {
                 ssl_context.load_verify_file(config.ssl.cert);
             }
