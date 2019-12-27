@@ -28,7 +28,7 @@
 #endif // _WIN32
 #ifdef __MACH__
 #include <Security/Security.h>
-#endif
+#endif // __MACH__
 #include <openssl/opensslv.h>
 #include "session/serversession.h"
 #include "session/clientsession.h"
