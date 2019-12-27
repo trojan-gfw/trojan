@@ -111,9 +111,6 @@ stages:
         ./trojan
         EOF
         chmod +x trojan/start.command
-        sed -i '' "s/\"cert\": \"\"/\"cert\": \"\/etc\/ssl\/cert.pem\"/" trojan/config.json
-        sed -i '' "s/\"cert\": \"\"/\"cert\": \"\/etc\/ssl\/cert.pem\"/" trojan/examples/client.json-example
-        sed -i '' "s/\"cert\": \"\"/\"cert\": \"\/etc\/ssl\/cert.pem\"/" trojan/examples/forward.json-example
         zip -r9 trojan-macos.zip trojan
       env:
         PIPELINE_WORKSPACE: $(Pipeline.Workspace)
