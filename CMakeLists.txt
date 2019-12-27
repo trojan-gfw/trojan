@@ -78,7 +78,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     endif()
 
     option(ENABLE_REUSE_PORT "Build with REUSE_PORT support" ON)
-    if (ENABLE_REUSE_PORT)
+    if(ENABLE_REUSE_PORT)
         add_definitions(-DENABLE_REUSE_PORT)
     endif()
 endif()
