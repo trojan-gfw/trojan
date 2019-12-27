@@ -8,7 +8,7 @@ Install these dependencies before you build (note that the test has some [additi
 
 - [CMake](https://cmake.org/) >= 3.7.2
 - [Boost](http://www.boost.org/) >= 1.66.0
-- [OpenSSL](https://www.openssl.org/) >= 1.0.2
+- [OpenSSL](https://www.openssl.org/) >= 1.1.0
 - [libmysqlclient](https://dev.mysql.com/downloads/connector/c/)
 
 For Debian users, run `sudo apt -y install build-essential cmake libboost-system-dev libboost-program-options-dev libssl-dev default-libmysqlclient-dev` to install all the necessary dependencies.
