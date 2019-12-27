@@ -16,6 +16,7 @@
         "verify_hostname": false,
         "cert": "cert.pem",
         "cipher": "",
+        "cipher_tls13":"",
         "sni": "",
         "alpn": [],
         "reuse_session": false,
@@ -25,6 +26,7 @@
     "tcp": {
         "no_delay": true,
         "keep_alive": true,
+        "reuse_port": false,
         "fast_open": false,
         "fast_open_qlen": 20
     }

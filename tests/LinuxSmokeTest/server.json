@@ -11,6 +11,7 @@
         "key": "key.pem",
         "key_password": "",
         "cipher": "",
+        "cipher_tls13":"",
         "prefer_server_cipher": true,
         "alpn": [],
         "reuse_session": false,
@@ -24,6 +25,7 @@
         "prefer_ipv4": false,
         "no_delay": true,
         "keep_alive": true,
+        "reuse_port": false,
         "fast_open": false,
         "fast_open_qlen": 20
     },

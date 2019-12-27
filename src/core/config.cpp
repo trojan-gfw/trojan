@@ -71,6 +71,7 @@ void Config::populate(const ptree &tree) {
     ssl.key = tree.get("ssl.key", string());
     ssl.key_password = tree.get("ssl.key_password", string());
     ssl.cipher = tree.get("ssl.cipher", string());
+    ssl.cipher_tls13 = tree.get("ssl.cipher_tls13", string());
     ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
     ssl.sni = tree.get("ssl.sni", string());
     ssl.alpn = "";
@@ -88,6 +89,7 @@ void Config::populate(const ptree &tree) {
     tcp.prefer_ipv4 = tree.get("tcp.prefer_ipv4", false);
     tcp.no_delay = tree.get("tcp.no_delay", true);
     tcp.keep_alive = tree.get("tcp.keep_alive", true);
+    tcp.reuse_port = tree.get("tcp.reuse_port", false);
     tcp.fast_open = tree.get("tcp.fast_open", false);
     tcp.fast_open_qlen = tree.get("tcp.fast_open_qlen", 20);
     mysql.enabled = tree.get("mysql.enabled", false);
