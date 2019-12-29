@@ -26,9 +26,9 @@
 #include <wincrypt.h>
 #include <tchar.h>
 #endif // _WIN32
-#ifdef __MACH__
+#ifdef __APPLE__
 #include <Security/Security.h>
-#endif // __MACH__
+#endif // __APPLE__
 #include <openssl/opensslv.h>
 #include "session/serversession.h"
 #include "session/clientsession.h"
@@ -155,7 +155,7 @@ Service::Service(Config &config, bool test) :
                     CertCloseStore(h_store, 0);
                 }
 #endif // _WIN32
-#ifdef __MACH__
+#ifdef __APPLE__
                 SecKeychainSearchRef pSecKeychainSearch = NULL;
                 SecKeychainRef pSecKeychain;
                 OSStatus status = noErr;
@@ -204,7 +204,7 @@ Service::Service(Config &config, bool test) :
                     CFRelease (pSecKeychainSearch);
                     CFRelease (pSecKeychain);
                 }
-#endif // __MACH__
+#endif // __APPLE__
             } else {
                 ssl_context.load_verify_file(config.ssl.cert);
             }
