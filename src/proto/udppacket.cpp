@@ -21,17 +21,22 @@
 using namespace std;
 using namespace boost::asio::ip;
 
-int UDPPacket::parse(const string &data) {
-    int address_len = address.parse(data);
-    if (address_len == -1 || data.length() < (unsigned int)address_len + 2) {
-        return -1;
+bool UDPPacket::parse(const string &data, size_t &udp_packet_len) {
+    if (data.length() <= 0) {
+        return false;
+    }
+    size_t address_len;
+    bool is_addr_valid = address.parse(data, address_len);
+    if (!is_addr_valid || data.length() < address_len + 2) {
+        return false;
     }
     length = (uint8_t(data[address_len]) << 8) | uint8_t(data[address_len + 1]);
-    if (data.length() < (unsigned int)address_len + 4 + length || data.substr(address_len + 2, 2) != "\r\n") {
-        return -1;
+    if (data.length() < address_len + 4 + length || data.substr(address_len + 2, 2) != "\r\n") {
+        return false;
     }
     payload = data.substr(address_len + 4, length);
-    return address_len + 4 + length;
+    udp_packet_len = address_len + 4 + length;
+    return true;
 }
 
 string UDPPacket::generate(const udp::endpoint &endpoint, const string &payload) {

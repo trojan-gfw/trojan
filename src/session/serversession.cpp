@@ -265,8 +265,9 @@ void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
 void ServerSession::udp_sent() {
     if (status == UDP_FORWARD) {
         UDPPacket packet;
-        int packet_len = packet.parse(udp_data_buf);
-        if (packet_len == -1) {
+        size_t packet_len;
+        bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
+        if (!is_packet_valid) {
             if (udp_data_buf.length() > MAX_LENGTH) {
                 Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
                 destroy();
