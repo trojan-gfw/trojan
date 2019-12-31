@@ -216,7 +216,7 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "tunnel established");
                 status = FORWARD;
                 out_async_read();
-                if (out_write_buf != "") {
+                if (!out_write_buf.empty()) {
                     out_async_write(out_write_buf);
                 } else {
                     in_async_read();
@@ -320,7 +320,7 @@ void ServerSession::destroy() {
     }
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
-    if (auth && auth_password.size() > 0) {
+    if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }
     boost::system::error_code ec;
