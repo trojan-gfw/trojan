@@ -42,7 +42,7 @@ bool SOCKS5Address::parse(const string &data, size_t &address_len) {
         }
         case DOMAINNAME: {
             uint8_t domain_len = data[1];
-            if (domain_len < 1 || domain_len > 255) {
+            if (domain_len == 0) {
                 // invalid domain len
                 break;
             }
