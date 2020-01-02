@@ -33,7 +33,7 @@ public:
     } address_type;
     std::string address;
     uint16_t port;
-    int parse(const std::string &data);
+    bool parse(const std::string &data, size_t &address_len);
     static std::string generate(const boost::asio::ip::udp::endpoint &endpoint);
 };
 

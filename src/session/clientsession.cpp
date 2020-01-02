@@ -329,8 +329,9 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint&) {
         return;
     }
     SOCKS5Address address;
-    int address_len = address.parse(data.substr(3));
-    if (address_len == -1) {
+    size_t address_len;
+    bool is_addr_valid = address.parse(data.substr(3), address_len);
+    if (!is_addr_valid) {
         Log::log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
         destroy();
         return;
@@ -350,8 +351,9 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint&) {
 void ClientSession::udp_sent() {
     if (status == UDP_FORWARD) {
         UDPPacket packet;
-        int packet_len = packet.parse(udp_data_buf);
-        if (packet_len == -1) {
+        size_t packet_len;
+        bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
+        if (!is_packet_valid) {
             if (udp_data_buf.length() > MAX_LENGTH) {
                 Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
                 destroy();
@@ -362,7 +364,13 @@ void ClientSession::udp_sent() {
         }
         Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
         SOCKS5Address address;
-        int address_len = address.parse(udp_data_buf);
+        size_t address_len;
+        bool is_addr_valid = address.parse(udp_data_buf, address_len);
+        if (!is_addr_valid) {
+            Log::log_with_endpoint(in_endpoint, "udp_sent: invalid UDP packet address", Log::ERROR);
+            destroy();
+            return;
+        }
         string reply = string("\x00\x00\x00", 3) + udp_data_buf.substr(0, address_len) + packet.payload;
         udp_data_buf = udp_data_buf.substr(packet_len);
         recv_len += packet.length;

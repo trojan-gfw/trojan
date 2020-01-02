@@ -216,7 +216,7 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "tunnel established");
                 status = FORWARD;
                 out_async_read();
-                if (out_write_buf != "") {
+                if (!out_write_buf.empty()) {
                     out_async_write(out_write_buf);
                 } else {
                     in_async_read();
@@ -265,8 +265,9 @@ void ServerSession::udp_recv(const string &data, const udp::endpoint &endpoint) 
 void ServerSession::udp_sent() {
     if (status == UDP_FORWARD) {
         UDPPacket packet;
-        int packet_len = packet.parse(udp_data_buf);
-        if (packet_len == -1) {
+        size_t packet_len;
+        bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
+        if (!is_packet_valid) {
             if (udp_data_buf.length() > MAX_LENGTH) {
                 Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
                 destroy();
@@ -319,7 +320,7 @@ void ServerSession::destroy() {
     }
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
-    if (auth && auth_password.size() > 0) {
+    if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }
     boost::system::error_code ec;
