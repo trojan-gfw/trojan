@@ -10,6 +10,8 @@ User=nobody
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/trojan @CMAKE_INSTALL_FULL_SYSCONFDIR@/trojan/@CONFIG_NAME@.json
 ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=3s
 
 [Install]
 WantedBy=multi-user.target
