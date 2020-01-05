@@ -95,7 +95,7 @@ int main(int argc, const char *argv[]) {
             Log::log("[Disabled] MySQL Support", Log::FATAL);
 #endif // ENABLE_MYSQL
 #ifdef TCP_FASTOPEN
-            Log::log(" [Enabled] TCP_FASTOPEN Support", Log::FATAL);
+            Log::log("[Enabled] TCP_FASTOPEN Support", Log::FATAL);
 #else // TCP_FASTOPEN
             Log::log("[Disabled] TCP_FASTOPEN Support", Log::FATAL);
 #endif // TCP_FASTOPEN
