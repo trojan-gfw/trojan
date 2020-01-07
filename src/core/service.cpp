@@ -173,7 +173,7 @@ Service::Service(Config &config, bool test) :
                         if (status == errSecItemNotFound) {
                             break;
                         }
-                        
+
                         if (status == noErr) {
                             void *_pCertData;
                             UInt32 _pCertLength;
@@ -187,7 +187,7 @@ Service::Service(Config &config, bool test) :
                                 if (cert == NULL) {
                                     continue;
                                 }
-   
+
                                 if (!X509_STORE_add_cert (store, cert)) {
                                     X509_free (cert);
                                     continue;
