@@ -13,7 +13,7 @@
         "verify_hostname": false,
         "cert": "cert.pem",
         "cipher": "",
-        "cipher_tls13":"",
+        "cipher_tls13": "",
         "sni": "",
         "alpn": [],
         "reuse_session": false,

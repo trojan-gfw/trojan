@@ -11,7 +11,7 @@
         "key": "key.pem",
         "key_password": "",
         "cipher": "",
-        "cipher_tls13":"",
+        "cipher_tls13": "",
         "prefer_server_cipher": true,
         "alpn": [],
         "reuse_session": false,
