@@ -65,7 +65,7 @@ Service::Service(Config &config, bool test) :
 #ifdef ENABLE_REUSE_PORT
             socket_acceptor.set_option(reuse_port(true));
 #else  // ENABLE_REUSE_PORT
-            Log::log_with_date_time("TCP_REUSEPORT is not supported", Log::WARN);
+            Log::log_with_date_time("SO_REUSEPORT is not supported", Log::WARN);
 #endif // ENABLE_REUSE_PORT
         }
 
@@ -121,9 +121,6 @@ Service::Service(Config &config, bool test) :
         } else {
             ssl_context.use_tmp_dh_file(config.ssl.dhparam);
         }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-        SSL_CTX_set_ecdh_auto(native_context, 1);
-#endif
         if (config.mysql.enabled) {
 #ifdef ENABLE_MYSQL
             auth = new Authenticator(config);
@@ -249,22 +246,18 @@ Service::Service(Config &config, bool test) :
         if (config.tcp.keep_alive) {
             socket_acceptor.set_option(boost::asio::socket_base::keep_alive(true));
         }
-#ifdef TCP_FASTOPEN
         if (config.tcp.fast_open) {
+#ifdef TCP_FASTOPEN
             using fastopen = boost::asio::detail::socket_option::integer<IPPROTO_TCP, TCP_FASTOPEN>;
             boost::system::error_code ec;
             socket_acceptor.set_option(fastopen(config.tcp.fast_open_qlen), ec);
-        }
 #else // TCP_FASTOPEN
-        if (config.tcp.fast_open) {
             Log::log_with_date_time("TCP_FASTOPEN is not supported", Log::WARN);
-        }
 #endif // TCP_FASTOPEN
 #ifndef TCP_FASTOPEN_CONNECT
-        if (config.tcp.fast_open) {
             Log::log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
-        }
 #endif // TCP_FASTOPEN_CONNECT
+        }
     }
     if (Log::keylog) {
 #ifdef ENABLE_SSL_KEYLOG

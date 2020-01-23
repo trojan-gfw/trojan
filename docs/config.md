@@ -54,7 +54,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
     - `verify_hostname`: whether to verify `SSL` hostname (specified in the `sni` field) **STRONGLY RECOMMENDED**
     - `cert`: if `verify` is set to `true`, the same certificate used by the server or a collection of `CA` certificates could be provided. If you leave this field blank, `OpenSSL` will try to look for a system `CA` store and will be likely to fail.
     - `cipher`: a cipher list to send and use
-    - `cipher_tls13`: a cipher list for tls 1.3 to send and use
+    - `cipher_tls13`: a cipher list for TLS 1.3 to use
     - `sni`: the Server Name Indication field in the `SSL` handshake. If left blank, it will be set to `remote_addr`.
     - `alpn`: a list of `ALPN` protocols to send
     - `reuse_session`: whether to reuse `SSL` session
@@ -63,7 +63,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 - `tcp`: `TCP` specific configurations
     - `no_delay`: whether to disable Nagle's algorithm
     - `keep_alive`: whether to enable TCP Keep Alive
-    - `reuse_port`: whether to enable TCP Reuse Port (kernel support required)
+    - `reuse_port`: whether to enable TCP port reuse (kernel support required)
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
     - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 
@@ -212,7 +212,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
     - `key`: private key file for encryption
     - `key_password`: password of the private key file
     - `cipher`: a cipher list to use
-    - `cipher_tls13`: a cipher list for tls 1.3 to send and use
+    - `cipher_tls13`: a cipher list for TLS 1.3 to use
     - `prefer_server_cipher`: whether to prefer server cipher list in a connection
     - `alpn`: a list of `ALPN` protocols to reply
     - `reuse_session`: whether to reuse `SSL` session
@@ -225,7 +225,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
     - `prefer_ipv4`: whether to connect to the IPv4 address when there are both IPv6 and IPv4 addresses for a domain
     - `no_delay`: whether to disable Nagle's algorithm
     - `keep_alive`: whether to enable TCP Keep Alive
-    - `reuse_port`: whether to enable TCP Reuse Port (kernel support required)
+    - `reuse_port`: whether to enable TCP port reuse (kernel support required)
     - `fast_open`: whether to enable TCP Fast Open (kernel support required)
     - `fast_open_qlen`: the server's limit on the size of the queue of TFO requests that have not yet completed the three-way handshake
 - `mysql`: see [Authenticator](authenticator)
