@@ -22,7 +22,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <boost/property_tree/json_parser.hpp>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 using namespace std;
 using namespace boost::property_tree;
 
@@ -126,14 +126,30 @@ bool Config::sip003() {
 }
 
 string Config::SHA224(const string &message) {
-    uint8_t digest[SHA224_DIGEST_LENGTH];
-    SHA256_CTX ctx;
-    SHA224_Init(&ctx);
-    SHA224_Update(&ctx, message.c_str(), message.length());
-    SHA224_Final(digest, &ctx);
-    char mdString[(SHA224_DIGEST_LENGTH << 1) + 1];
-    for (int i = 0; i < SHA224_DIGEST_LENGTH; ++i) {
+    uint8_t digest[EVP_MAX_MD_SIZE];
+    char mdString[(EVP_MAX_MD_SIZE << 1) + 1];
+    unsigned int digest_len;
+    EVP_MD_CTX *ctx;
+    if ((ctx = EVP_MD_CTX_new()) == NULL) {
+        throw runtime_error("could not create hash context");
+    }
+    if (!EVP_DigestInit_ex(ctx, EVP_sha224(), NULL)) {
+        EVP_MD_CTX_free(ctx);
+        throw runtime_error("could not initialize hash context");
+    }
+    if (!EVP_DigestUpdate(ctx, message.c_str(), message.length())) {
+        EVP_MD_CTX_free(ctx);
+        throw runtime_error("could not update hash");
+    }
+    if (!EVP_DigestFinal_ex(ctx, digest, &digest_len)) {
+        EVP_MD_CTX_free(ctx);
+        throw runtime_error("could not output hash");
+    }
+
+    for (unsigned int i = 0; i < digest_len; ++i) {
         sprintf(mdString + (i << 1), "%02x", (unsigned int)digest[i]);
     }
+    mdString[digest_len << 1] = '\0';
+    EVP_MD_CTX_free(ctx);
     return string(mdString);
 }
