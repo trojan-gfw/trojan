@@ -12,6 +12,8 @@
     - Fix a parameter type error in the `CertOpenSystemStore` call.
 - [KCCat](https://github.com/KCCat)
     - Fix an ambiguity in the documentation.
+- [keur](https://github.com/keur)
+    - Replace deprecated SHA224 functions with `EVP`.
 - [klzgrad](https://github.com/klzgrad)
     - Add Linux smoke test.
 - [WeidiDeng](https://github.com/WeidiDeng)
