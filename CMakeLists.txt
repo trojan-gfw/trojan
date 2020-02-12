@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.7.2)
 project(trojan)
 
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup(TARGETS)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -36,16 +39,16 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(trojan ${CMAKE_THREAD_LIBS_INIT})
 
-find_package(Boost 1.66.0 REQUIRED COMPONENTS system program_options)
-include_directories(${Boost_INCLUDE_DIR})
-target_link_libraries(trojan ${Boost_LIBRARIES})
+
+include_directories(${CONAN_INCLUDE_DIRS})
+target_link_directories(${PROJECT_NAME} PRIVATE ${CONAN_LIB_DIRS})
+target_link_libraries(trojan ${CONAN_LIBS})
+
 if(MSVC)
     add_definitions(-DBOOST_DATE_TIME_NO_LIB)
+    add_definitions(-DBOOST_PROGRAM_OPTIONS_NO_LIB)
 endif()
 
-find_package(OpenSSL 1.1.0 REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
-target_link_libraries(trojan ${OPENSSL_LIBRARIES})
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     option(ENABLE_SSL_KEYLOG "Build with SSL KeyLog support" ON)
     if(ENABLE_SSL_KEYLOG)
@@ -58,7 +61,7 @@ if(OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     endif()
 endif()
 
-option(ENABLE_MYSQL "Build with MySQL support" ON)
+option(ENABLE_MYSQL "Build with MySQL support" OFF)
 if(ENABLE_MYSQL)
     find_package(MySQL REQUIRED)
     include_directories(${MYSQL_INCLUDE_DIR})
