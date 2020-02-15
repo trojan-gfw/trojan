@@ -7,7 +7,7 @@ assignees: GreaterFire
 
 ---
 
-- [ ] I certify that I acknowledge if I don't follow the format below or I don't check this box, my issue will be closed immediately without any notice.
+- [ ] I certify that I have read the contributing guidelines and I acknowledge if I don't follow the format below or I don't check this box, my issue will be closed immediately without any notice.
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]

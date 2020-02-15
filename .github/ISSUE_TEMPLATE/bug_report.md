@@ -7,7 +7,7 @@ assignees: GreaterFire
 
 ---
 
-- [ ] I certify that I acknowledge if I don't follow the format below, or I'm using an old version of trojan, or I apparently fail to provide sufficient information (such as logs, specific numbers), or I don't check this box, my issue will be closed immediately without any notice.
+- [ ] I certify that I have read the contributing guidelines and I acknowledge if I don't follow the format below, or I'm using an old version of trojan, or I apparently fail to provide sufficient information (such as logs, specific numbers), or I don't check this box, my issue will be closed immediately without any notice.
 
 **Trojan Version**
 The version of trojan you are using.
