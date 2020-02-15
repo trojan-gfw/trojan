@@ -13,6 +13,10 @@ Trojan is not a fixed program or protocol. It's an idea, an idea that imitating 
 An online documentation can be found [here](https://trojan-gfw.github.io/trojan/).  
 Installation guide on various platforms can be found in the [wiki](https://github.com/trojan-gfw/trojan/wiki/Binary-&-Package-Distributions).
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Dependencies
 
 - [CMake](https://cmake.org/) >= 3.7.2
