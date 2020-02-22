@@ -52,7 +52,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 - `ssl`: `SSL` specific configurations
     - `verify`: whether to verify `SSL` certificate **STRONGLY RECOMMENDED**
     - `verify_hostname`: whether to verify `SSL` hostname (specified in the `sni` field) **STRONGLY RECOMMENDED**
-    - `cert`: if `verify` is set to `true`, the same certificate used by the server or a collection of `CA` certificates could be provided. If you leave this field blank, `OpenSSL` will try to look for a system `CA` store and will be likely to fail.
+    - `cert`: if `verify` is set to `true`, the same certificate used by the server or a collection of `CA` certificates could be provided. If you leave this field blank, `OpenSSL` will try to look for a system `CA` store and will be likely to fail. Certificates can be retrieved with [this simple Python script](https://github.com/trojan-gfw/trojan/blob/master/scripts/getcert.py).
     - `cipher`: a cipher list to send and use
     - `cipher_tls13`: a cipher list for TLS 1.3 to use
     - `sni`: the Server Name Indication field in the `SSL` handshake. If left blank, it will be set to `remote_addr`.
