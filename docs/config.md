@@ -208,7 +208,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
 - `password`: an array of passwords used for verification
 - `log_level`: how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
 - `ssl`: `SSL` specific configurations
-    - `cert`: server certificate **STRONGLY RECOMMENDED TO BE SIGNED BY A CA**
+    - `cert`: server certificate **STRONGLY RECOMMENDED TO BE SIGNED BY A CA**. It's preferred to use the full chain certificate here instead of the certificate alone.
     - `key`: private key file for encryption
     - `key_password`: password of the private key file
     - `cipher`: a cipher list to use
