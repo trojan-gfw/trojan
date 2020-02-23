@@ -39,7 +39,12 @@ def main(argc, argv):
     else:
         print('usage: {} [hostname] [port]'.format(argv[0]), file=sys.stderr)
         exit(1)
-    print(ssl.get_server_certificate((hostname, port)), end='')
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    with socket.create_connection((hostname, port)) as sock:
+        with ctx.wrap_socket(sock, server_hostname=hostname) as ssock:
+            print(ssl.DER_cert_to_PEM_cert(ssock.getpeercert(True)), end='')
 
 if __name__ == '__main__':
     main(len(sys.argv), sys.argv)
