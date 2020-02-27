@@ -35,7 +35,15 @@ Authenticator::Authenticator(const Config &config) {
         throw runtime_error(mysql_error(&con));
     }
     bool reconnect = 1;
-    mysql_options(&con, MYSQL_OPT_RECONNECT, &reconnect);
+	if (config.mysql.cafile == null) {
+		mysql_options(&con, MYSQL_OPT_RECONNECT, &reconnect);
+	} else if (config.mysql.tls_version == null)
+		mysql_ssl_set(&con, NULL, NULL, config.mysql.cafile.c_str(), NULL, NULL)
+		mysql_options(&con, MYSQL_OPT_RECONNECT, &reconnect);
+	} else
+		mysql_optionsv(mysql, MARIADB_OPT_TLS_VERSION, config.mysql.tls_version, MYSQL_OPT_RECONNECT, &reconnect);
+		mysql_ssl_set(&con, NULL, NULL, config.mysql.cafile.c_str(), NULL, NULL)	
+    
     Log::log_with_date_time("connected to MySQL server", Log::INFO);
 }
 

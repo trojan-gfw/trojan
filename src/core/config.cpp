@@ -90,7 +90,7 @@ void Config::populate(const ptree &tree) {
     tcp.no_delay = tree.get("tcp.no_delay", true);
     tcp.keep_alive = tree.get("tcp.keep_alive", true);
     tcp.reuse_port = tree.get("tcp.reuse_port", false);
-    tcp.fast_open = tree.get("tcp.fast_open", false);
+    tcp.fast_open = tree.get("tcp.fast_open", false);6
     tcp.fast_open_qlen = tree.get("tcp.fast_open_qlen", 20);
     mysql.enabled = tree.get("mysql.enabled", false);
     mysql.server_addr = tree.get("mysql.server_addr", string("127.0.0.1"));
@@ -98,6 +98,8 @@ void Config::populate(const ptree &tree) {
     mysql.database = tree.get("mysql.database", string("trojan"));
     mysql.username = tree.get("mysql.username", string("trojan"));
     mysql.password = tree.get("mysql.password", string());
+	mysql.cafile = tree.get("mysql.cafile", string());
+	mysql.tls_version = tree.get("mysql.tls_version", string());
 }
 
 bool Config::sip003() {
