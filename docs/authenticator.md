@@ -1,6 +1,6 @@
 # Authenticator
 
-Trojan servers can authenticate users according to not only passwords in the config file but also entries in a MySQL (MariaDB) database. To turn this functionality on, set `enabled` field in the MySQL config to `true` and correctly configure the server address and credentials, etc:
+Trojan servers can authenticate users according to not only passwords in the config file but also entries in a MySQL (MariaDB) database. To turn this functionality on, set `enabled` field in the MySQL config to `true` and correctly configure the server address and credentials,if you enable ssl connect to database you need fill the cafile(sure you can use 3rd-party trusted ca file in debian just like this "cafile":"/etc/ssl/certs/ca-certificates.crt", https://mariadb.com/kb/en/certificate-creation-with-openssl/#creating-a-certificate-authority-private-key-and-certificate) and tls_version(if have many tls version you need seprate them with comma like this "tls_version":"TLSv1.2,TLSv1.3"), etc:
 
 ```json
 "mysql": {
@@ -9,7 +9,9 @@ Trojan servers can authenticate users according to not only passwords in the con
     "server_port": 3306,
     "database": "trojan",
     "username": "trojan",
-    "password": ""
+    "password": "",
+    "cafile":"",
+	"tls_version":""
 }
 ```
 
