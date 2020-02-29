@@ -41,7 +41,7 @@
         "database": "trojan",
         "username": "trojan",
         "password": "",
-		"cafile":"",
-		"tls_version":""
+		"cafile": "",
+		"tls_version": ""
     }
 }

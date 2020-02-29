@@ -10,8 +10,8 @@ Trojan servers can authenticate users according to not only passwords in the con
     "database": "trojan",
     "username": "trojan",
     "password": "",
-    "cafile":"",
-    "tls_version":""
+    "cafile": "",
+    "tls_version": ""
 }
 ```
 
