@@ -32,11 +32,13 @@ add_executable(trojan
     src/ssl/sslsession.cpp)
 include_directories(src)
 
-option(ENABLE_STATIC "Build full static bin" OFF)
-if(ENABLE_STATIC)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s -static")
-    set(Boost_USE_STATIC_LIBS ON)
+if(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    option(ENABLE_STATIC "Build full static bin" OFF)
+    if(ENABLE_STATIC)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s -static")
+        set(Boost_USE_STATIC_LIBS ON)
+    endif()
 endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
