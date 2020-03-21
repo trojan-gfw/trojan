@@ -65,6 +65,7 @@ void Config::populate(const ptree &tree) {
     }
     udp_timeout = tree.get("udp_timeout", 60);
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
+    map<string, uint16_t>().swap(alpn_port);
     ssl.verify = tree.get("ssl.verify", true);
     ssl.verify_hostname = tree.get("ssl.verify_hostname", true);
     ssl.cert = tree.get("ssl.cert", string());
@@ -75,10 +76,15 @@ void Config::populate(const ptree &tree) {
     ssl.prefer_server_cipher = tree.get("ssl.prefer_server_cipher", true);
     ssl.sni = tree.get("ssl.sni", string());
     ssl.alpn = "";
+    auto alpn_port_override = tree.get_child_optional("ssl.alpn_port_override");
     for (auto& item: tree.get_child("ssl.alpn")) {
         string proto = item.second.get_value<string>();
         ssl.alpn += (char)((unsigned char)(proto.length()));
         ssl.alpn += proto;
+        if (alpn_port_override) {
+            auto it = alpn_port_override->find(proto);
+            alpn_port[proto] = it != alpn_port_override->not_found() ? it->second.get_value<uint16_t>() : remote_port;
+        }
     }
     ssl.reuse_session = tree.get("ssl.reuse_session", true);
     ssl.session_ticket = tree.get("ssl.session_ticket", false);

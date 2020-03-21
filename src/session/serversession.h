@@ -38,6 +38,7 @@ private:
     Authenticator *auth;
     std::string auth_password;
     const std::string &plain_http_response;
+    uint16_t remote_port;
     void destroy();
     void in_async_read();
     void in_async_write(const std::string &data);
