@@ -195,7 +195,9 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
         "server_port": 3306,
         "database": "trojan",
         "username": "trojan",
-        "password": ""
+        "password": "",
+        "cafile": "",
+        "tls_version": ""
     }
 }
 ```
