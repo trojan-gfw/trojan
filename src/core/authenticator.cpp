@@ -28,10 +28,7 @@ Authenticator::Authenticator(const Config &config) {
     mysql_init(&con);
     Log::log_with_date_time("connecting to MySQL server " + config.mysql.server_addr + ':' + to_string(config.mysql.server_port), Log::INFO);
     if (config.mysql.cafile != "") {
-        mysql_options(&con, MYSQL_OPT_SSL_CA, config.mysql.cafile.c_str());
-    }
-    if (config.mysql.tls_version != "") {
-        mysql_optionsv(&con, MARIADB_OPT_TLS_VERSION, config.mysql.tls_version.c_str());
+        mysql_ssl_set(&con, NULL, NULL, config.mysql.cafile.c_str(), NULL, NULL);
     }
     if (mysql_real_connect(&con, config.mysql.server_addr.c_str(),
                                  config.mysql.username.c_str(),

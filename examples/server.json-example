@@ -40,8 +40,7 @@
         "server_port": 3306,
         "database": "trojan",
         "username": "trojan",
-        "password": ""，
-        "cafile": "",
-        "tls_version": ""
+        "password": "",
+        "cafile": ""
     }
 }
