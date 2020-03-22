@@ -40,7 +40,7 @@ int TrojanRequest::parse(const string &data) {
     return data.length();
 }
 
-std::string TrojanRequest::generate(const std::string &password, const std::string &domainname, uint16_t port, bool tcp) {
+string TrojanRequest::generate(const string &password, const string &domainname, uint16_t port, bool tcp) {
     string ret = password + "\r\n";
     if (tcp) {
         ret += '\x01';

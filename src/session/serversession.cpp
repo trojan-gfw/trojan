@@ -163,7 +163,7 @@ void ServerSession::in_recv(const string &data) {
             if (alpn_out == NULL) {
                 return config.remote_port;
             }
-            auto it = config.ssl.alpn_port_override.find(std::string(alpn_out, alpn_out + alpn_len));
+            auto it = config.ssl.alpn_port_override.find(string(alpn_out, alpn_out + alpn_len));
             return it == config.ssl.alpn_port_override.end() ? config.remote_port : it->second;
         }());
         if (valid) {

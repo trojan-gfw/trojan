@@ -32,7 +32,7 @@ void Config::load(const string &filename) {
     populate(tree);
 }
 
-void Config::populate(const std::string &JSON) {
+void Config::populate(const string &JSON) {
     istringstream s(JSON);
     ptree tree;
     read_json(s, tree);

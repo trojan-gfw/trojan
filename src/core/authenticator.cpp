@@ -73,7 +73,7 @@ bool Authenticator::auth(const string &password) {
     return true;
 }
 
-void Authenticator::record(const std::string &password, uint64_t download, uint64_t upload) {
+void Authenticator::record(const string &password, uint64_t download, uint64_t upload) {
     if (!is_valid_password(password)) {
         return;
     }
@@ -82,7 +82,7 @@ void Authenticator::record(const std::string &password, uint64_t download, uint6
     }
 }
 
-bool Authenticator::is_valid_password(const std::string &password) {
+bool Authenticator::is_valid_password(const string &password) {
     if (password.size() != PASSWORD_LENGTH) {
         return false;
     }
@@ -102,8 +102,8 @@ Authenticator::~Authenticator() {
 
 Authenticator::Authenticator(const Config&) {}
 bool Authenticator::auth(const string&) { return true; }
-void Authenticator::record(const std::string&, uint64_t, uint64_t) {}
-bool Authenticator::is_valid_password(const std::string&) { return true; }
+void Authenticator::record(const string&, uint64_t, uint64_t) {}
+bool Authenticator::is_valid_password(const string&) { return true; }
 Authenticator::~Authenticator() {}
 
 #endif // ENABLE_MYSQL
