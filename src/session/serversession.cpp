@@ -153,17 +153,19 @@ void ServerSession::in_recv(const string &data) {
             }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;
-        string query_port = [&]() {
+        string query_port = to_string([&]() {
             if (valid) {
-                return to_string(req.address.port);
-            } else {
-                const unsigned char *alpn_out = nullptr;
-                unsigned int alpn_len = 0;
-                SSL_get0_alpn_selected(in_socket.native_handle(), &alpn_out, &alpn_len);
-                auto it = config.alpn_port.find(std::string(alpn_out, alpn_out + alpn_len));
-                return to_string((it != config.alpn_port.end()) ? it->second : config.remote_port);
+                return req.address.port;
             }
-        }();
+            const unsigned char *alpn_out;
+            unsigned int alpn_len;
+            SSL_get0_alpn_selected(in_socket.native_handle(), &alpn_out, &alpn_len);
+            if (alpn_out == NULL) {
+                return config.remote_port;
+            }
+            auto it = config.ssl.alpn_port_override.find(std::string(alpn_out, alpn_out + alpn_len));
+            return it == config.ssl.alpn_port_override.end() ? config.remote_port : it->second;
+        }());
         if (valid) {
             out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
@@ -176,7 +178,7 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             }
         } else {
-            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + query_port, Log::WARN);
+            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + query_addr + ':' + query_port, Log::WARN);
             out_write_buf = data;
         }
         sent_len += out_write_buf.length();

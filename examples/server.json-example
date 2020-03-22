@@ -19,7 +19,7 @@
         "alpn": [
             "http/1.1"
         ],
-        "alpn_port_override" : {
+        "alpn_port_override": {
             "h2": 81
         },
         "reuse_session": true,

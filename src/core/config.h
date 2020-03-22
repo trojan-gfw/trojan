@@ -42,7 +42,6 @@ public:
     std::map<std::string, std::string> password;
     int udp_timeout;
     Log::Level log_level;
-    std::map<std::string, uint16_t> alpn_port;
     class SSLConfig {
     public:
         bool verify;
@@ -55,6 +54,7 @@ public:
         bool prefer_server_cipher;
         std::string sni;
         std::string alpn;
+        std::map<std::string, uint16_t> alpn_port_override;
         bool reuse_session;
         bool session_ticket;
         long session_timeout;
