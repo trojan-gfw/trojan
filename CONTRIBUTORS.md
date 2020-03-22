@@ -2,6 +2,8 @@
 
 - [a-wing](https://github.com/a-wing)
     - Add Debian build instructions in the documentation.
+- [cybmp3](https://github.com/cybmp3)
+    - Add MySQL SSL support.
 - [felixonmars](https://github.com/felixonmars)
     - Fix incorrect systemd service path in the documentation.
 - [ffftwo](https://github.com/ffftwo)
@@ -18,6 +20,8 @@
     - Add Linux smoke test.
 - [WeidiDeng](https://github.com/WeidiDeng)
     - Fix incorrect Debian dependency in the documentation.
+- [WillyPillow](https://github.com/WillyPillow)
+    - Add `alpn_port_override` functionality.
 - [wongsyrone](https://github.com/wongsyrone)
     - Add conditional MySQL compilation.
     - Remove `SSL_CTX_set_ecdh_auto(native_context, 1)` call in new versions of OpenSSL.
