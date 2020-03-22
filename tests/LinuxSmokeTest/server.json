@@ -35,6 +35,7 @@
         "server_port": 0,
         "database": "",
         "username": "",
-        "password": ""
+        "password": "",
+        "cafile": ""
     }
 }

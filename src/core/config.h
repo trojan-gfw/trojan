@@ -78,6 +78,7 @@ public:
         std::string database;
         std::string username;
         std::string password;
+        std::string cafile;
     } mysql;
     void load(const std::string &filename);
     void populate(const std::string &JSON);
