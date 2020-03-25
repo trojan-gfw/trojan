@@ -223,7 +223,7 @@ void ClientSession::in_sent() {
             }
             auto self = shared_from_this();
             resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
-                if (error) {
+                if (error || results.size() == 0) {
                     Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
                     destroy();
                     return;

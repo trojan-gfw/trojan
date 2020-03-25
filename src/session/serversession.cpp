@@ -184,7 +184,7 @@ void ServerSession::in_recv(const string &data) {
         sent_len += out_write_buf.length();
         auto self = shared_from_this();
         resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, tcp::resolver::results_type results) {
-            if (error) {
+            if (error || results.size() == 0) {
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
@@ -293,7 +293,7 @@ void ServerSession::udp_sent() {
         string query_addr = packet.address.address;
         auto self = shared_from_this();
         udp_resolver.async_resolve(query_addr, to_string(packet.address.port), [this, self, packet, query_addr](const boost::system::error_code error, udp::resolver::results_type results) {
-            if (error) {
+            if (error || results.size() == 0) {
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
