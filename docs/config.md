@@ -69,7 +69,9 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 
 ## A valid forward.json
 
-This forward config is for port forwarding. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint, and `udp_timeout`, which controls how long (in seconds) a UDP session will last in idle.
+This forward config is for port forwarding through a trojan connection. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint, and `udp_timeout`, which controls how long (in seconds) a UDP session will last in idle.
+
+PROTIP: If you simply want to redirect a raw TCP connection, you can use `iptables` or `socat` to do that. The forward mode is not for this purpose.
 
 ```json
 {
