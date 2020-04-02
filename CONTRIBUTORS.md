@@ -4,6 +4,8 @@
     - Add Debian build instructions in the documentation.
 - [cybmp3](https://github.com/cybmp3)
     - Add MySQL SSL support.
+- [du5](https://github.com/du5)
+    - Update OpenSSL version in Azure Pipelines config.
 - [felixonmars](https://github.com/felixonmars)
     - Fix incorrect systemd service path in the documentation.
 - [ffftwo](https://github.com/ffftwo)
@@ -18,6 +20,8 @@
     - Replace deprecated SHA224 functions with `EVP`.
 - [klzgrad](https://github.com/klzgrad)
     - Add Linux smoke test.
+- [LimiQS](https://github.com/LimiQS)
+    - Refine the config documentation.
 - [WeidiDeng](https://github.com/WeidiDeng)
     - Fix incorrect Debian dependency in the documentation.
 - [WillyPillow](https://github.com/WillyPillow)
