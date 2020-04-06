@@ -8,7 +8,7 @@ Issues in this repository are for bug reports and feature requests, and for thes
 
 If you would like to file a bug report, you **must** use the bug report template and follow the instructions inside it. If you do not do so, or if the problem you reported is not considered by the developers a bug, your issue might be closed immediately.
 
-If you would like to file a feature request, you also **must** use the feature request template and follow the instructions inside it. Note that we are trying to keep this project as small as possible because it is the core of the trojan ecosystem and will be included in other projects. For a feature to be considered, make sure that the feature you request is **really necessary** to be included in this very project. Also, we will not consider adding a dependency to the project unless it is **absolutely necessary**. If you do not do the above, your issue might be closed immediately.
+If you would like to file a feature request, you also **must** use the feature request template and follow the instructions inside it. Note that we are trying to keep this project as small as possible because it is the core of the trojan ecosystem and will be included in other projects. For a feature to be considered, make sure that the feature you request is **really necessary** to be included in this project. Also, we will not consider adding a dependency to the project unless it is **absolutely necessary**. If you do not do the above, your issue might be closed immediately.
 
 ## Pull Requests
 
