@@ -17,28 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _AUTHENTICATOR_H_
-#define _AUTHENTICATOR_H_
-
-#ifdef ENABLE_MYSQL
-#include <mysql.h>
-#endif // ENABLE_MYSQL
-#include "config.h"
+#ifndef _AUTH_H_
+#define _AUTH_H_
+#include "core/config.h"
 
 class Authenticator {
-private:
-#ifdef ENABLE_MYSQL
-    MYSQL con;
-#endif // ENABLE_MYSQL
-    enum {
-        PASSWORD_LENGTH=56
-    };
-    bool is_valid_password(const std::string &password);
 public:
-    Authenticator(const Config &config);
-    bool auth(const std::string &password);
-    void record(const std::string &password, uint64_t download, uint64_t upload);
-    ~Authenticator();
+    virtual bool auth(const std::string &password) = 0;
+    virtual void record(const std::string &password, uint64_t download, uint64_t upload) = 0;
+    virtual ~Authenticator(){};
 };
 
-#endif // _AUTHENTICATOR_H_
+#endif // _AUTH_H_

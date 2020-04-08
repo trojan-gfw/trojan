@@ -13,7 +13,7 @@ else()
 endif()
 
 add_executable(trojan
-    src/core/authenticator.cpp
+    src/auth/mysql.cpp
     src/core/config.cpp
     src/core/log.cpp
     src/core/service.cpp

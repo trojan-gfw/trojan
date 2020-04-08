@@ -24,7 +24,7 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/udp.hpp>
-#include "authenticator.h"
+#include "auth/auth.h"
 #include "session/udpforwardsession.h"
 
 class Service {

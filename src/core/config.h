@@ -25,6 +25,17 @@
 #include <boost/property_tree/ptree.hpp>
 #include "log.h"
 
+class MySQLConfig {
+public:
+    bool enabled;
+    std::string server_addr;
+    uint16_t server_port;
+    std::string database;
+    std::string username;
+    std::string password;
+    std::string cafile;
+};
+
 class Config {
 public:
     enum RunType {
@@ -71,16 +82,7 @@ public:
         bool fast_open;
         int fast_open_qlen;
     } tcp;
-    class MySQLConfig {
-    public:
-        bool enabled;
-        std::string server_addr;
-        uint16_t server_port;
-        std::string database;
-        std::string username;
-        std::string password;
-        std::string cafile;
-    } mysql;
+    MySQLConfig mysql;
     void load(const std::string &filename);
     void populate(const std::string &JSON);
     bool sip003();

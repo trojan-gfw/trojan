@@ -36,6 +36,7 @@
 #include "session/natsession.h"
 #include "ssl/ssldefaults.h"
 #include "ssl/sslsession.h"
+#include "auth/mysql.h"
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -123,7 +124,7 @@ Service::Service(Config &config, bool test) :
         }
         if (config.mysql.enabled) {
 #ifdef ENABLE_MYSQL
-            auth = new Authenticator(config);
+            auth = new MySQLAuthenticator(config.mysql);
 #else // ENABLE_MYSQL
             Log::log_with_date_time("MySQL is not supported", Log::WARN);
 #endif // ENABLE_MYSQL

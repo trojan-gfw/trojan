@@ -22,7 +22,7 @@
 
 #include "session.h"
 #include <boost/asio/ssl.hpp>
-#include "core/authenticator.h"
+#include "auth/auth.h"
 
 class ServerSession : public Session {
 private:
