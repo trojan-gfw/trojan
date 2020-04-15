@@ -21,31 +21,14 @@
 #define _FORWARDSESSION_H_
 
 #include "session.h"
+#include "natsession.h"
 #include <boost/asio/ssl.hpp>
 
-class ForwardSession : public Session {
-private:
-    enum Status {
-        CONNECT,
-        FORWARD,
-        DESTROY
-    } status;
-    bool first_packet_recv;
-    boost::asio::ip::tcp::socket in_socket;
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
-    void destroy();
-    void in_async_read();
-    void in_async_write(const std::string &data);
-    void in_recv(const std::string &data);
-    void in_sent();
-    void out_async_read();
-    void out_async_write(const std::string &data);
-    void out_recv(const std::string &data);
-    void out_sent();
+class ForwardSession : public NATSession {
+protected:
+    virtual std::pair<std::string, uint16_t> get_target_endpoint();
 public:
     ForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
-    boost::asio::ip::tcp::socket& accept_socket();
-    void start();
 };
 
 #endif // _FORWARDSESSION_H_

@@ -40,10 +40,6 @@ NATSession::NATSession(const Config &config, boost::asio::io_context &io_context
     status = CONNECT;
 }
 
-tcp::socket& NATSession::accept_socket() {
-    return in_socket;
-}
-
 pair<string, uint16_t> NATSession::get_target_endpoint() {
 #ifdef ENABLE_NAT
     int fd = in_socket.native_handle();
