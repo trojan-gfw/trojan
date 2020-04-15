@@ -65,6 +65,14 @@ typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> re
 #endif
 #endif
 
+#ifndef SOL_IP
+#define SOL_IP  IPPROTO_IP
+#endif
+
+#ifndef SOL_IPV6
+#define SOL_IPV6  IPPROTO_IPV6
+#endif
+
 #define PACKET_HEADER_SIZE (1 + 28 + 2 + 64)
 #define DEFAULT_PACKET_SIZE 1397 // 1492 - PACKET_HEADER_SIZE = 1397, the default MTU for UDP relay
 
