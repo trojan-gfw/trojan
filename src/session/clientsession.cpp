@@ -221,72 +221,7 @@ void ClientSession::in_sent() {
             if (is_udp) {
                 udp_async_read();
             }
-            auto self = shared_from_this();
-            resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
-                if (error || results.size() == 0) {
-                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
-                    destroy();
-                    return;
-                }
-                auto iterator = results.begin();
-                Log::log_with_endpoint(in_endpoint, config.remote_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
-                boost::system::error_code ec;
-                out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
-                if (ec) {
-                    destroy();
-                    return;
-                }
-                if (config.tcp.no_delay) {
-                    out_socket.next_layer().set_option(tcp::no_delay(true));
-                }
-                if (config.tcp.keep_alive) {
-                    out_socket.next_layer().set_option(boost::asio::socket_base::keep_alive(true));
-                }
-#ifdef TCP_FASTOPEN_CONNECT
-                if (config.tcp.fast_open) {
-                    using fastopen_connect = boost::asio::detail::socket_option::boolean<IPPROTO_TCP, TCP_FASTOPEN_CONNECT>;
-                    boost::system::error_code ec;
-                    out_socket.next_layer().set_option(fastopen_connect(true), ec);
-                }
-#endif // TCP_FASTOPEN_CONNECT
-                out_socket.next_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
-                    if (error) {
-                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
-                        destroy();
-                        return;
-                    }
-                    out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
-                        if (error) {
-                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
-                            destroy();
-                            return;
-                        }
-                        Log::log_with_endpoint(in_endpoint, "tunnel established");
-                        if (config.ssl.reuse_session) {
-                            auto ssl = out_socket.native_handle();
-                            if (!SSL_session_reused(ssl)) {
-                                Log::log_with_endpoint(in_endpoint, "SSL session not reused");
-                            } else {
-                                Log::log_with_endpoint(in_endpoint, "SSL session reused");
-                            }
-                        }
-                        boost::system::error_code ec;
-                        if (is_udp) {
-                            if (!first_packet_recv) {
-                                udp_socket.cancel(ec);
-                            }
-                            status = UDP_FORWARD;
-                        } else {
-                            if (!first_packet_recv) {
-                                in_socket.cancel(ec);
-                            }
-                            status = FORWARD;
-                        }
-                        out_async_read();
-                        out_async_write(out_write_buf);
-                    });
-                });
-            });
+            request_remote();
             break;
         }
         case FORWARD: {
@@ -301,6 +236,74 @@ void ClientSession::in_sent() {
     }
 }
 
+void ClientSession::request_remote(){
+    auto self = shared_from_this();
+    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
+        if (error || results.size() == 0) {
+            Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
+            destroy();
+            return;
+        }
+        auto iterator = results.begin();
+        Log::log_with_endpoint(in_endpoint, config.remote_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
+        boost::system::error_code ec;
+        out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
+        if (ec) {
+            destroy();
+            return;
+        }
+        if (config.tcp.no_delay) {
+            out_socket.next_layer().set_option(tcp::no_delay(true));
+        }
+        if (config.tcp.keep_alive) {
+            out_socket.next_layer().set_option(boost::asio::socket_base::keep_alive(true));
+        }
+#ifdef TCP_FASTOPEN_CONNECT
+        if (config.tcp.fast_open) {
+            using fastopen_connect = boost::asio::detail::socket_option::boolean<IPPROTO_TCP, TCP_FASTOPEN_CONNECT>;
+            boost::system::error_code ec;
+            out_socket.next_layer().set_option(fastopen_connect(true), ec);
+        }
+#endif // TCP_FASTOPEN_CONNECT
+        out_socket.next_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
+            if (error) {
+                Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                destroy();
+                return;
+            }
+            out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
+                if (error) {
+                    Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                    destroy();
+                    return;
+                }
+                Log::log_with_endpoint(in_endpoint, "tunnel established");
+                if (config.ssl.reuse_session) {
+                    auto ssl = out_socket.native_handle();
+                    if (!SSL_session_reused(ssl)) {
+                        Log::log_with_endpoint(in_endpoint, "SSL session not reused");
+                    } else {
+                        Log::log_with_endpoint(in_endpoint, "SSL session reused");
+                    }
+                }
+                boost::system::error_code ec;
+                if (is_udp) {
+                    if (!first_packet_recv) {
+                        udp_socket.cancel(ec);
+                    }
+                    status = UDP_FORWARD;
+                } else {
+                    if (!first_packet_recv) {
+                        in_socket.cancel(ec);
+                    }
+                    status = FORWARD;
+                }
+                out_async_read();
+                out_async_write(out_write_buf);
+            });
+        });
+    });
+}
 void ClientSession::out_recv(const string &data) {
     if (status == FORWARD) {
         recv_len += data.length();
