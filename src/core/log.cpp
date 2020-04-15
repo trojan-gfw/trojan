@@ -58,7 +58,11 @@ void Log::log_with_date_time(const string &message, Level level) {
 }
 
 void Log::log_with_endpoint(const tcp::endpoint &endpoint, const string &message, Level level) {
-    log_with_date_time(endpoint.address().to_string() + ':' + to_string(endpoint.port()) + ' ' + message, level);
+    log_with_date_time(string("[tcp] ") + endpoint.address().to_string() + ':' + to_string(endpoint.port()) + ' ' + message, level);
+}
+
+void Log::log_with_endpoint(const udp::endpoint &endpoint, const string &message, Level level) {
+    log_with_date_time(string("[udp] ") + endpoint.address().to_string() + ':' + to_string(endpoint.port()) + ' ' + message, level);
 }
 
 void Log::redirect(const string &filename) {

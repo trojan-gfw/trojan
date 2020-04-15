@@ -44,6 +44,119 @@ using namespace boost::asio::ssl;
 typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
 #endif // ENABLE_REUSE_PORT
 
+// copied from shadowsocks-libe udprelay.h
+#ifndef IP_TRANSPARENT
+#define IP_TRANSPARENT       19
+#endif
+
+#ifndef IP_RECVORIGDSTADDR
+#ifdef  IP_ORIGDSTADDR
+#define IP_RECVORIGDSTADDR   IP_ORIGDSTADDR
+#else
+#define IP_RECVORIGDSTADDR   20
+#endif
+#endif
+
+#ifndef IPV6_RECVORIGDSTADDR
+#ifdef  IPV6_ORIGDSTADDR
+#define IPV6_RECVORIGDSTADDR   IPV6_ORIGDSTADDR
+#else
+#define IPV6_RECVORIGDSTADDR   74
+#endif
+#endif
+
+#define PACKET_HEADER_SIZE (1 + 28 + 2 + 64)
+#define DEFAULT_PACKET_SIZE 1397 // 1492 - PACKET_HEADER_SIZE = 1397, the default MTU for UDP relay
+
+
+// copied from shadowsocks-libev udpreplay.c
+static int get_dstaddr(struct msghdr *msg, struct sockaddr_storage *dstaddr)
+{
+    struct cmsghdr *cmsg;
+
+    for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
+        if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_RECVORIGDSTADDR) {
+            memcpy(dstaddr, CMSG_DATA(cmsg), sizeof(struct sockaddr_in));
+            dstaddr->ss_family = AF_INET;
+            return 0;
+        } else if (cmsg->cmsg_level == SOL_IPV6 && cmsg->cmsg_type == IPV6_RECVORIGDSTADDR) {
+            memcpy(dstaddr, CMSG_DATA(cmsg), sizeof(struct sockaddr_in6));
+            dstaddr->ss_family = AF_INET6;
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static pair<string, uint16_t> get_addr(struct sockaddr_storage addr){
+    
+    const int buf_size = 256;
+    char buf[256];
+
+    if(addr.ss_family == AF_INET){
+        sockaddr_in *sa = (sockaddr_in*) &addr;
+        if(inet_ntop(AF_INET, &(sa->sin_addr), buf, buf_size)){
+            return make_pair(buf, ntohs(sa->sin_port));
+        }             
+    }else{
+        sockaddr_in6 *sa = (sockaddr_in6*) &addr;
+        if(inet_ntop(AF_INET6, &(sa->sin6_addr), buf, buf_size)){
+            return make_pair(buf, ntohs(sa->sin6_port));
+        }                
+    }
+
+    return make_pair("", 0);
+}
+
+// copied from shadowsocks-libev udpreplay.c
+// it works if in NAT mode
+static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::endpoint& recv_endpoint, char* buf, int& buf_len){
+    struct sockaddr_storage src_addr;
+    memset(&src_addr, 0, sizeof(struct sockaddr_storage));
+
+    char control_buffer[64] = { 0 };
+    struct msghdr msg;
+    memset(&msg, 0, sizeof(struct msghdr));
+    struct iovec iov[1];
+    struct sockaddr_storage dst_addr;
+    memset(&dst_addr, 0, sizeof(struct sockaddr_storage));
+
+    msg.msg_name       = &src_addr;
+    msg.msg_namelen    = sizeof(struct sockaddr_storage);;
+    msg.msg_control    = control_buffer;
+    msg.msg_controllen = sizeof(control_buffer);
+
+    const int packet_size = DEFAULT_PACKET_SIZE;
+    const int buf_size = DEFAULT_PACKET_SIZE * 2;
+
+    iov[0].iov_base = buf;
+    iov[0].iov_len  = buf_size;
+    msg.msg_iov     = iov;
+    msg.msg_iovlen  = 1;
+
+    buf_len = recvmsg(fd, &msg, 0);
+    if (buf_len == -1) {
+        Log::log("[udp] server_recvmsg failed!", Log::FATAL);
+    } else{
+        if (buf_len > packet_size) {
+            Log::log(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
+        }
+
+        if (get_dstaddr(&msg, &dst_addr)) {
+            Log::log("[udp] unable to get dest addr!", Log::FATAL);
+        }else{
+            auto target_dst = get_addr(dst_addr);       
+            auto src_dst = get_addr(src_addr);
+            recv_endpoint.address(boost::asio::ip::make_address(src_dst.first));
+            recv_endpoint.port(src_dst.second); 
+            return target_dst;           
+        }
+    }    
+
+    return make_pair("", 0);
+}
+
 Service::Service(Config &config, bool test) :
     config(config),
     socket_acceptor(io_context),
@@ -71,9 +184,32 @@ Service::Service(Config &config, bool test) :
 
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
-        if (config.run_type == Config::FORWARD) {
+        if (config.run_type == Config::FORWARD || config.run_type == Config::NAT) {
             auto udp_bind_endpoint = udp::endpoint(listen_endpoint.address(), listen_endpoint.port());
-            udp_socket.open(udp_bind_endpoint.protocol());
+            auto udp_protocol = udp_bind_endpoint.protocol();
+            udp_socket.open(udp_protocol);
+            
+            if(config.run_type == Config::NAT){
+                // copy from shadowsocks-libev
+                int opt = 1;
+                int fd = udp_socket.native_handle();
+                if (setsockopt(fd, SOL_IP, IP_TRANSPARENT, &opt, sizeof(opt))) {
+                    Log::log("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
+                    stop();
+                    return;
+                }
+                
+                if (udp_protocol.family() == boost::asio::ip::tcp::v4().family()) {
+                    if (setsockopt(fd, SOL_IP, IP_RECVORIGDSTADDR, &opt, sizeof(opt))) {
+                        Log::log("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
+                    }
+                } else if (udp_protocol.family() == boost::asio::ip::tcp::v6().family()) {
+                    if (setsockopt(fd, SOL_IPV6, IPV6_RECVORIGDSTADDR, &opt, sizeof(opt))) {
+                        Log::log("[udp] setsockopt IPV6_RECVORIGDSTADDR failed!", Log::FATAL);
+                    }
+                }
+            }
+
             udp_socket.bind(udp_bind_endpoint);
         }
     }
@@ -273,7 +409,7 @@ Service::Service(Config &config, bool test) :
 
 void Service::run() {
     async_accept();
-    if (config.run_type == Config::FORWARD) {
+    if (config.run_type == Config::FORWARD || config.run_type == Config::NAT) {
         udp_async_read();
     }
     tcp::endpoint local_endpoint = socket_acceptor.local_endpoint();
@@ -331,7 +467,7 @@ void Service::async_accept() {
 }
 
 void Service::udp_async_read() {
-    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this](const boost::system::error_code error, size_t length) {
+    auto cb = [this](const boost::system::error_code error, size_t length) {
         if (error == boost::asio::error::operation_aborted) {
             // got cancel signal, stop calling myself
             return;
@@ -340,33 +476,86 @@ void Service::udp_async_read() {
             stop();
             throw runtime_error(error.message());
         }
-        string data((const char *)udp_read_buf, length);
-        for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
-            auto next = ++it;
-            --it;
-            if (it->expired()) {
-                udp_sessions.erase(it);
-            } else if (it->lock()->process(udp_recv_endpoint, data)) {
-                udp_async_read();
-                return;
-            }
-            it = next;
+        
+        pair<string,uint16_t> targetdst;
+        
+        if(config.run_type == Config::NAT){
+            int read_length = (int)length;
+            targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char*)udp_read_buf, read_length);
+            length = read_length < 0 ? 0 : read_length;
+        }else{
+            targetdst = make_pair(config.target_addr, config.target_port);
         }
-        Log::log_with_endpoint(tcp::endpoint(udp_recv_endpoint.address(), udp_recv_endpoint.port()), "new UDP session");
-        auto session = make_shared<UDPForwardSession>(config, io_context, ssl_context, udp_recv_endpoint, [this](const udp::endpoint &endpoint, const string &data) {
-            boost::system::error_code ec;
-            udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
-            if (ec == boost::asio::error::no_permission) {
-                Log::log_with_endpoint(tcp::endpoint(endpoint.address(), endpoint.port()), "dropped a UDP packet due to firewall policy or rate limit");
-            } else if (ec) {
-                throw runtime_error(ec.message());
+
+        if(targetdst.second != 0){                
+            string data((const char *)udp_read_buf, length);
+            for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
+                auto next = ++it;
+                --it;
+                if (it->expired()) {
+                    udp_sessions.erase(it);
+                } else if (it->lock()->process(udp_recv_endpoint, data)) {
+                    udp_async_read();
+                    return;
+                }
+                it = next;
             }
-        });
-        udp_sessions.emplace_back(session);
-        session->start();
-        session->process(udp_recv_endpoint, data);
-        udp_async_read();
-    });
+            
+            Log::log_with_endpoint(udp_recv_endpoint, "new UDP session");
+            auto session = make_shared<UDPForwardSession>(config, io_context, ssl_context, udp_recv_endpoint, targetdst, 
+             [this](const udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& target, const string &data) {
+                boost::system::error_code ec;
+
+                if(config.run_type == Config::NAT){
+                    auto target_endpoint = udp::endpoint(boost::asio::ip::make_address(target.first), target.second);
+                    auto new_udp_socket = udp::socket(io_context);
+                    new_udp_socket.open(target_endpoint.protocol());
+
+                    bool succ = true;
+                    int opt = 1;
+                    int fd = new_udp_socket.native_handle();
+                    int sol = endpoint.protocol().family() == boost::asio::ip::tcp::v6().family() ? SOL_IPV6 : SOL_IP;
+                    if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
+                        Log::log_with_endpoint(target_endpoint, "[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
+                        succ = false;
+                    }
+                    
+                    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+                        Log::log_with_endpoint(target_endpoint, "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
+                        succ = false;
+                    }
+                    
+                    if(succ){
+                        new_udp_socket.bind(target_endpoint);
+                        new_udp_socket.send_to(boost::asio::buffer(data), endpoint,0,ec);
+                    }                   
+                    
+                    new_udp_socket.close(ec);
+                }else{
+                    udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
+                }
+
+                if (ec == boost::asio::error::no_permission) {
+                    Log::log_with_endpoint(udp_recv_endpoint, "dropped a UDP packet due to firewall policy or rate limit");
+                } else if (ec) {
+                    throw runtime_error(ec.message());
+                }             
+            });
+            udp_sessions.emplace_back(session);
+            session->start();
+            session->process(udp_recv_endpoint, data);    
+        }else{
+            Log::Log::log_with_endpoint(udp_recv_endpoint, "cannot read original destination address!");
+        }
+
+        udp_async_read();        
+    };
+
+    if(config.run_type == Config::NAT){
+        udp_socket.async_receive_from(boost::asio::null_buffers(), udp_recv_endpoint, cb);
+    }else{
+        udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, cb);
+    }    
 }
 
 boost::asio::io_context &Service::service() {

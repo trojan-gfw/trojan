@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <string>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ip/udp.hpp>
 
 #ifdef ERROR // windows.h
 #undef ERROR
@@ -43,6 +44,7 @@ public:
     static void log(const std::string &message, Level level = ALL);
     static void log_with_date_time(const std::string &message, Level level = ALL);
     static void log_with_endpoint(const boost::asio::ip::tcp::endpoint &endpoint, const std::string &message, Level level = ALL);
+    static void log_with_endpoint(const boost::asio::ip::udp::endpoint &endpoint, const std::string &message, Level level = ALL);
     static void redirect(const std::string &filename);
     static void redirect_keylog(const std::string &filename);
     static void reset();

@@ -36,13 +36,14 @@ tcp::socket& ClientSession::accept_socket() {
     return in_socket;
 }
 
-void ClientSession::start() {
+bool ClientSession::prepare_session(){
     boost::system::error_code ec;
     start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint(ec);
     if (ec) {
+        Log::log("cannot get in_endpoint in prepare_session", Log::FATAL);
         destroy();
-        return;
+        return false;
     }
     auto ssl = out_socket.native_handle();
     if (config.ssl.sni != "") {
@@ -54,7 +55,12 @@ void ClientSession::start() {
             SSL_set_session(ssl, session);
         }
     }
-    in_async_read();
+    return true;
+}
+void ClientSession::start() {
+    if(prepare_session()){
+        in_async_read();
+    }
 }
 
 void ClientSession::in_async_read() {

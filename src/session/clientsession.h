@@ -54,6 +54,7 @@ protected:
     virtual void in_recv(const std::string &data);
     virtual void in_sent();
 
+    bool prepare_session();
     void request_remote();
 public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);

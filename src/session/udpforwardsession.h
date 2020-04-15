@@ -26,7 +26,8 @@
 
 class UDPForwardSession : public Session {
 public:
-    typedef std::function<void(const boost::asio::ip::udp::endpoint&, const std::string&)> UDPWrite;
+    typedef std::function<void(const boost::asio::ip::udp::endpoint&, 
+        const std::pair<std::string, uint16_t>& target, const std::string&)> UDPWrite;
 private:
     enum Status {
         CONNECT,
@@ -37,6 +38,8 @@ private:
     UDPWrite in_write;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     boost::asio::steady_timer gc_timer;
+    std::pair<std::string, uint16_t> udp_target;
+
     void destroy();
     void in_recv(const std::string &data);
     void out_async_read();
@@ -45,7 +48,8 @@ private:
     void out_sent();
     void timer_async_wait();
 public:
-    UDPForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, const boost::asio::ip::udp::endpoint &endpoint, const UDPWrite &in_write);
+    UDPForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, 
+        const boost::asio::ip::udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& targetdst, const UDPWrite &in_write);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
     bool process(const boost::asio::ip::udp::endpoint &endpoint, const std::string &data);

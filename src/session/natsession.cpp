@@ -71,17 +71,19 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
 }
 
 void NATSession::start() {
-    auto target_endpoint = get_target_endpoint();
-    string &target_addr = target_endpoint.first;
-    uint16_t target_port = target_endpoint.second;
-    if (target_port == 0) {
-        destroy();
-        return;
+    if (prepare_session()) {
+        auto target_endpoint = get_target_endpoint();
+        string &target_addr = target_endpoint.first;
+        uint16_t target_port = target_endpoint.second;
+        if (target_port == 0) {
+            destroy();
+            return;
+        }
+        Log::log_with_endpoint(in_endpoint, "forwarding to " + target_addr + ':' + to_string(target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
+        out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, target_addr, target_port, true);
+        
+        request_remote();
     }
-    Log::log_with_endpoint(in_endpoint, "forwarding to " + target_addr + ':' + to_string(target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
-    out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, target_addr, target_port, true);
-    
-    request_remote();
 }
 
 void NATSession::in_recv(const string &data) {
