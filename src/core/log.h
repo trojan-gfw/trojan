@@ -38,6 +38,7 @@ public:
         FATAL = 4,
         OFF = 5
     };
+    typedef std::function<void(const std::string &, Level)> LogCallback;
     static Level level;
     static FILE *keylog;
     static void log(const std::string &message, Level level = ALL);
@@ -45,9 +46,11 @@ public:
     static void log_with_endpoint(const boost::asio::ip::tcp::endpoint &endpoint, const std::string &message, Level level = ALL);
     static void redirect(const std::string &filename);
     static void redirect_keylog(const std::string &filename);
+    static void set_callback(LogCallback cb);
     static void reset();
 private:
     static FILE *output_stream;
+    static LogCallback log_callback;
 };
 
 #endif // _LOG_H_
