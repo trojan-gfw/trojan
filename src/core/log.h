@@ -46,6 +46,9 @@ public:
     static void redirect(const std::string &filename);
     static void redirect_keylog(const std::string &filename);
     static void reset();
+#ifdef TROJAN_USE_EXTERNAL_LOGGER
+    static std::function<void(const std::string &, Log::Level)> logger;
+#endif
 private:
     static FILE *output_stream;
 };

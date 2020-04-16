@@ -34,16 +34,21 @@ using namespace boost::asio::ip;
 Log::Level Log::level(INFO);
 FILE *Log::keylog(NULL);
 FILE *Log::output_stream(stderr);
+#ifdef TROJAN_USE_EXTERNAL_LOGGER
+std::function<void(const std::string &, Log::Level)> Log::logger{};
+#endif
 
 void Log::log(const string &message, Level level) {
     if (level >= Log::level) {
-#ifdef ENABLE_ANDROID_LOG
+#ifdef TROJAN_USE_EXTERNAL_LOGGER
+        logger(message, level);
+#elif defined(ENABLE_ANDROID_LOG)
         __android_log_print(ANDROID_LOG_ERROR, "trojan", "%s\n",
                             message.c_str());
 #else
         fprintf(output_stream, "%s\n", message.c_str());
         fflush(output_stream);
-#endif // ENABLE_ANDROID_LOG
+#endif
     }
 }
 
