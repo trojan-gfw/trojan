@@ -201,20 +201,37 @@ Service::Service(Config &config, bool test) :
                 // copy from shadowsocks-libev
                 int opt = 1;
                 int fd = udp_socket.native_handle();
-                if (setsockopt(fd, SOL_IP, IP_TRANSPARENT, &opt, sizeof(opt))) {
+                int sol;
+                int ip_recv;
+
+                if(udp_protocol.family() == boost::asio::ip::tcp::v4().family()){
+                    sol = SOL_IP;
+                    ip_recv = IP_RECVORIGDSTADDR;
+                }else if (udp_protocol.family() == boost::asio::ip::tcp::v6().family()) {
+                    sol = SOL_IPV6;
+                    ip_recv = IPV6_RECVORIGDSTADDR;
+                }else{
+                    Log::log("[udp] protocol can't be recognized", Log::FATAL);
+                    stop();
+                    return;
+                }
+
+                if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
                     Log::log("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
                     stop();
                     return;
                 }
-                
-                if (udp_protocol.family() == boost::asio::ip::tcp::v4().family()) {
-                    if (setsockopt(fd, SOL_IP, IP_RECVORIGDSTADDR, &opt, sizeof(opt))) {
-                        Log::log("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
-                    }
-                } else if (udp_protocol.family() == boost::asio::ip::tcp::v6().family()) {
-                    if (setsockopt(fd, SOL_IPV6, IPV6_RECVORIGDSTADDR, &opt, sizeof(opt))) {
-                        Log::log("[udp] setsockopt IPV6_RECVORIGDSTADDR failed!", Log::FATAL);
-                    }
+
+                if (setsockopt(fd, sol, ip_recv, &opt, sizeof(opt))) {
+                    Log::log("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
+                    stop();
+                    return;
+                }
+
+                if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+                    Log::log( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
+                    stop();
+                    return;
                 }
             }
 
