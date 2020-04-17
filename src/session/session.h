@@ -33,7 +33,7 @@ protected:
         MAX_LENGTH = 8192,
         SSL_SHUTDOWN_TIMEOUT = 30
     };
-    const Config &config;
+    
     uint8_t in_read_buf[MAX_LENGTH];
     uint8_t out_read_buf[MAX_LENGTH];
     uint8_t udp_read_buf[MAX_LENGTH];
@@ -43,7 +43,7 @@ protected:
     std::string out_write_buf;
     std::string udp_data_buf;
     boost::asio::ip::tcp::resolver resolver;
-    boost::asio::ip::tcp::endpoint in_endpoint;
+    
     boost::asio::ip::udp::socket udp_socket;
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
     boost::asio::steady_timer ssl_shutdown_timer;
@@ -52,6 +52,11 @@ public:
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
     virtual void start() = 0;
     virtual ~Session();
+    virtual void destroy() = 0;
+    const Config &config;
+    boost::asio::ip::tcp::endpoint in_endpoint;
+
+    uint32_t session_id;
 };
 
 #endif // _SESSION_H_

@@ -22,6 +22,7 @@
 
 #include "session.h"
 #include <boost/asio/ssl.hpp>
+#include "pipelinesession.h"
 #include "core/authenticator.h"
 
 class ServerSession : public Session {
@@ -38,10 +39,9 @@ private:
     Authenticator *auth;
     std::string auth_password;
     const std::string &plain_http_response;
-    void destroy();
+    
     void in_async_read();
     void in_async_write(const std::string &data);
-    void in_recv(const std::string &data);
     void in_sent();
     void out_async_read();
     void out_async_write(const std::string &data);
@@ -51,10 +51,16 @@ private:
     void udp_async_write(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_recv(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_sent();
+
+    std::weak_ptr<Session> pipeline;
+    bool use_pipeline;
 public:
     ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
+    void set_use_pipeline(std::weak_ptr<Session> pipeline);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
+    void destroy();
+    void in_recv(const std::string &data);
 };
 
 #endif // _SERVERSESSION_H_

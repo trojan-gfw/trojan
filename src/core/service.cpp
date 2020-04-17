@@ -34,6 +34,7 @@
 #include "session/clientsession.h"
 #include "session/forwardsession.h"
 #include "session/natsession.h"
+#include "session/pipelinesession.h"
 #include "ssl/ssldefaults.h"
 #include "ssl/sslsession.h"
 using namespace std;
@@ -466,7 +467,12 @@ void Service::stop() {
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
+        if(config.experimental.pipeline_num > 0){
+            // start a pipeline mode in server run_type
+            session = make_shared<PipelineSession>(config, io_context, ssl_context, auth, plain_http_response);
+        }else{
+            session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
+        }        
     } else if (config.run_type == Config::FORWARD) {
         session = make_shared<ForwardSession>(config, io_context, ssl_context);
     } else if (config.run_type == Config::NAT) {

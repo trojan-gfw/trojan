@@ -31,59 +31,82 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_c
     out_socket(io_context),
     udp_resolver(io_context),
     auth(auth),
-    plain_http_response(plain_http_response) {}
+    plain_http_response(plain_http_response),
+    use_pipeline(false) {}
+
+void ServerSession::set_use_pipeline(weak_ptr<Session> pl){
+    pipeline = pl;
+    use_pipeline = true;
+}
 
 tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.next_layer();
 }
 
 void ServerSession::start() {
-    boost::system::error_code ec;
+    
     start_time = time(NULL);
-    in_endpoint = in_socket.next_layer().remote_endpoint(ec);
-    if (ec) {
-        destroy();
-        return;
-    }
-    auto self = shared_from_this();
-    in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
-        if (error) {
-            Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
-            if (error.message() == "http request" && plain_http_response != "") {
-                recv_len += plain_http_response.length();
-                boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
-                    destroy();
-                });
-                return;
-            }
+
+    if(!use_pipeline){
+        boost::system::error_code ec;
+        in_endpoint = in_socket.next_layer().remote_endpoint(ec);
+        if (ec) {
             destroy();
             return;
         }
-        in_async_read();
-    });
+        auto self = shared_from_this();
+        in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
+            if (error) {
+                Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
+                if (error.message() == "http request" && plain_http_response != "") {
+                    recv_len += plain_http_response.length();
+                    boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
+                        destroy();
+                    });
+                    return;
+                }
+                destroy();
+                return;
+            }
+            in_async_read();
+        });
+    }
+    
 }
 
 void ServerSession::in_async_read() {
-    auto self = shared_from_this();
-    in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
-        if (error) {
-            destroy();
-            return;
-        }
-        in_recv(string((const char*)in_read_buf, length));
-    });
+    if(use_pipeline){      
+        auto self = shared_from_this();
+        in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
+            if (error) {
+                destroy();
+                return;
+            }
+            in_recv(string((const char*)in_read_buf, length));
+        });
+    }
 }
 
 void ServerSession::in_async_write(const string &data) {
-    auto self = shared_from_this();
-    auto data_copy = make_shared<string>(data);
-    boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
-        if (error) {
+    if(use_pipeline){
+        if(!pipeline.expired()){
+            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_data(*this, data, [this](){
+                in_sent();
+            });            
+        }else{
             destroy();
-            return;
         }
-        in_sent();
-    });
+    }else{
+        auto self = shared_from_this();
+        auto data_copy = make_shared<string>(data);
+        boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
+            if (error) {
+                destroy();
+                return;
+            }
+            in_sent();
+        });
+    }
 }
 
 void ServerSession::out_async_read() {
@@ -363,5 +386,9 @@ void ServerSession::destroy() {
         in_socket.async_shutdown(ssl_shutdown_cb);
         ssl_shutdown_timer.expires_after(chrono::seconds(SSL_SHUTDOWN_TIMEOUT));
         ssl_shutdown_timer.async_wait(ssl_shutdown_cb);
+    }
+
+    if(use_pipeline && !pipeline.expired()){
+        (static_cast<PipelineSession*>(pipeline.lock().get()))->remove_session_after_destroy(*this);
     }
 }

@@ -109,6 +109,7 @@ void Config::populate(const ptree &tree) {
     mysql.username = tree.get("mysql.username", string("trojan"));
     mysql.password = tree.get("mysql.password", string());
     mysql.cafile = tree.get("mysql.cafile", string());
+    experimental.pipeline_num = tree.get("experimental.pipeline_num", uint32_t(0));
 }
 
 bool Config::sip003() {

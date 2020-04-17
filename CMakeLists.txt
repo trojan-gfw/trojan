@@ -22,12 +22,14 @@ add_executable(trojan
     src/proto/socks5address.cpp
     src/proto/trojanrequest.cpp
     src/proto/udppacket.cpp
+    src/proto/pipelinerequest.cpp
     src/session/clientsession.cpp
     src/session/forwardsession.cpp
     src/session/natsession.cpp
     src/session/serversession.cpp
     src/session/session.cpp
     src/session/udpforwardsession.cpp
+    src/session/pipelinesession.cpp
     src/ssl/ssldefaults.cpp
     src/ssl/sslsession.cpp)
 include_directories(src)

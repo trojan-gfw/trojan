@@ -81,6 +81,11 @@ public:
         std::string password;
         std::string cafile;
     } mysql;
+
+    class Experimental{
+    public:
+        uint32_t pipeline_num;
+    } experimental;
     void load(const std::string &filename);
     void populate(const std::string &JSON);
     bool sip003();
