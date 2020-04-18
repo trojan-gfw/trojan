@@ -27,6 +27,7 @@
 #include <boost/asio/ssl.hpp>
 #include "core/authenticator.h"
 
+class ServerSession;
 class PipelineSession : public Session {
     typedef std::list<std::shared_ptr<ServerSession>> SessionsList;
 
@@ -47,14 +48,17 @@ class PipelineSession : public Session {
     boost::asio::steady_timer gc_timer;
     std::string in_recv_streaming_data;
     
+    boost::asio::io_context& io_context;
+    boost::asio::ssl::context& ssl_context;
+    
     void timer_async_wait();
     void process_streaming_data();
 
     void in_async_read();
     void in_recv(const std::string& data);
     void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler);
-    bool find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator)> processor);
-    bool find_and_process_session(ServerSession& session, std::function<void(SessionsList::iterator)> processor);
+    bool find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator&)> processor);
+    bool find_and_process_session(ServerSession& session, std::function<void(SessionsList::iterator&)> processor);
 public:
     PipelineSession(const Config &config, boost::asio::io_context &io_context, 
         boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
@@ -64,7 +68,7 @@ public:
     void start();
 
     void session_write_data(ServerSession& session, const std::string& session_data, std::function<void()> sent_handler);
-    void remove_session_after_destroy(ServerSession& session)
+    void remove_session_after_destroy(ServerSession& session);
 };
 
 #endif // _PIPELINEESSION_H_

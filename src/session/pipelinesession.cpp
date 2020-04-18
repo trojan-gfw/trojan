@@ -34,7 +34,9 @@ PipelineSession::PipelineSession(const Config &config, boost::asio::io_context &
     auth(auth),
     plain_http_response(plain_http_response),
     live_socket(io_context, ssl_context),
-    gc_timer(io_context){
+    gc_timer(io_context),
+    io_context(io_context),
+    ssl_context(ssl_context){
 
     timer_async_wait();
 }
@@ -94,7 +96,7 @@ void PipelineSession::in_recv(const string &data) {
             return;
         }
         gc_timer.cancel();
-        status == STREAMING;
+        status = STREAMING;
         in_recv_streaming_data += data.substr(npos + 2);
         process_streaming_data();
         
@@ -105,7 +107,7 @@ void PipelineSession::in_recv(const string &data) {
 }
 
 void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler){
-    auto found = find_and_process_session(session, [&](auto it){
+    auto found = find_and_process_session(session, [&](SessionsList::iterator&){
         auto data = PipelineRequest::generate(cmd, session.session_id, session_data);
         auto self = shared_from_this();
         auto data_copy = make_shared<string>(data);
@@ -124,9 +126,9 @@ void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& sessi
     }
 }
 
-bool PipelineSession::find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator)> processor){
-    auto it = std::find_if(sessions.begin(), sessions.end(), [=](auto s){
-        return s->session_id == session_id;
+bool PipelineSession::find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator&)> processor){
+    auto it = std::find_if(sessions.begin(), sessions.end(), [=](shared_ptr<ServerSession> s){
+        return s.get()->session_id == session_id;
     });
     
     if(it != sessions.end()){
@@ -137,9 +139,9 @@ bool PipelineSession::find_and_process_session(uint32_t session_id, std::functio
     return false;
 }
 
-bool PipelineSession::find_and_process_session(ServerSession& session, std::function<void(SessionsList::iterator)> processor){
-    auto it = std::find_if(sessions.begin(), sessions.end(), [&](auto s){
-        return s->get() == (&session);
+bool PipelineSession::find_and_process_session(ServerSession& session, std::function<void(SessionsList::iterator&)> processor){
+    auto it = std::find_if(sessions.begin(), sessions.end(), [&](shared_ptr<ServerSession> s){
+        return s.get() == (&session);
     });
     
     if(it != sessions.end()){
@@ -164,23 +166,22 @@ void PipelineSession::process_streaming_data(){
     }
 
     if(req.command == PipelineRequest::CONNECT){
-        find_and_process_session(req.session_id, [this](auto it){    
+        find_and_process_session(req.session_id, [this](SessionsList::iterator& it){    
             it->get()->destroy();
             sessions.erase(it);
         });
 
-        auto session = make_shared<ServerSession>(config, live_socket.next_layer().get_io_context(), 
-            live_socket.get_io_context(), auth, plain_http_response);
+        auto session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
         session->session_id = req.session_id;
         session->set_use_pipeline(shared_from_this());
         session->start();
         sessions.emplace_back(session);
     }else if(req.command == PipelineRequest::DATA){
-        find_and_process_session(req.session_id, [&,req](auto it){    
+        find_and_process_session(req.session_id, [&,req](SessionsList::iterator& it){    
             it->get()->in_recv(req.packet_data);
         });        
     }else if(req.command == PipelineRequest::CLOSE){
-        find_and_process_session(req.session_id, [this](auto it){    
+        find_and_process_session(req.session_id, [this](SessionsList::iterator& it){    
             it->get()->destroy();
             sessions.erase(it);
         });
@@ -209,9 +210,9 @@ void PipelineSession::timer_async_wait(){
 }
 
 void PipelineSession::remove_session_after_destroy(ServerSession& session){
-    find_and_process_session(session, [this, &session](auto it){
+    find_and_process_session(session, [this, &session](SessionsList::iterator& it){
         if(status != DESTROY){
-            in_send(PipelineRequest::CLOSE, session, "");
+            in_send(PipelineRequest::CLOSE, session, "",[](){});
         }        
         sessions.erase(it);
     });
