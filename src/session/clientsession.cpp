@@ -28,6 +28,7 @@ using namespace boost::asio::ssl;
 ClientSession::ClientSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context) :
     Session(config, io_context),
     status(HANDSHAKE),
+    is_udp(false),
     first_packet_recv(false),
     in_socket(io_context),
     out_socket(io_context, ssl_context) {}
