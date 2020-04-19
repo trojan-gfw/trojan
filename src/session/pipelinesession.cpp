@@ -27,6 +27,8 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
+PipelineSession::SessionsList PipelineSession::sessions;
+
 PipelineSession::PipelineSession(const Config &config, boost::asio::io_context &io_context, 
     boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response):
     Session(config, io_context),
@@ -167,8 +169,8 @@ void PipelineSession::process_streaming_data(){
 
     if(req.command == PipelineRequest::CONNECT){
         find_and_process_session(req.session_id, [this](SessionsList::iterator& it){    
-            it->get()->destroy();
-            sessions.erase(it);
+            sessions.erase(it); // must erase firstly then destroy
+            it->get()->destroy();            
         });
 
         auto session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
@@ -176,14 +178,15 @@ void PipelineSession::process_streaming_data(){
         session->set_use_pipeline(shared_from_this());
         session->start();
         sessions.emplace_back(session);
+        Log::log_with_endpoint(in_endpoint, "Pipeline start a session " + to_string(req.session_id) + ", now remain " + to_string(sessions.size()));
     }else if(req.command == PipelineRequest::DATA){
         find_and_process_session(req.session_id, [&,req](SessionsList::iterator& it){    
             it->get()->in_recv(req.packet_data);
-        });        
+        });
     }else if(req.command == PipelineRequest::CLOSE){
         find_and_process_session(req.session_id, [this](SessionsList::iterator& it){    
-            it->get()->destroy();
-            sessions.erase(it);
+            sessions.erase(it); // must erase firstly then destroy
+            it->get()->destroy();            
         });
     }else{
         Log::log_with_endpoint(in_endpoint, "Pipeline error command");
@@ -210,12 +213,13 @@ void PipelineSession::timer_async_wait(){
 }
 
 void PipelineSession::remove_session_after_destroy(ServerSession& session){
-    find_and_process_session(session, [this, &session](SessionsList::iterator& it){
-        if(status != DESTROY){
+    if(status != DESTROY){
+        find_and_process_session(session, [this, &session](SessionsList::iterator& it){
+            sessions.erase(it);
             in_send(PipelineRequest::CLOSE, session, "",[](){});
-        }        
-        sessions.erase(it);
-    });
+            Log::log_with_endpoint(in_endpoint, "Pipeline remove session " + to_string(session.session_id) + ", now remain " + to_string(sessions.size()));
+        });
+    }    
 }
 
 void PipelineSession::destroy(){
@@ -223,6 +227,26 @@ void PipelineSession::destroy(){
         return;
     }
     status = DESTROY;
+    
+    Log::log_with_endpoint(in_endpoint, "Pipeline remove all sessions " + to_string(sessions.size()));
+
+    // clear all sessions which attached this pipeline
+    auto it = sessions.begin();
+    while(it != sessions.end()){
+        
+        auto sess = it->get();
+        auto pipe = sess->get_pipeline();
+
+        if(!pipe.expired() && pipe.lock().get() == this){
+            sess->destroy();
+            it = sessions.erase(it);
+        }else{
+            ++it;
+        }
+    }
+
+    // TODO
+    gc_timer.cancel();
 }
 
 

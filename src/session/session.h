@@ -27,11 +27,11 @@
 #include <boost/asio/steady_timer.hpp>
 #include "core/config.h"
 
+class Service;
 class Session : public std::enable_shared_from_this<Session> {
 protected:
     enum {
         MAX_LENGTH = 8192,
-        SSL_SHUTDOWN_TIMEOUT = 30
     };
     
     uint8_t in_read_buf[MAX_LENGTH];
@@ -46,7 +46,8 @@ protected:
     
     boost::asio::ip::udp::socket udp_socket;
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
-    boost::asio::steady_timer ssl_shutdown_timer;
+    Service* pipeline_service;
+    bool is_udp_forward_session;
 public:
     Session(const Config &config, boost::asio::io_context &io_context);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
@@ -57,6 +58,11 @@ public:
     boost::asio::ip::tcp::endpoint in_endpoint;
 
     uint32_t session_id;
+    void set_use_pipeline(Service* service, bool is_udp_forward) { 
+        pipeline_service = service; 
+        is_udp_forward_session = is_udp_forward;
+    };
+    bool is_udp_forward()const { return is_udp_forward_session; }
 };
 
 #endif // _SESSION_H_

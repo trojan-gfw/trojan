@@ -40,11 +40,11 @@ private:
     boost::asio::steady_timer gc_timer;
     std::pair<std::string, uint16_t> udp_target;
 
-    void destroy();
+    
     void in_recv(const std::string &data);
     void out_async_read();
     void out_async_write(const std::string &data);
-    void out_recv(const std::string &data);
+    
     void out_sent();
     void timer_async_wait();
 public:
@@ -52,7 +52,9 @@ public:
         const boost::asio::ip::udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& targetdst, const UDPWrite &in_write);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
+    void destroy();
     bool process(const boost::asio::ip::udp::endpoint &endpoint, const std::string &data);
+    void out_recv(const std::string &data);
 };
 
 #endif // _UDPFORWARDSESSION_H_

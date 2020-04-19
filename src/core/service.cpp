@@ -22,6 +22,8 @@
 #include <cerrno>
 #include <stdexcept>
 #include <fstream>
+#include <thread>
+#include <chrono>
 #ifdef _WIN32
 #include <wincrypt.h>
 #include <tchar.h>
@@ -434,6 +436,7 @@ Service::Service(Config &config, bool test) :
 }
 
 void Service::run() {
+    
     async_accept();
     if (config.run_type == Config::FORWARD || config.run_type == Config::NAT) {
         udp_async_read();
@@ -464,6 +467,128 @@ void Service::stop() {
     io_context.stop();
 }
 
+void Service::prepare_pipelines(){
+    if(pipelines.size() < config.experimental.pipeline_num && config.run_type != Config::SERVER){
+        for(size_t i = pipelines.size();i < config.experimental.pipeline_num;i++){
+            auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
+            pipeline->set_recv_handler([this](boost::system::error_code ec, uint32_t session_id, const std::string& data){
+                recv_pipeline_data(ec, session_id, data);
+            });
+            pipeline->start();
+            pipelines.emplace_back(pipeline);
+        }
+    }
+}
+
+void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forward, std::function<void(boost::system::error_code ec)> started_handler){
+    if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
+        
+        prepare_pipelines();
+
+        // find the pipeline which has sent the least data 
+        Pipeline* pipeline = nullptr;
+        auto it = pipelines.begin();
+        uint64_t send_least_length = 0;
+        while(it != pipelines.end()){
+            if(it->expired()){
+                it = pipelines.erase(it);
+            }else{
+                auto p = it->lock().get();
+                if(!pipeline || send_least_length > p->get_sent_data_length()){
+                    send_least_length = p->get_sent_data_length();
+                    pipeline = p;
+                }
+                ++it;
+            }
+        }
+
+        if(!pipeline){
+            Log::log("fatal pipeline logic!", Log::FATAL);
+            return;
+        }
+
+        session.get()->set_use_pipeline(this, is_udp_forward);
+        pipeline->session_start(*(session.get()), started_handler);
+    }else{
+        started_handler(boost::system::error_code());
+    }
+}
+
+void Service::recv_pipeline_data(boost::system::error_code ec, uint32_t session_id, const std::string& data){
+    if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
+        auto it = pipelines.begin();
+        while(it != pipelines.end()){
+            if(it->expired()){
+                it = pipelines.erase(it);
+            }else{
+                auto p = it->lock().get();
+                auto session = p->find_valid_session(session_id);
+                if(session){
+                    if(ec){
+                        pipelines.erase(it);
+                        session->destroy();                        
+                    }else{
+                        if(session->is_udp_forward()){
+                            static_cast<UDPForwardSession*>(session)->out_recv(data);
+                        }else{
+                            static_cast<ClientSession*>(session)->out_recv(data);
+                        }                        
+                    }                    
+                    return;
+                }
+                ++it;
+            }
+        }
+    }else{
+        Log::log("fatal pipeline logic!", Log::FATAL);
+    }
+}
+
+void Service::session_async_send_to_pipeline(Session& session, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
+    if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
+        
+        Pipeline* pipeline = nullptr;
+        auto it = pipelines.begin();
+        while(it != pipelines.end()){
+            if(it->expired()){
+                it = pipelines.erase(it);
+            }else{
+                auto p = it->lock().get();
+                if(p->is_in_pipeline(session)){
+                    pipeline = p;
+                    break;
+                }
+                ++it;
+            }
+        }
+
+        if(!pipeline){
+            Log::log("pipeline is broken, destory session", Log::WARN);
+            sent_handler(boost::asio::error::broken_pipe);
+        }else{
+            pipeline->session_async_send(session, data, sent_handler);
+        }
+    }else{
+        Log::log("can't send data via pipeline!", Log::FATAL);
+    }
+    
+}
+
+void Service::session_destroy_in_pipeline(Session& session){
+    for(auto it = pipelines.begin(); it != pipelines.end(); it++){
+        if(it->expired()){
+            it = pipelines.erase(it);
+        }else{
+            auto p = it->lock().get();
+            if(p->is_in_pipeline(session)){
+                p->session_destroyed(session);
+                break;
+            }
+            ++it;
+        }
+    }
+}
+
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
@@ -473,24 +598,35 @@ void Service::async_accept() {
         }else{
             session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
         }        
-    } else if (config.run_type == Config::FORWARD) {
-        session = make_shared<ForwardSession>(config, io_context, ssl_context);
-    } else if (config.run_type == Config::NAT) {
-        session = make_shared<NATSession>(config, io_context, ssl_context);
     } else {
-        session = make_shared<ClientSession>(config, io_context, ssl_context);
+        if (config.run_type == Config::FORWARD) {
+            session = make_shared<ForwardSession>(config, io_context, ssl_context);
+        } else if (config.run_type == Config::NAT) {
+            session = make_shared<NATSession>(config, io_context, ssl_context);
+        } else {
+            session = make_shared<ClientSession>(config, io_context, ssl_context);
+        }      
     }
-    socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
+    
+    socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {    
+
         if (error == boost::asio::error::operation_aborted) {
             // got cancel signal, stop calling myself
             return;
         }
+
         if (!error) {
             boost::system::error_code ec;
             auto endpoint = session->accept_socket().remote_endpoint(ec);
             if (!ec) {
                 Log::log_with_endpoint(endpoint, "incoming connection");
-                session->start();
+                start_session(session, false, [session](boost::system::error_code ec){
+                    if(ec){
+                        session->destroy();    
+                    }else{
+                        session->start(); 
+                    }                    
+                });                
             }
         }
         async_accept();
@@ -572,9 +708,15 @@ void Service::udp_async_read() {
                     throw runtime_error(ec.message());
                 }             
             });
-            udp_sessions.emplace_back(session);
-            session->start();
-            session->process(udp_recv_endpoint, data);    
+
+            start_session(session, true, [this, session, &data](boost::system::error_code ec){
+                if(!ec){
+                    udp_sessions.emplace_back(session);
+                    session->start();
+                    session->process(udp_recv_endpoint, data);  
+                }                
+            });
+              
         }else{
             Log::Log::log_with_endpoint(udp_recv_endpoint, "cannot read original destination address!");
         }

@@ -66,30 +66,72 @@ void Pipeline::async_send_data(const std::string& data, function<void(boost::sys
     }    
 }
 
-void Pipeline::async_send_cmd(PipelineRequest::Command cmd, uint32_t session_id, const std::string& send_data, function<void(boost::system::error_code ec)> sent_handler){
+void Pipeline::async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, function<void(boost::system::error_code ec)> sent_handler){
     if(destroyed){
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
-    async_send_data(PipelineRequest::generate(cmd, session_id, send_data), sent_handler);
+    async_send_data(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler);
 }
 
-void Pipeline::session_start(uint32_t session_id, function<void(boost::system::error_code ec)> started_handler){
-    sessions.insert(session_id);
-    async_send_cmd(PipelineRequest::CONNECT, session_id, "", started_handler);
+void Pipeline::session_start(Session& session, function<void(boost::system::error_code ec)> started_handler){
+    sessions.emplace_back(session.shared_from_this());
+    async_send_cmd(PipelineRequest::CONNECT, session, "", started_handler);
 }
 
-void Pipeline::session_async_send(uint32_t session_id, const std::string& send_data, function<void(boost::system::error_code ec)> sent_handler){
-    async_send_cmd(PipelineRequest::DATA, session_id, send_data, sent_handler);
+void Pipeline::session_async_send(Session& session, const std::string& send_data, function<void(boost::system::error_code ec)> sent_handler){
+    async_send_cmd(PipelineRequest::DATA, session, send_data, sent_handler);
 }
 
-void Pipeline::session_destroyed(uint32_t session_id){
-    sessions.erase(session_id);
-    async_send_cmd(PipelineRequest::CLOSE, session_id, "", [](boost::system::error_code){});
+void Pipeline::session_destroyed(Session& session){
+    auto it = sessions.begin();
+    while(it != sessions.end()){
+        if(it->expired()){
+            it = sessions.erase(it);
+        }else{
+            if(it->lock().get() == &session){
+                sessions.erase(it);
+            }else{
+                ++it;
+            }
+        }
+    }
+    async_send_cmd(PipelineRequest::CLOSE, session, "", [](boost::system::error_code){});
 }
 
-bool Pipeline::is_in_pipeline(Session& session)const{
+bool Pipeline::is_in_pipeline(Session& session){
+    auto it = sessions.begin();
+    while(it != sessions.end()){
+        if(it->expired()){
+            it = sessions.erase(it);
+        }else{
+            if(it->lock().get() == &session){
+                return true;
+            }else{
+                ++it;
+            }
+        }
+    }
 
+    return false;
+}
+
+Session* Pipeline::find_valid_session(uint32_t session_id){
+    auto it = sessions.begin();
+    while(it != sessions.end()){
+        if(it->expired()){
+            it = sessions.erase(it);
+        }else{
+            auto session = it->lock().get();
+            if(session->session_id == session_id){
+                return session;
+            }else{
+                ++it;
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 void Pipeline::out_async_recv(){

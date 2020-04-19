@@ -24,7 +24,7 @@ Session::Session(const Config &config, boost::asio::io_context &io_context) : re
                                                                               sent_len(0),
                                                                               resolver(io_context),
                                                                               udp_socket(io_context),
-                                                                              ssl_shutdown_timer(io_context),
+                                                                              pipeline_service(nullptr),
                                                                               config(config) {}
 
 Session::~Session() {}

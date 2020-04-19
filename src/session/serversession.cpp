@@ -20,6 +20,8 @@
 #include "serversession.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
+#include "core/service.h"
+
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -88,16 +90,16 @@ void ServerSession::in_async_read() {
 }
 
 void ServerSession::in_async_write(const string &data) {
+    auto self = shared_from_this();
     if(use_pipeline){
         if(!pipeline.expired()){
-            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_data(*this, data, [this](){
+            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_data(*this, data, [this, self](){
                 in_sent();
             });            
         }else{
             destroy();
         }
     }else{
-        auto self = shared_from_this();
         auto data_copy = make_shared<string>(data);
         boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
             if (error) {
@@ -370,23 +372,7 @@ void ServerSession::destroy() {
         udp_socket.cancel(ec);
         udp_socket.close(ec);
     }
-    if (in_socket.next_layer().is_open()) {
-        auto self = shared_from_this();
-        auto ssl_shutdown_cb = [this, self](const boost::system::error_code error) {
-            if (error == boost::asio::error::operation_aborted) {
-                return;
-            }
-            boost::system::error_code ec;
-            ssl_shutdown_timer.cancel();
-            in_socket.next_layer().cancel(ec);
-            in_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
-            in_socket.next_layer().close(ec);
-        };
-        in_socket.next_layer().cancel(ec);
-        in_socket.async_shutdown(ssl_shutdown_cb);
-        ssl_shutdown_timer.expires_after(chrono::seconds(SSL_SHUTDOWN_TIMEOUT));
-        ssl_shutdown_timer.async_wait(ssl_shutdown_cb);
-    }
+    shutdown_ssl_socket(this, in_socket);
 
     if(use_pipeline && !pipeline.expired()){
         (static_cast<PipelineSession*>(pipeline.lock().get()))->remove_session_after_destroy(*this);

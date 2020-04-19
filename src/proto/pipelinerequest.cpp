@@ -75,6 +75,8 @@ int PipelineRequest::parse(std::string &data){
     }
 
     data = data.substr(HEADER_LENGTH + trojan_request_length);
+
+    return packet_data.length();
 }
 
 std::string PipelineRequest::generate(enum Command cmd, uint32_t session_id, const std::string& data){

@@ -18,6 +18,7 @@ add_executable(trojan
     src/core/log.cpp
     src/core/service.cpp
     src/core/version.cpp
+    src/core/pipeline.cpp
     src/main.cpp
     src/proto/socks5address.cpp
     src/proto/trojanrequest.cpp

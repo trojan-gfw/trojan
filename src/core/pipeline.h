@@ -28,6 +28,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include "proto/pipelinerequest.h"
 #include "core/config.h"
+#include "session/session.h"
 
 
 class Pipeline : public std::enable_shared_from_this<Pipeline> {
@@ -54,7 +55,7 @@ private:
 
     void out_async_recv();
     void async_send_data(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
-    void async_send_cmd(PipelineRequest::Command cmd,uint32_t session_id, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
 public:
     Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context);
     void start();
@@ -63,12 +64,13 @@ public:
     void set_recv_handler(RecvHandler handler){ recv_handler = handler;}
     uint64_t get_sent_data_length()const{ return sent_data_length; }
 
-    void session_start(uint32_t session_id,  std::function<void(boost::system::error_code ec)> started_handler);
-    void session_async_send(uint32_t session_id, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
-    void session_destroyed(uint32_t session_id);
+    void session_start(Session& session,  std::function<void(boost::system::error_code ec)> started_handler);
+    void session_async_send(Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void session_destroyed(Session& session);
 
     inline bool is_connected()const { return connected; }
-    inline bool is_in_pipeline(Session& session)const;
+    bool is_in_pipeline(Session& session);
+    Session* find_valid_session(uint32_t session_id); 
     
 };
 

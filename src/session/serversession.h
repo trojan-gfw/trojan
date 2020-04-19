@@ -61,6 +61,8 @@ public:
     void start();
     void destroy();
     void in_recv(const std::string &data);
+
+    std::weak_ptr<Session> get_pipeline(){ return pipeline; }
 };
 
 #endif // _SERVERSESSION_H_
