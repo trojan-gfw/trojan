@@ -19,13 +19,12 @@
 
 #include "session.h"
 
+uint32_t Session::s_session_id_counter = 0;
 
-Session::Session(const Config &config, boost::asio::io_context &io_context) : recv_len(0),
-                                                                              sent_len(0),
-                                                                              resolver(io_context),
-                                                                              udp_socket(io_context),
-                                                                              pipeline_service(nullptr),
-                                                                              config(config) {}
+Session::Session(const Config &config, boost::asio::io_context &io_context) : recv_len(0), sent_len(0), resolver(io_context),
+ udp_socket(io_context), pipeline_service(nullptr), config(config) {
+    session_id = s_session_id_counter++;
+}
 
 Session::~Session() {}
 

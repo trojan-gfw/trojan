@@ -164,6 +164,7 @@ int main(int argc, const char *argv[]) {
                 Log::log_with_date_time("trojan service restarting. . . ", Log::WARN);
             }
         } while (restart);
+        Log::log_with_date_time("trojan service exit.", Log::WARN);
         Log::reset();
         exit(EXIT_SUCCESS);
     } catch (const exception &e) {

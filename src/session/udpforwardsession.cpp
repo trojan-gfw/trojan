@@ -190,4 +190,8 @@ void UDPForwardSession::destroy() {
     resolver.cancel();
     gc_timer.cancel();
     shutdown_ssl_socket(this, out_socket);
+    
+    if(pipeline_service){
+        pipeline_service->session_destroy_in_pipeline(*this);
+    }
 }

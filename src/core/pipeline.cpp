@@ -41,9 +41,15 @@ void Pipeline::start(){
         string data(config.password.cbegin()->first);
         data += "\r\n";
         data += cache_out_send_data;
-        cache_out_send_data = "";
+        
+        Log::log_with_date_time("pipeline connect remote server...");
+        if(cache_out_send_data.length() == 0){
+            async_send_data(data, [](boost::system::error_code){});
+        }else{
+            async_send_data(data, cache_out_sent_handler);
+            cache_out_send_data = "";
+        }
 
-        async_send_data(data, cache_out_sent_handler);
         out_async_recv();
     });
 }
@@ -60,7 +66,8 @@ void Pipeline::async_send_data(const std::string& data, function<void(boost::sys
                 destroy();
             }else{
                 sent_data_length += data_copy->length();
-            }        
+            }
+            Log::log_with_date_time("pipeline sent data length:" + to_string(sent_data_length));     
             sent_handler(error);
         });
     }    
@@ -71,6 +78,7 @@ void Pipeline::async_send_cmd(PipelineRequest::Command cmd, Session& session, co
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
+    Log::log_with_date_time("pipeline send to server cmd " +  to_string(cmd) + " session_id: " + to_string(session.session_id));
     async_send_data(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler);
 }
 
@@ -84,19 +92,21 @@ void Pipeline::session_async_send(Session& session, const std::string& send_data
 }
 
 void Pipeline::session_destroyed(Session& session){
-    auto it = sessions.begin();
-    while(it != sessions.end()){
-        if(it->expired()){
-            it = sessions.erase(it);
-        }else{
-            if(it->lock().get() == &session){
-                sessions.erase(it);
+    if(!destroyed){    
+        auto it = sessions.begin();
+        while(it != sessions.end()){
+            if(it->expired()){
+                it = sessions.erase(it);
             }else{
-                ++it;
+                if(it->lock().get() == &session){
+                    sessions.erase(it);
+                }else{
+                    ++it;
+                }
             }
         }
+        async_send_cmd(PipelineRequest::CLOSE, session, "", [](boost::system::error_code){});
     }
-    async_send_cmd(PipelineRequest::CLOSE, session, "", [](boost::system::error_code){});
 }
 
 bool Pipeline::is_in_pipeline(Session& session){
@@ -164,8 +174,16 @@ void Pipeline::destroy(){
         return;
     }
     destroyed = true;
-    Log::log("pipeline destroyed.", Log::INFO);
+    Log::log_with_date_time("pipeline destroyed. close all sessions in this pipeline " + to_string(sessions.size()));
 
-    // TODO
+    // close all sessions
+    auto it = sessions.begin();
+    while(it != sessions.end()){
+        if(!it->expired()){
+            auto session = it->lock().get();
+            session->destroy();
+        }
+    }
+    sessions.clear();
     shutdown_ssl_socket(this, out_socket);
 }

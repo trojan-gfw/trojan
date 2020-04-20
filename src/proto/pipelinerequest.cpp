@@ -69,7 +69,7 @@ int PipelineRequest::parse(std::string &data){
     session_id = parse_uint32(5, data);
 
     if(compress){
-        // TODO 
+        // TODO compress
     }else{
         packet_data = data.substr(HEADER_LENGTH, HEADER_LENGTH + trojan_request_length);
     }

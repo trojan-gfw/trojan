@@ -48,6 +48,7 @@ protected:
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
     Service* pipeline_service;
     bool is_udp_forward_session;
+    static uint32_t s_session_id_counter;
 public:
     Session(const Config &config, boost::asio::io_context &io_context);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;

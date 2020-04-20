@@ -21,6 +21,7 @@
 #include "serversession.h"
 #include "proto/trojanrequest.h"
 #include "core/authenticator.h"
+#include "core/service.h"
 #include <boost/asio/ssl.hpp>
 
 using namespace std;
@@ -39,8 +40,6 @@ PipelineSession::PipelineSession(const Config &config, boost::asio::io_context &
     gc_timer(io_context),
     io_context(io_context),
     ssl_context(ssl_context){
-
-    timer_async_wait();
 }
 
 tcp::socket& PipelineSession::accept_socket(){
@@ -50,6 +49,7 @@ tcp::socket& PipelineSession::accept_socket(){
 void PipelineSession::start(){
     boost::system::error_code ec;
     start_time = time(NULL);
+    timer_async_wait();
     in_endpoint = live_socket.next_layer().remote_endpoint(ec);
     if (ec) {
         destroy();
@@ -206,7 +206,7 @@ void PipelineSession::timer_async_wait(){
     auto self = shared_from_this();
     gc_timer.async_wait([this, self](const boost::system::error_code error) {
         if (!error) {
-            Log::log_with_endpoint(in_endpoint, "Pipeline wait for password timeout");
+            Log::log_with_endpoint(in_endpoint, "PipelineSession wait for password timeout");
             destroy();
         }
     });
@@ -217,7 +217,7 @@ void PipelineSession::remove_session_after_destroy(ServerSession& session){
         find_and_process_session(session, [this, &session](SessionsList::iterator& it){
             sessions.erase(it);
             in_send(PipelineRequest::CLOSE, session, "",[](){});
-            Log::log_with_endpoint(in_endpoint, "Pipeline remove session " + to_string(session.session_id) + ", now remain " + to_string(sessions.size()));
+            Log::log_with_endpoint(in_endpoint, "PipelineSession remove session " + to_string(session.session_id) + ", now remain " + to_string(sessions.size()));
         });
     }    
 }
@@ -227,8 +227,9 @@ void PipelineSession::destroy(){
         return;
     }
     status = DESTROY;
-    
-    Log::log_with_endpoint(in_endpoint, "Pipeline remove all sessions " + to_string(sessions.size()));
+    gc_timer.cancel();
+
+    Log::log_with_endpoint(in_endpoint, "PipelineSession remove all sessions in this pipeline... current: " + to_string(sessions.size()));
 
     // clear all sessions which attached this pipeline
     auto it = sessions.begin();
@@ -244,9 +245,9 @@ void PipelineSession::destroy(){
             ++it;
         }
     }
-
-    // TODO
-    gc_timer.cancel();
+    Log::log_with_endpoint(in_endpoint, "after: " + to_string(sessions.size()));
+    
+    shutdown_ssl_socket(this, live_socket);
 }
 
 

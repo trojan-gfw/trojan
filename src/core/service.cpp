@@ -148,14 +148,14 @@ static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::
 
     buf_len = recvmsg(fd, &msg, 0);
     if (buf_len == -1) {
-        Log::log("[udp] server_recvmsg failed!", Log::FATAL);
+        Log::log_with_date_time("[udp] server_recvmsg failed!", Log::FATAL);
     } else{
         if (buf_len > packet_size) {
-            Log::log(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
+            Log::log_with_date_time(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
         }
 
         if (get_dstaddr(&msg, &dst_addr)) {
-            Log::log("[udp] unable to get dest addr!", Log::FATAL);
+            Log::log_with_date_time("[udp] unable to get dest addr!", Log::FATAL);
         }else{
             auto target_dst = get_addr(dst_addr);       
             auto src_dst = get_addr(src_addr);
@@ -214,25 +214,25 @@ Service::Service(Config &config, bool test) :
                     sol = SOL_IPV6;
                     ip_recv = IPV6_RECVORIGDSTADDR;
                 }else{
-                    Log::log("[udp] protocol can't be recognized", Log::FATAL);
+                    Log::log_with_date_time("[udp] protocol can't be recognized", Log::FATAL);
                     stop();
                     return;
                 }
 
                 if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
-                    Log::log("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
+                    Log::log_with_date_time("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
                     stop();
                     return;
                 }
 
                 if (setsockopt(fd, sol, ip_recv, &opt, sizeof(opt))) {
-                    Log::log("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
+                    Log::log_with_date_time("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
                     stop();
                     return;
                 }
 
                 if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-                    Log::log( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
+                    Log::log_with_date_time( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
                     stop();
                     return;
                 }
@@ -468,15 +468,30 @@ void Service::stop() {
 }
 
 void Service::prepare_pipelines(){
-    if(pipelines.size() < config.experimental.pipeline_num && config.run_type != Config::SERVER){
-        for(size_t i = pipelines.size();i < config.experimental.pipeline_num;i++){
-            auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
-            pipeline->set_recv_handler([this](boost::system::error_code ec, uint32_t session_id, const std::string& data){
-                recv_pipeline_data(ec, session_id, data);
-            });
-            pipeline->start();
-            pipelines.emplace_back(pipeline);
+    if(config.run_type != Config::SERVER){
+
+        if(config.experimental.pipeline_num > 0){
+            auto it = pipelines.begin();
+            while(it != pipelines.end()){
+                if(it->expired()){
+                    it = pipelines.erase(it);
+                }else{
+                    ++it;
+                }
+            }
+
+            for(size_t i = pipelines.size();i < config.experimental.pipeline_num;i++){
+                auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
+                pipeline->set_recv_handler([this](boost::system::error_code ec, uint32_t session_id, const std::string& data){
+                    recv_pipeline_data(ec, session_id, data);
+                });
+                pipeline->start();
+                pipelines.emplace_back(pipeline);
+            }
+
+            Log::log_with_date_time("prepare pipelines, total:" + to_string(pipelines.size()));
         }
+        
     }
 }
 
@@ -503,12 +518,13 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         }
 
         if(!pipeline){
-            Log::log("fatal pipeline logic!", Log::FATAL);
+            Log::log_with_date_time("fatal pipeline logic!", Log::FATAL);
             return;
         }
 
         session.get()->set_use_pipeline(this, is_udp_forward);
         pipeline->session_start(*(session.get()), started_handler);
+        Log::log_with_date_time("start session:" + to_string(session->session_id));
     }else{
         started_handler(boost::system::error_code());
     }
@@ -540,7 +556,7 @@ void Service::recv_pipeline_data(boost::system::error_code ec, uint32_t session_
             }
         }
     }else{
-        Log::log("fatal pipeline logic!", Log::FATAL);
+        Log::log_with_date_time("fatal pipeline logic!", Log::FATAL);
     }
 }
 
@@ -563,13 +579,13 @@ void Service::session_async_send_to_pipeline(Session& session, const std::string
         }
 
         if(!pipeline){
-            Log::log("pipeline is broken, destory session", Log::WARN);
+            Log::log_with_date_time("pipeline is broken, destory session", Log::WARN);
             sent_handler(boost::asio::error::broken_pipe);
         }else{
             pipeline->session_async_send(session, data, sent_handler);
         }
     }else{
-        Log::log("can't send data via pipeline!", Log::FATAL);
+        Log::log_with_date_time("can't send data via pipeline!", Log::FATAL);
     }
     
 }
@@ -581,6 +597,7 @@ void Service::session_destroy_in_pipeline(Session& session){
         }else{
             auto p = it->lock().get();
             if(p->is_in_pipeline(session)){
+                Log::log_with_date_time("destroy session:" + session.session_id);
                 p->session_destroyed(session);
                 break;
             }

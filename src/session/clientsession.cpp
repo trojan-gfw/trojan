@@ -44,7 +44,7 @@ bool ClientSession::prepare_session(){
     start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint(ec);
     if (ec) {
-        Log::log("cannot get in_endpoint in prepare_session", Log::FATAL);
+        Log::log_with_date_time("cannot get in_endpoint in prepare_session", Log::FATAL);
         destroy();
         return false;
     }
@@ -376,4 +376,8 @@ void ClientSession::destroy() {
         udp_socket.close(ec);
     }
     shutdown_ssl_socket(this, out_socket);
+
+    if(pipeline_service){
+        pipeline_service->session_destroy_in_pipeline(*this);
+    }
 }
