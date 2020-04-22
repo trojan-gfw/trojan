@@ -21,6 +21,7 @@
 #include <iostream>
 #include <boost/asio/signal_set.hpp>
 #include <boost/program_options.hpp>
+#include <boost/process/environment.hpp>
 #include <boost/version.hpp>
 #include <openssl/opensslv.h>
 #ifdef ENABLE_MYSQL
@@ -67,6 +68,7 @@ int main(int argc, const char *argv[]) {
         string config_file;
         string log_file;
         string keylog_file;
+        string pid_file;
         bool test;
         po::options_description desc("options");
         desc.add_options()
@@ -74,6 +76,7 @@ int main(int argc, const char *argv[]) {
             ("help,h", "print help message")
             ("keylog,k", po::value<string>(&keylog_file)->value_name("KEYLOG"), "specify keylog file location (OpenSSL >= 1.1.1)")
             ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
+            ("pid,p", po::value<string>(&pid_file)->value_name("PID"), "write pid to pidfile")
             ("test,t", po::bool_switch(&test), "test config file")
             ("version,v", "print version and build info")
         ;
@@ -137,6 +140,15 @@ int main(int argc, const char *argv[]) {
         if (vm.count("keylog")) {
             Log::redirect_keylog(keylog_file);
         }
+        if (!test && vm.count("pid")) {
+            FILE *fp = fopen(pid_file.c_str(), "w");
+            if (fp == NULL) {
+                throw runtime_error(pid_file + ": " + strerror(errno));
+            }
+            fprintf(fp, "%d\n", boost::this_process::get_id());
+            fclose(fp);
+        }
+        
         bool restart;
         Config config;
         do {
