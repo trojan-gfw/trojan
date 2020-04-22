@@ -192,7 +192,7 @@ Service::Service(Config &config, bool test) :
             Log::log_with_date_time("SO_REUSEPORT is not supported", Log::WARN);
 #endif // ENABLE_REUSE_PORT
         }
-
+        
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
         if (config.run_type == Config::FORWARD || config.run_type == Config::NAT) {
@@ -468,30 +468,22 @@ void Service::stop() {
 }
 
 void Service::prepare_pipelines(){
-    if(config.run_type != Config::SERVER){
-
-        if(config.experimental.pipeline_num > 0){
-            auto it = pipelines.begin();
-            while(it != pipelines.end()){
-                if(it->expired()){
-                    it = pipelines.erase(it);
-                }else{
-                    ++it;
-                }
+    if(config.run_type != Config::SERVER && config.experimental.pipeline_num > 0){
+        auto it = pipelines.begin();
+        while(it != pipelines.end()){
+            if(it->expired()){
+                it = pipelines.erase(it);
+            }else{
+                ++it;
             }
-
-            for(size_t i = pipelines.size();i < config.experimental.pipeline_num;i++){
-                auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
-                pipeline->set_recv_handler([this](boost::system::error_code ec, uint32_t session_id, const std::string& data){
-                    recv_pipeline_data(ec, session_id, data);
-                });
-                pipeline->start();
-                pipelines.emplace_back(pipeline);
-            }
-
-            Log::log_with_date_time("prepare pipelines, total:" + to_string(pipelines.size()));
         }
-        
+
+        for(size_t i = pipelines.size();i < config.experimental.pipeline_num;i++){
+            auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
+            pipeline->start();
+            pipelines.emplace_back(pipeline);
+            Log::log_with_date_time("Prepare pipelines start a new one, total:" + to_string(pipelines.size()));
+        }        
     }
 }
 
@@ -503,14 +495,14 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         // find the pipeline which has sent the least data 
         Pipeline* pipeline = nullptr;
         auto it = pipelines.begin();
-        uint64_t send_least_length = 0;
+        uint64_t send_least_speed = 0;
         while(it != pipelines.end()){
             if(it->expired()){
                 it = pipelines.erase(it);
             }else{
                 auto p = it->lock().get();
-                if(!pipeline || send_least_length > p->get_sent_data_length()){
-                    send_least_length = p->get_sent_data_length();
+                if(!pipeline || send_least_speed > p->get_sent_data_speed()){
+                    send_least_speed = p->get_sent_data_speed();
                     pipeline = p;
                 }
                 ++it;
@@ -527,36 +519,6 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         Log::log_with_date_time("start session:" + to_string(session->session_id));
     }else{
         started_handler(boost::system::error_code());
-    }
-}
-
-void Service::recv_pipeline_data(boost::system::error_code ec, uint32_t session_id, const std::string& data){
-    if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
-        auto it = pipelines.begin();
-        while(it != pipelines.end()){
-            if(it->expired()){
-                it = pipelines.erase(it);
-            }else{
-                auto p = it->lock().get();
-                auto session = p->find_valid_session(session_id);
-                if(session){
-                    if(ec){
-                        pipelines.erase(it);
-                        session->destroy();                        
-                    }else{
-                        if(session->is_udp_forward()){
-                            static_cast<UDPForwardSession*>(session)->out_recv(data);
-                        }else{
-                            static_cast<ClientSession*>(session)->out_recv(data);
-                        }                        
-                    }                    
-                    return;
-                }
-                ++it;
-            }
-        }
-    }else{
-        Log::log_with_date_time("fatal pipeline logic!", Log::FATAL);
     }
 }
 
@@ -591,13 +553,14 @@ void Service::session_async_send_to_pipeline(Session& session, const std::string
 }
 
 void Service::session_destroy_in_pipeline(Session& session){
-    for(auto it = pipelines.begin(); it != pipelines.end(); it++){
+    auto it = pipelines.begin();
+    while(it != pipelines.end()){
         if(it->expired()){
             it = pipelines.erase(it);
         }else{
             auto p = it->lock().get();
             if(p->is_in_pipeline(session)){
-                Log::log_with_date_time("destroy session:" + session.session_id);
+                Log::log_with_date_time("pipeline destroy session:" + to_string(session.session_id));
                 p->session_destroyed(session);
                 break;
             }

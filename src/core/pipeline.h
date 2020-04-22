@@ -20,9 +20,9 @@
 #ifndef _PIPELINE_H_
 #define _PIPELINE_H_
 
-#include <set>
 #include <memory>
 #include <functional>
+#include <time.h>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -32,20 +32,19 @@
 
 
 class Pipeline : public std::enable_shared_from_this<Pipeline> {
-public:
-    typedef std::function<void(boost::system::error_code ec, uint32_t session_id, const std::string& data)> RecvHandler;
-    typedef std::function<void()> DestroyHandler;
 private:
     enum {
-        MAX_LENGTH = 8192
+        MAX_LENGTH = 8192,
+        STAT_SENT_DATA_SPEED_INTERVAL = 5
     };
 
     bool destroyed;
     const Config& config;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
-    RecvHandler recv_handler;
     bool connected;
     uint64_t sent_data_length;
+    clock_t sent_data_former_time;
+    uint64_t sent_data_speed;
     char out_read_buf[MAX_LENGTH];
     std::string out_read_data;
     std::string cache_out_send_data;
@@ -60,18 +59,14 @@ public:
     Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context);
     void start();
     void destroy();
-
-    void set_recv_handler(RecvHandler handler){ recv_handler = handler;}
-    uint64_t get_sent_data_length()const{ return sent_data_length; }
+    uint64_t get_sent_data_speed()const{ return sent_data_speed; }
 
     void session_start(Session& session,  std::function<void(boost::system::error_code ec)> started_handler);
     void session_async_send(Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
     void session_destroyed(Session& session);
 
     inline bool is_connected()const { return connected; }
-    bool is_in_pipeline(Session& session);
-    Session* find_valid_session(uint32_t session_id); 
-    
+    bool is_in_pipeline(Session& session);    
 };
 
 #endif // _PIPELINE_H_

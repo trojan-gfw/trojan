@@ -70,6 +70,7 @@ public:
         bool reuse_port;
         bool fast_open;
         int fast_open_qlen;
+        int connect_time_out;
     } tcp;
     class MySQLConfig {
     public:

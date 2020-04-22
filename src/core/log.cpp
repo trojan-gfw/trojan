@@ -31,6 +31,8 @@ using namespace std;
 using namespace boost::posix_time;
 using namespace boost::asio::ip;
 
+char __debug_str_buf[1024];
+
 Log::Level Log::level(INFO);
 FILE *Log::keylog(NULL);
 FILE *Log::output_stream(stderr);

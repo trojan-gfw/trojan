@@ -52,4 +52,11 @@ private:
     static FILE *output_stream;
 };
 
+extern char __debug_str_buf[1024];
+#define output_debug_info_ec(ec) \
+    Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s> ec:%s",__FILE__, __LINE__, __FUNCTION__,(ec.message().c_str())), __debug_str_buf)), Log::INFO)
+
+#define output_debug_info() \
+    Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s>",__FILE__, __LINE__, __FUNCTION__), __debug_str_buf)), Log::INFO)
+
 #endif // _LOG_H_

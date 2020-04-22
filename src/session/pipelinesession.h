@@ -42,7 +42,7 @@ class PipelineSession : public Session {
     std::string auth_password;
     const std::string &plain_http_response;
 
-    static SessionsList sessions;
+    static SessionsList all_sessions;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket> live_socket;
 
     boost::asio::steady_timer gc_timer;
@@ -58,11 +58,10 @@ class PipelineSession : public Session {
     void in_recv(const std::string& data);
     void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler);
     bool find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator&)> processor);
-    bool find_and_process_session(ServerSession& session, std::function<void(SessionsList::iterator&)> processor);
 public:
     PipelineSession(const Config &config, boost::asio::io_context &io_context, 
         boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
-    void destroy();
+    void destroy(bool pipeline_call = false);
 
     boost::asio::ip::tcp::socket& accept_socket();
     void start();

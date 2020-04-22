@@ -34,7 +34,8 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_c
     udp_resolver(io_context),
     auth(auth),
     plain_http_response(plain_http_response),
-    use_pipeline(false) {}
+    use_pipeline(false),
+    has_queried_out(false) {}
 
 void ServerSession::set_use_pipeline(weak_ptr<Session> pl){
     pipeline = pl;
@@ -53,6 +54,7 @@ void ServerSession::start() {
         boost::system::error_code ec;
         in_endpoint = in_socket.next_layer().remote_endpoint(ec);
         if (ec) {
+            output_debug_info_ec(ec);
             destroy();
             return;
         }
@@ -63,10 +65,12 @@ void ServerSession::start() {
                 if (error.message() == "http request" && plain_http_response != "") {
                     recv_len += plain_http_response.length();
                     boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
+                        output_debug_info();
                         destroy();
                     });
                     return;
                 }
+                output_debug_info();
                 destroy();
                 return;
             }
@@ -77,10 +81,11 @@ void ServerSession::start() {
 }
 
 void ServerSession::in_async_read() {
-    if(use_pipeline){      
+    if(!use_pipeline){    
         auto self = shared_from_this();
         in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
+                output_debug_info_ec(error);
                 destroy();
                 return;
             }
@@ -97,12 +102,14 @@ void ServerSession::in_async_write(const string &data) {
                 in_sent();
             });            
         }else{
+            output_debug_info();
             destroy();
         }
     }else{
         auto data_copy = make_shared<string>(data);
         boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
             if (error) {
+                output_debug_info_ec(error);
                 destroy();
                 return;
             }
@@ -115,6 +122,7 @@ void ServerSession::out_async_read() {
     auto self = shared_from_this();
     out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -127,6 +135,7 @@ void ServerSession::out_async_write(const string &data) {
     auto data_copy = make_shared<string>(data);
     boost::asio::async_write(out_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -138,6 +147,7 @@ void ServerSession::udp_async_read() {
     auto self = shared_from_this();
     udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -150,6 +160,7 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
     auto data_copy = make_shared<string>(data);
     udp_socket.async_send_to(boost::asio::buffer(*data_copy), endpoint, [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -159,6 +170,14 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
 
 void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
+        
+        if(has_queried_out){
+            // pipeline session will call this in_recv directly so that the HANDSHAKE status will remain for a while
+            out_write_buf += data;
+            sent_len += data.length();
+            return;
+        }
+
         TrojanRequest req;
         bool valid = req.parse(data) != -1;
         if (valid) {
@@ -207,6 +226,7 @@ void ServerSession::in_recv(const string &data) {
             out_write_buf = data;
         }
         sent_len += out_write_buf.length();
+        has_queried_out = true;
         auto self = shared_from_this();
         resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, tcp::resolver::results_type results) {
             if (error || results.size() == 0) {
@@ -228,6 +248,7 @@ void ServerSession::in_recv(const string &data) {
             boost::system::error_code ec;
             out_socket.open(iterator->endpoint().protocol(), ec);
             if (ec) {
+                output_debug_info_ec(error);
                 destroy();
                 return;
             }
@@ -339,6 +360,7 @@ void ServerSession::udp_sent() {
                 boost::system::error_code ec;
                 udp_socket.open(protocol, ec);
                 if (ec) {
+                    output_debug_info_ec(ec);
                     destroy();
                     return;
                 }
@@ -351,12 +373,12 @@ void ServerSession::udp_sent() {
     }
 }
 
-void ServerSession::destroy() {
+void ServerSession::destroy(bool pipeline_call /*= false*/) {
     if (status == DESTROY) {
         return;
     }
     status = DESTROY;
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, " server session: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }
@@ -374,7 +396,7 @@ void ServerSession::destroy() {
     }
     shutdown_ssl_socket(this, in_socket);
 
-    if(use_pipeline && !pipeline.expired()){
+    if(!pipeline_call && use_pipeline && !pipeline.expired()){
         (static_cast<PipelineSession*>(pipeline.lock().get()))->remove_session_after_destroy(*this);
     }
 }

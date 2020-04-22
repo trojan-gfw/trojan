@@ -54,7 +54,7 @@ public:
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
     virtual void start() = 0;
     virtual ~Session();
-    virtual void destroy() = 0;
+    virtual void destroy(bool pipeline_call = false) = 0;
     const Config &config;
     boost::asio::ip::tcp::endpoint in_endpoint;
 

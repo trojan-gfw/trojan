@@ -58,7 +58,7 @@ public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
-    void destroy();
+    void destroy(bool pipeline_call = false);
 
     void out_recv(const std::string &data);   
 };

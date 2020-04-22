@@ -74,6 +74,7 @@ void ClientSession::in_async_read() {
             return;
         }
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -86,6 +87,7 @@ void ClientSession::in_async_write(const string &data) {
     auto data_copy = make_shared<string>(data);
     boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -98,6 +100,7 @@ void ClientSession::out_async_read() {
         auto self = shared_from_this();
         out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
+                output_debug_info_ec(error);
                 destroy();
                 return;
             }
@@ -111,6 +114,7 @@ void ClientSession::out_async_write(const string &data) {
     if(pipeline_service){
         pipeline_service->session_async_send_to_pipeline(*this, data, [this, self](const boost::system::error_code error) {
             if (error) {
+                output_debug_info_ec(error);
                 destroy();
                 return;
             }
@@ -120,6 +124,7 @@ void ClientSession::out_async_write(const string &data) {
         auto data_copy = make_shared<string>(data);
         boost::asio::async_write(out_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
             if (error) {
+                output_debug_info_ec(error);
                 destroy();
                 return;
             }
@@ -136,6 +141,7 @@ void ClientSession::udp_async_read() {
             return;
         }
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -148,6 +154,7 @@ void ClientSession::udp_async_write(const string &data, const udp::endpoint &end
     auto data_copy = make_shared<string>(data);
     udp_socket.async_send_to(boost::asio::buffer(*data_copy), endpoint, [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
+            output_debug_info_ec(error);
             destroy();
             return;
         }
@@ -199,6 +206,7 @@ void ClientSession::in_recv(const string &data) {
                 boost::system::error_code ec;
                 udp_socket.open(bindpoint.protocol(), ec);
                 if (ec) {
+                    output_debug_info();
                     destroy();
                     return;
                 }
@@ -252,6 +260,7 @@ void ClientSession::in_sent() {
             break;
         }
         case INVALID: {
+            output_debug_info();
             destroy();
             break;
         }
@@ -261,7 +270,7 @@ void ClientSession::in_sent() {
 
 void ClientSession::request_remote(){
     auto self = shared_from_this();
-    connect_remote_server(config, resolver, out_socket, this, in_endpoint, [this, self](){
+    auto cb = [this, self](){
         boost::system::error_code ec;
         if (is_udp) {
             if (!first_packet_recv) {
@@ -276,7 +285,13 @@ void ClientSession::request_remote(){
         }
         out_async_read();
         out_async_write(out_write_buf);
-    });
+    };
+
+    if(pipeline_service){
+        cb();
+    }else{        
+        connect_remote_server(config, resolver, out_socket, this, in_endpoint,cb);
+    }    
 }
 
 void ClientSession::out_recv(const string &data) {
@@ -358,12 +373,12 @@ void ClientSession::udp_sent() {
 
 
 
-void ClientSession::destroy() {
+void ClientSession::destroy(bool pipeline_call /*= false*/) {
     if (status == DESTROY) {
         return;
     }
     status = DESTROY;
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, " client session: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
     if (in_socket.is_open()) {
@@ -377,7 +392,7 @@ void ClientSession::destroy() {
     }
     shutdown_ssl_socket(this, out_socket);
 
-    if(pipeline_service){
+    if(!pipeline_call && pipeline_service){
         pipeline_service->session_destroy_in_pipeline(*this);
     }
 }

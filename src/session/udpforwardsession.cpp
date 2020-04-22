@@ -181,7 +181,7 @@ void UDPForwardSession::out_sent() {
     }
 }
 
-void UDPForwardSession::destroy() {
+void UDPForwardSession::destroy(bool pipeline_call /*= false*/) {
     if (status == DESTROY) {
         return;
     }
@@ -191,7 +191,7 @@ void UDPForwardSession::destroy() {
     gc_timer.cancel();
     shutdown_ssl_socket(this, out_socket);
     
-    if(pipeline_service){
+    if(!pipeline_call && pipeline_service){
         pipeline_service->session_destroy_in_pipeline(*this);
     }
 }

@@ -18,16 +18,17 @@
  */
 
 #include "pipelinerequest.h"
+#include "core/log.h"
 #include <string>
 
 using namespace std;
 
 static 
 uint32_t parse_uint32(int start_pos, const string& data){
-    return uint32_t(data[0 + start_pos]) << 24 | 
-           uint32_t(data[1 + start_pos]) << 16 | 
-           uint32_t(data[2 + start_pos]) << 8 | 
-           uint32_t(data[3 + start_pos]);
+    return uint32_t(uint8_t(data[0 + start_pos])) << 24 | 
+           uint32_t(uint8_t(data[1 + start_pos])) << 16 | 
+           uint32_t(uint8_t(data[2 + start_pos])) << 8 | 
+           uint32_t(uint8_t(data[3 + start_pos]));
 }
 
 static 
@@ -47,12 +48,14 @@ int PipelineRequest::parse(std::string &data){
     const uint32_t HEADER_LENGTH = 9;
 
     if(data.length() < HEADER_LENGTH){
+        //Log::log_with_date_time("PipelineRequest::parse length: "  + to_string(data.length()) + ", packet is not completed, continue read...");
         return -1;
     }
 
     uint32_t trojan_request_length = parse_uint32(0, data);
     
-    if(data.size() < HEADER_LENGTH + trojan_request_length){
+    if(data.length() < HEADER_LENGTH + trojan_request_length){
+        //Log::log_with_date_time("PipelineRequest::parse length: "  + to_string(data.length()) + " less than packet length:" + to_string(trojan_request_length) + ", continue read...");
         return -1;
     }
 
@@ -71,7 +74,7 @@ int PipelineRequest::parse(std::string &data){
     if(compress){
         // TODO compress
     }else{
-        packet_data = data.substr(HEADER_LENGTH, HEADER_LENGTH + trojan_request_length);
+        packet_data = data.substr(HEADER_LENGTH, trojan_request_length);
     }
 
     data = data.substr(HEADER_LENGTH + trojan_request_length);
@@ -86,7 +89,7 @@ std::string PipelineRequest::generate(enum Command cmd, uint32_t session_id, con
 
     // TODO compress
 
-    ret_data += char(cmd);
+    ret_data += char(uint8_t(cmd));
     
     generate_uint32(ret_data, session_id);
 
