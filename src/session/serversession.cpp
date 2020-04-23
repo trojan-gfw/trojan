@@ -35,7 +35,8 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_c
     auth(auth),
     plain_http_response(plain_http_response),
     use_pipeline(false),
-    has_queried_out(false) {}
+    has_queried_out(false),
+    first_out_async_read(true) {}
 
 void ServerSession::set_use_pipeline(weak_ptr<Session> pl){
     pipeline = pl;
@@ -118,7 +119,11 @@ void ServerSession::in_async_write(const string &data) {
     }
 }
 
-void ServerSession::out_async_read() {
+void ServerSession::out_async_read(bool called_by_pipeline /*= false*/) {
+    if(use_pipeline && !called_by_pipeline && !first_out_async_read){
+        return;
+    }
+    first_out_async_read = false;
     auto self = shared_from_this();
     out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
@@ -139,7 +144,14 @@ void ServerSession::out_async_write(const string &data) {
             destroy();
             return;
         }
-        out_sent();
+        
+        if(use_pipeline && !pipeline.expired()){
+            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_ack(*this, [this](){
+                out_sent();
+            });
+        }else{
+            out_sent();
+        }        
     });
 }
 
@@ -273,7 +285,7 @@ void ServerSession::in_recv(const string &data) {
                 }
                 Log::log_with_endpoint(in_endpoint, "tunnel established");
                 status = FORWARD;
-                out_async_read();
+                out_async_read(true);
                 if (!out_write_buf.empty()) {
                     out_async_write(out_write_buf);
                 } else {
@@ -307,7 +319,7 @@ void ServerSession::out_recv(const string &data) {
 
 void ServerSession::out_sent() {
     if (status == FORWARD) {
-        in_async_read();
+        in_async_read();        
     }
 }
 
@@ -394,7 +406,8 @@ void ServerSession::destroy(bool pipeline_call /*= false*/) {
         udp_socket.cancel(ec);
         udp_socket.close(ec);
     }
-    shutdown_ssl_socket(this, in_socket);
+
+    shutdown_ssl_socket(this, in_socket);    
 
     if(!pipeline_call && use_pipeline && !pipeline.expired()){
         (static_cast<PipelineSession*>(pipeline.lock().get()))->remove_session_after_destroy(*this);

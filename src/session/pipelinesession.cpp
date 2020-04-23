@@ -201,6 +201,15 @@ void PipelineSession::process_streaming_data(){
             if(!found){
                 Log::log_with_endpoint(in_endpoint, "PipelineSession cann't find a session " + to_string(req.session_id) + " to destroy" , Log::WARN);
             }
+        }else if(req.command == PipelineRequest::ACK){
+            auto found = find_and_process_session(req.session_id, [this, &req](SessionsList::iterator& it){ 
+                Log::log_with_endpoint(in_endpoint, "PipelineSession recv client ACK cmd to destroy session:" + to_string(req.session_id), Log::WARN);
+                it->get()->out_async_read(true);
+            });
+
+            if(!found){
+                Log::log_with_endpoint(in_endpoint, "PipelineSession cann't find a session " + to_string(req.session_id) + " to ACK" , Log::WARN);
+            }
         }else{
             Log::log_with_endpoint(in_endpoint, "PipelineSession error command");
             destroy();
@@ -209,6 +218,10 @@ void PipelineSession::process_streaming_data(){
     }    
 
     in_async_read();
+}
+
+void PipelineSession::session_write_ack(ServerSession& session,std::function<void()> sent_handler){
+    in_send(PipelineRequest::ACK, session, "", sent_handler);
 }
 
 void PipelineSession::session_write_data(ServerSession& session, const std::string& session_data, std::function<void()> sent_handler){

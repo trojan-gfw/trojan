@@ -66,6 +66,7 @@ public:
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
 
+    void session_write_ack(ServerSession& session,std::function<void()> sent_handler);
     void session_write_data(ServerSession& session, const std::string& session_data, std::function<void()> sent_handler);
     void remove_session_after_destroy(ServerSession& session);
 };

@@ -31,8 +31,8 @@ public:
     enum Command {
         CONNECT = 0,
         DATA,
+        ACK,
         CLOSE,
-
         MAX_COMMANDS
     } command;
     int parse(std::string &data);

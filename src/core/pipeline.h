@@ -38,6 +38,8 @@ private:
         STAT_SENT_DATA_SPEED_INTERVAL = 5
     };
 
+    static uint32_t s_pipeline_id_counter;
+
     bool destroyed;
     const Config& config;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
@@ -50,11 +52,11 @@ private:
     std::string cache_out_send_data;
     std::function<void(boost::system::error_code ec)> cache_out_sent_handler;
     boost::asio::ip::tcp::resolver resolver; 
-    std::vector<std::weak_ptr<Session>> sessions;
-
+    std::vector<std::shared_ptr<Session>> sessions;
+    uint32_t pipeline_id;
     void out_async_recv();
     void async_send_data(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
-    void async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
+    
 public:
     Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context);
     void start();
@@ -62,11 +64,13 @@ public:
     uint64_t get_sent_data_speed()const{ return sent_data_speed; }
 
     void session_start(Session& session,  std::function<void(boost::system::error_code ec)> started_handler);
-    void session_async_send(Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
     void session_destroyed(Session& session);
 
     inline bool is_connected()const { return connected; }
-    bool is_in_pipeline(Session& session);    
+    bool is_in_pipeline(Session& session);
+
+    uint32_t get_pipeline_id()const{ return pipeline_id; }
 };
 
 #endif // _PIPELINE_H_

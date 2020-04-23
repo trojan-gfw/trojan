@@ -510,19 +510,19 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         }
 
         if(!pipeline){
-            Log::log_with_date_time("fatal pipeline logic!", Log::FATAL);
+            Log::log_with_date_time("pipeline fatal logic!", Log::FATAL);
             return;
         }
 
         session.get()->set_use_pipeline(this, is_udp_forward);
         pipeline->session_start(*(session.get()), started_handler);
-        Log::log_with_date_time("start session:" + to_string(session->session_id));
+        Log::log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session:" + to_string(session->session_id));
     }else{
         started_handler(boost::system::error_code());
     }
 }
 
-void Service::session_async_send_to_pipeline(Session& session, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
+void Service::session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
     if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
         
         Pipeline* pipeline = nullptr;
@@ -544,13 +544,13 @@ void Service::session_async_send_to_pipeline(Session& session, const std::string
             Log::log_with_date_time("pipeline is broken, destory session", Log::WARN);
             sent_handler(boost::asio::error::broken_pipe);
         }else{
-            pipeline->session_async_send(session, data, sent_handler);
+            pipeline->session_async_send_cmd(cmd, session, data, sent_handler);         
         }
     }else{
         Log::log_with_date_time("can't send data via pipeline!", Log::FATAL);
-    }
-    
+    }    
 }
+
 
 void Service::session_destroy_in_pipeline(Session& session){
     auto it = pipelines.begin();
@@ -560,7 +560,7 @@ void Service::session_destroy_in_pipeline(Session& session){
         }else{
             auto p = it->lock().get();
             if(p->is_in_pipeline(session)){
-                Log::log_with_date_time("pipeline destroy session:" + to_string(session.session_id));
+                Log::log_with_date_time("pipeline " + to_string(p->get_pipeline_id()) + " destroy session:" + to_string(session.session_id));
                 p->session_destroyed(session);
                 break;
             }

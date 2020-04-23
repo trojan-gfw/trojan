@@ -41,25 +41,16 @@ void generate_uint32(string& data, uint32_t value){
 
 int PipelineRequest::parse(std::string &data){
     /*
-        |-------------------|-------------------|-----------------------|---------------------|
-        | 4 bytes as length | 1 byte as command | 4 bytes as session id | trojan request data |
-        |-------------------|-------------------|-----------------------|---------------------|
+        |-------------------|-----------------------|---------------------|-----------------------|
+        | 1 byte as command | 4 bytes as session id | <4 bytes as length> | <trojan request data> |
+        |-------------------|-----------------------|---------------------|-----------------------|
     */
-    const uint32_t HEADER_LENGTH = 9;
 
-    if(data.length() < HEADER_LENGTH){
-        //Log::log_with_date_time("PipelineRequest::parse length: "  + to_string(data.length()) + ", packet is not completed, continue read...");
+    if(data.length() < 1){
         return -1;
     }
 
-    uint32_t trojan_request_length = parse_uint32(0, data);
-    
-    if(data.length() < HEADER_LENGTH + trojan_request_length){
-        //Log::log_with_date_time("PipelineRequest::parse length: "  + to_string(data.length()) + " less than packet length:" + to_string(trojan_request_length) + ", continue read...");
-        return -1;
-    }
-
-    uint8_t cmd = data[4];
+    uint8_t cmd = data[0];
     bool compress = (cmd & 0x80) != 0;
     cmd = cmd & 0x7f;
 
@@ -69,31 +60,48 @@ int PipelineRequest::parse(std::string &data){
 
     command = (Command) cmd;
 
-    session_id = parse_uint32(5, data);
+    if(command == DATA){
+        const size_t DATA_CMD_HEADER_LENGTH = 9;
+        if(data.length() < DATA_CMD_HEADER_LENGTH){
+            return -1;
+        }
 
-    if(compress){
-        // TODO compress
+        uint32_t trojan_request_length = parse_uint32(5, data);
+        if(data.length() < DATA_CMD_HEADER_LENGTH + trojan_request_length){
+            return -1;
+        }
+
+        session_id = parse_uint32(1, data);       
+        packet_data = data.substr(DATA_CMD_HEADER_LENGTH, trojan_request_length);
+        if(compress){
+            // TODO decompress
+        }
+        data = data.substr(DATA_CMD_HEADER_LENGTH + trojan_request_length);
     }else{
-        packet_data = data.substr(HEADER_LENGTH, trojan_request_length);
+        const size_t CMD_HEADER_LENGTH = 5;
+        if(data.length() < CMD_HEADER_LENGTH){
+            return -1;
+        }
+        session_id = parse_uint32(1, data);
+        data = data.substr(CMD_HEADER_LENGTH);
+        // no packet data;
     }
-
-    data = data.substr(HEADER_LENGTH + trojan_request_length);
 
     return packet_data.length();
 }
 
 std::string PipelineRequest::generate(enum Command cmd, uint32_t session_id, const std::string& data){
-    size_t length = data.size();
-    string ret_data;
-    generate_uint32(ret_data, length);
-
+    
     // TODO compress
 
+    string ret_data;
     ret_data += char(uint8_t(cmd));
-    
     generate_uint32(ret_data, session_id);
 
-    ret_data += data;
+    if(cmd == DATA){
+        generate_uint32(ret_data, data.size());
+        ret_data += data;
+    }    
 
     return ret_data;
 }

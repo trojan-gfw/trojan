@@ -96,7 +96,7 @@ void UDPForwardSession::out_async_read() {
 void UDPForwardSession::out_async_write(const string &data) {
     auto self = shared_from_this();
     if(pipeline_service){
-        pipeline_service->session_async_send_to_pipeline(*this, data, [this, self](const boost::system::error_code error) {
+        pipeline_service->session_async_send_to_pipeline(*this, PipelineRequest::DATA, data, [this, self](const boost::system::error_code error) {
             if (error) {
                 destroy();
                 return;

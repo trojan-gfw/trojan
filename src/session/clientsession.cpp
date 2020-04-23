@@ -32,8 +32,9 @@ ClientSession::ClientSession(const Config &config, boost::asio::io_context &io_c
     status(HANDSHAKE),
     is_udp(false),
     first_packet_recv(false),
+    first_forward_async_read(true),
     in_socket(io_context),
-    out_socket(io_context, ssl_context) {}
+    out_socket(io_context, ssl_context){}
 
 tcp::socket& ClientSession::accept_socket() {
     return in_socket;
@@ -67,7 +68,17 @@ void ClientSession::start() {
     }
 }
 
-void ClientSession::in_async_read() {
+void ClientSession::in_async_read(bool called_by_pipeline /*= false*/) {
+    if(pipeline_service && !called_by_pipeline){
+        if(status == FORWARD && !first_forward_async_read){
+            return;
+        }        
+    }
+
+    if(status == FORWARD){
+        first_forward_async_read = false;
+    }
+
     auto self = shared_from_this();
     in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error == boost::asio::error::operation_aborted) {
@@ -91,7 +102,20 @@ void ClientSession::in_async_write(const string &data) {
             destroy();
             return;
         }
-        in_sent();
+
+        if(pipeline_service && status == FORWARD){
+            pipeline_service->session_async_send_to_pipeline(*this, PipelineRequest::ACK, "", [this, self](const boost::system::error_code error) {
+                if (error) {
+                    output_debug_info_ec(error);
+                    destroy();
+                    return;
+                }
+
+                in_sent();
+            });
+        }else{
+            in_sent();
+        }
     });
 }
 
@@ -112,7 +136,7 @@ void ClientSession::out_async_read() {
 void ClientSession::out_async_write(const string &data) {
     auto self = shared_from_this();
     if(pipeline_service){
-        pipeline_service->session_async_send_to_pipeline(*this, data, [this, self](const boost::system::error_code error) {
+        pipeline_service->session_async_send_to_pipeline(*this, PipelineRequest::DATA, data, [this, self](const boost::system::error_code error) {
             if (error) {
                 output_debug_info_ec(error);
                 destroy();
@@ -390,6 +414,7 @@ void ClientSession::destroy(bool pipeline_call /*= false*/) {
         udp_socket.cancel(ec);
         udp_socket.close(ec);
     }
+
     shutdown_ssl_socket(this, out_socket);
 
     if(!pipeline_call && pipeline_service){

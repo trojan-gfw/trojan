@@ -61,7 +61,7 @@ public:
     void reload_cert();
     ~Service();
 
-    void session_async_send_to_pipeline(Session& session, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
     void session_destroy_in_pipeline(Session& session);
 };
 
@@ -146,8 +146,8 @@ template<typename ThisPtr>
 void shutdown_ssl_socket(ThisPtr this_ptr, boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& socket){
     if (socket.next_layer().is_open()) {
         auto self = this_ptr->shared_from_this();
-        auto ssl_shutdown_timer = std::make_shared<boost::asio::steady_timer>(socket.get_io_context());
-        auto ssl_shutdown_cb = [=, &socket](const boost::system::error_code error) {
+        auto ssl_shutdown_timer = std::make_shared<boost::asio::steady_timer>(socket.next_layer().get_io_context());
+        auto ssl_shutdown_cb = [self, ssl_shutdown_timer, &socket](const boost::system::error_code error) {
             if (error == boost::asio::error::operation_aborted) {
                 return;
             }
