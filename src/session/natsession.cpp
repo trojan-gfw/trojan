@@ -79,7 +79,7 @@ void NATSession::start() {
             destroy();
             return;
         }
-        Log::log_with_endpoint(in_endpoint, "forwarding to " + target_addr + ':' + to_string(target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
+        _log_with_endpoint(in_endpoint, "forwarding to " + target_addr + ':' + to_string(target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
         out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, target_addr, target_port, true);
         
         request_remote();

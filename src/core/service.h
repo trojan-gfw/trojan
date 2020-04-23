@@ -77,7 +77,7 @@ void connect_remote_server(const Config& config, boost::asio::ip::tcp::resolver&
         timeout_timer->expires_from_now(boost::posix_time::milliseconds(config.tcp.connect_time_out));
         timeout_timer->async_wait([=, &out_socket](const boost::system::error_code error) {
             if(!error){
-                Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": timeout", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": timeout", Log::ERROR);
                 this_ptr->destroy();
             }
         });
@@ -86,12 +86,12 @@ void connect_remote_server(const Config& config, boost::asio::ip::tcp::resolver&
     auto self = this_ptr->shared_from_this();
     resolver.async_resolve(config.remote_addr, std::to_string(config.remote_port), [=, &config, &out_socket](const boost::system::error_code error, boost::asio::ip::tcp::resolver::results_type results) {
         if (error || results.size() == 0) {
-            Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
+            _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
             this_ptr->destroy();
             return;
         }
         auto iterator = results.begin();
-        Log::log_with_endpoint(in_endpoint, config.remote_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
+        _log_with_endpoint(in_endpoint, config.remote_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
         boost::system::error_code ec;
         out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
         if (ec) {
@@ -114,7 +114,7 @@ void connect_remote_server(const Config& config, boost::asio::ip::tcp::resolver&
         
         out_socket.next_layer().async_connect(*iterator, [=, &config, &out_socket](const boost::system::error_code error) {
             if (error) {
-                Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
                 this_ptr->destroy();
                 return;
             }
@@ -123,17 +123,17 @@ void connect_remote_server(const Config& config, boost::asio::ip::tcp::resolver&
                     timeout_timer->cancel();
                 }
                 if (error) {
-                    Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                    _log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
                     this_ptr->destroy();
                     return;
                 }
-                Log::log_with_endpoint(in_endpoint, "tunnel established");
+                _log_with_endpoint(in_endpoint, "tunnel established");
                 if (config.ssl.reuse_session) {
                     auto ssl = out_socket.native_handle();
                     if (!SSL_session_reused(ssl)) {
-                        Log::log_with_endpoint(in_endpoint, "SSL session not reused");
+                        _log_with_endpoint(in_endpoint, "SSL session not reused");
                     } else {
-                        Log::log_with_endpoint(in_endpoint, "SSL session reused");
+                        _log_with_endpoint(in_endpoint, "SSL session reused");
                     }
                 }
                 connected_handler();

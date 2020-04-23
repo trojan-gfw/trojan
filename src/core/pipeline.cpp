@@ -48,7 +48,7 @@ void Pipeline::start(){
         data += "\r\n";
         data += cache_out_send_data;
         
-        Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " is going to connect remote server and send password...");
+        _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " is going to connect remote server and send password...");
 
         if(cache_out_send_data.length() == 0){
             async_send_data(data, [](boost::system::error_code){});
@@ -65,7 +65,7 @@ void Pipeline::async_send_data(const std::string& data, function<void(boost::sys
     if(!connected){
         cache_out_send_data += data;
         cache_out_sent_handler = sent_handler;
-        Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " haven't connected, cache data length:" + to_string(cache_out_send_data.length()));
+        _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " haven't connected, cache data length:" + to_string(cache_out_send_data.length()));
     }else{
         auto self = shared_from_this();
         auto data_copy = make_shared<string>(data);
@@ -93,7 +93,7 @@ void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& ses
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
-    Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send to server cmd " +  to_string(cmd) + " session_id: " + to_string(session.session_id) + " data length:" + to_string(send_data.length()));
+    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send to server cmd " +  to_string(cmd) + " session_id: " + to_string(session.session_id) + " data length:" + to_string(send_data.length()));
     async_send_data(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler);
 }
 
@@ -112,7 +112,7 @@ void Pipeline::session_destroyed(Session& session){
                 ++it;
             }            
         }
-        Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send command to close session_id: " + to_string(session.session_id));
+        _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send command to close session_id: " + to_string(session.session_id));
         session_async_send_cmd(PipelineRequest::CLOSE, session, "", [](boost::system::error_code){});
     }
 }
@@ -143,7 +143,6 @@ void Pipeline::out_async_recv(){
                 PipelineRequest req;
                 int ret = req.parse(out_read_data);
                 if(ret == -1){
-                    //Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv data from server length: "  + to_string(length) + ", packet is not completed, continue read...");
                     break;
                 }
 
@@ -153,7 +152,7 @@ void Pipeline::out_async_recv(){
                     return;
                 }
 
-                Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv from server cmd: " +  to_string(req.command) + " session_id: " + to_string(req.session_id) + " data length:" + to_string(req.packet_data.length()));
+                _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv from server cmd: " +  to_string(req.command) + " session_id: " + to_string(req.session_id) + " data length:" + to_string(req.packet_data.length()));
                 
                 bool found = false;
                 auto it = sessions.begin();
@@ -161,13 +160,13 @@ void Pipeline::out_async_recv(){
                     auto session = it->get();
                     if(session->session_id == req.session_id){
                         if(req.command == PipelineRequest::CLOSE){
-                            Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv server session CLOSE cmd to destroy session:" + to_string(req.session_id));
+                            _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv server session CLOSE cmd to destroy session:" + to_string(req.session_id));
                             session->destroy(true);
                             it = sessions.erase(it);
                         }else if(req.command == PipelineRequest::ACK){
-                            Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv server session ACK cmd to destroy session:" + to_string(req.session_id));
+                            _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv server session ACK cmd, session:" + to_string(req.session_id));
                             if(session->is_udp_forward()){
-                                Log::log_with_date_time("UDP don't need ACK command", Log::ERROR);
+                                _log_with_date_time("UDP don't need ACK command", Log::ERROR);
                             }else{
                                 static_cast<ClientSession*>(session)->in_async_read(true);
                             }
@@ -187,7 +186,7 @@ void Pipeline::out_async_recv(){
                 }
                 
                 if(!found){
-                    Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " cannot find session:" + to_string(req.session_id) + " current sessions:" + to_string(sessions.size()));
+                    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " cannot find session:" + to_string(req.session_id) + " current sessions:" + to_string(sessions.size()));
                 }
             }            
 
@@ -201,7 +200,7 @@ void Pipeline::destroy(){
         return;
     }
     destroyed = true;
-    Log::log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " destroyed. close all " + to_string(sessions.size()) + " sessions in this pipeline.");
+    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " destroyed. close all " + to_string(sessions.size()) + " sessions in this pipeline.");
 
     // close all sessions
     for(auto it = sessions.begin(); it != sessions.end(); ++it){

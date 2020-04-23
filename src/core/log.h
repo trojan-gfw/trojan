@@ -53,10 +53,20 @@ private:
 };
 
 extern char __debug_str_buf[1024];
+
+#define _log_with_date_time(...) \
+    if(Log::level != Log::OFF) { Log::log_with_date_time(__VA_ARGS__); }
+
+#define _log_with_endpoint(...) \
+    if(Log::level != Log::OFF) { Log::log_with_endpoint(__VA_ARGS__); }
+
+#define _log(...) \
+    if(Log::level != Log::OFF) { Log::log(__VA_ARGS__); }
+
 #define output_debug_info_ec(ec) \
-    Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s> ec:%s",__FILE__, __LINE__, __FUNCTION__,(ec.message().c_str())), __debug_str_buf)), Log::INFO)
+    if(Log::level != Log::OFF) { Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s> ec:%s",__FILE__, __LINE__, __FUNCTION__,(ec.message().c_str())), __debug_str_buf)), Log::INFO); }
 
 #define output_debug_info() \
-    Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s>",__FILE__, __LINE__, __FUNCTION__), __debug_str_buf)), Log::INFO)
+    if(Log::level != Log::OFF) { Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s>",__FILE__, __LINE__, __FUNCTION__), __debug_str_buf)), Log::INFO); }
 
 #endif // _LOG_H_

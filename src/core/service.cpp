@@ -148,14 +148,14 @@ static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::
 
     buf_len = recvmsg(fd, &msg, 0);
     if (buf_len == -1) {
-        Log::log_with_date_time("[udp] server_recvmsg failed!", Log::FATAL);
+        _log_with_date_time("[udp] server_recvmsg failed!", Log::FATAL);
     } else{
         if (buf_len > packet_size) {
-            Log::log_with_date_time(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
+            _log_with_date_time(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
         }
 
         if (get_dstaddr(&msg, &dst_addr)) {
-            Log::log_with_date_time("[udp] unable to get dest addr!", Log::FATAL);
+            _log_with_date_time("[udp] unable to get dest addr!", Log::FATAL);
         }else{
             auto target_dst = get_addr(dst_addr);       
             auto src_dst = get_addr(src_addr);
@@ -189,7 +189,7 @@ Service::Service(Config &config, bool test) :
 #ifdef ENABLE_REUSE_PORT
             socket_acceptor.set_option(reuse_port(true));
 #else  // ENABLE_REUSE_PORT
-            Log::log_with_date_time("SO_REUSEPORT is not supported", Log::WARN);
+            _log_with_date_time("SO_REUSEPORT is not supported", Log::WARN);
 #endif // ENABLE_REUSE_PORT
         }
         
@@ -214,25 +214,25 @@ Service::Service(Config &config, bool test) :
                     sol = SOL_IPV6;
                     ip_recv = IPV6_RECVORIGDSTADDR;
                 }else{
-                    Log::log_with_date_time("[udp] protocol can't be recognized", Log::FATAL);
+                    _log_with_date_time("[udp] protocol can't be recognized", Log::FATAL);
                     stop();
                     return;
                 }
 
                 if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
-                    Log::log_with_date_time("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
+                    _log_with_date_time("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
                     stop();
                     return;
                 }
 
                 if (setsockopt(fd, sol, ip_recv, &opt, sizeof(opt))) {
-                    Log::log_with_date_time("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
+                    _log_with_date_time("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
                     stop();
                     return;
                 }
 
                 if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-                    Log::log_with_date_time( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
+                    _log_with_date_time( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
                     stop();
                     return;
                 }
@@ -289,7 +289,7 @@ Service::Service(Config &config, bool test) :
 #ifdef ENABLE_MYSQL
             auth = new Authenticator(config);
 #else // ENABLE_MYSQL
-            Log::log_with_date_time("MySQL is not supported", Log::WARN);
+            _log_with_date_time("MySQL is not supported", Log::WARN);
 #endif // ENABLE_MYSQL
         }
     } else {
@@ -399,7 +399,7 @@ Service::Service(Config &config, bool test) :
 #ifdef ENABLE_TLS13_CIPHERSUITES
         SSL_CTX_set_ciphersuites(native_context, config.ssl.cipher_tls13.c_str());
 #else  // ENABLE_TLS13_CIPHERSUITES
-        Log::log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
+        _log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
 #endif // ENABLE_TLS13_CIPHERSUITES
     }
 
@@ -416,10 +416,10 @@ Service::Service(Config &config, bool test) :
             boost::system::error_code ec;
             socket_acceptor.set_option(fastopen(config.tcp.fast_open_qlen), ec);
 #else // TCP_FASTOPEN
-            Log::log_with_date_time("TCP_FASTOPEN is not supported", Log::WARN);
+            _log_with_date_time("TCP_FASTOPEN is not supported", Log::WARN);
 #endif // TCP_FASTOPEN
 #ifndef TCP_FASTOPEN_CONNECT
-            Log::log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
+            _log_with_date_time("TCP_FASTOPEN_CONNECT is not supported", Log::WARN);
 #endif // TCP_FASTOPEN_CONNECT
         }
     }
@@ -430,7 +430,7 @@ Service::Service(Config &config, bool test) :
             fflush(Log::keylog);
         });
 #else // ENABLE_SSL_KEYLOG
-        Log::log_with_date_time("SSL KeyLog is not supported", Log::WARN);
+        _log_with_date_time("SSL KeyLog is not supported", Log::WARN);
 #endif // ENABLE_SSL_KEYLOG
     }
 }
@@ -452,9 +452,9 @@ void Service::run() {
     } else {
         rt = "client";
     }
-    Log::log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::WARN);
+    _log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::WARN);
     io_context.run();
-    Log::log_with_date_time("trojan service stopped", Log::WARN);
+    _log_with_date_time("trojan service stopped", Log::WARN);
 }
 
 void Service::stop() {
@@ -482,7 +482,7 @@ void Service::prepare_pipelines(){
             auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
             pipeline->start();
             pipelines.emplace_back(pipeline);
-            Log::log_with_date_time("Prepare pipelines start a new one, total:" + to_string(pipelines.size()));
+            _log_with_date_time("Prepare pipelines start a new one, total:" + to_string(pipelines.size()));
         }        
     }
 }
@@ -510,13 +510,13 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         }
 
         if(!pipeline){
-            Log::log_with_date_time("pipeline fatal logic!", Log::FATAL);
+            _log_with_date_time("pipeline fatal logic!", Log::FATAL);
             return;
         }
 
         session.get()->set_use_pipeline(this, is_udp_forward);
         pipeline->session_start(*(session.get()), started_handler);
-        Log::log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session:" + to_string(session->session_id));
+        _log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session:" + to_string(session->session_id));
     }else{
         started_handler(boost::system::error_code());
     }
@@ -541,13 +541,13 @@ void Service::session_async_send_to_pipeline(Session& session, PipelineRequest::
         }
 
         if(!pipeline){
-            Log::log_with_date_time("pipeline is broken, destory session", Log::WARN);
+            _log_with_date_time("pipeline is broken, destory session", Log::WARN);
             sent_handler(boost::asio::error::broken_pipe);
         }else{
             pipeline->session_async_send_cmd(cmd, session, data, sent_handler);         
         }
     }else{
-        Log::log_with_date_time("can't send data via pipeline!", Log::FATAL);
+        _log_with_date_time("can't send data via pipeline!", Log::FATAL);
     }    
 }
 
@@ -560,7 +560,7 @@ void Service::session_destroy_in_pipeline(Session& session){
         }else{
             auto p = it->lock().get();
             if(p->is_in_pipeline(session)){
-                Log::log_with_date_time("pipeline " + to_string(p->get_pipeline_id()) + " destroy session:" + to_string(session.session_id));
+                _log_with_date_time("pipeline " + to_string(p->get_pipeline_id()) + " destroy session:" + to_string(session.session_id));
                 p->session_destroyed(session);
                 break;
             }
@@ -599,7 +599,7 @@ void Service::async_accept() {
             boost::system::error_code ec;
             auto endpoint = session->accept_socket().remote_endpoint(ec);
             if (!ec) {
-                Log::log_with_endpoint(endpoint, "incoming connection");
+                _log_with_endpoint(endpoint, "incoming connection");
                 start_session(session, false, [session](boost::system::error_code ec){
                     if(ec){
                         session->destroy();    
@@ -648,7 +648,7 @@ void Service::udp_async_read() {
                 it = next;
             }
             
-            Log::log_with_endpoint(udp_recv_endpoint, "new UDP session");
+            _log_with_endpoint(udp_recv_endpoint, "new UDP session");
             auto session = make_shared<UDPForwardSession>(config, io_context, ssl_context, udp_recv_endpoint, targetdst, 
              [this](const udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& target, const string &data) {
                 boost::system::error_code ec;
@@ -663,12 +663,12 @@ void Service::udp_async_read() {
                     int fd = new_udp_socket.native_handle();
                     int sol = endpoint.protocol().family() == boost::asio::ip::tcp::v6().family() ? SOL_IPV6 : SOL_IP;
                     if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
-                        Log::log_with_endpoint(target_endpoint, "[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
+                        _log_with_endpoint(target_endpoint, "[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
                         succ = false;
                     }
                     
                     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-                        Log::log_with_endpoint(target_endpoint, "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
+                        _log_with_endpoint(target_endpoint, "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
                         succ = false;
                     }
                     
@@ -683,7 +683,7 @@ void Service::udp_async_read() {
                 }
 
                 if (ec == boost::asio::error::no_permission) {
-                    Log::log_with_endpoint(udp_recv_endpoint, "dropped a UDP packet due to firewall policy or rate limit");
+                    _log_with_endpoint(udp_recv_endpoint, "dropped a UDP packet due to firewall policy or rate limit");
                 } else if (ec) {
                     throw runtime_error(ec.message());
                 }             
@@ -698,7 +698,7 @@ void Service::udp_async_read() {
             });
               
         }else{
-            Log::Log::log_with_endpoint(udp_recv_endpoint, "cannot read original destination address!");
+            _log_with_endpoint(udp_recv_endpoint, "cannot read original destination address!");
         }
 
         udp_async_read();        
@@ -717,15 +717,15 @@ boost::asio::io_context &Service::service() {
 
 void Service::reload_cert() {
     if (config.run_type == Config::SERVER) {
-        Log::log_with_date_time("reloading certificate and private key. . . ", Log::WARN);
+        _log_with_date_time("reloading certificate and private key. . . ", Log::WARN);
         ssl_context.use_certificate_chain_file(config.ssl.cert);
         ssl_context.use_private_key_file(config.ssl.key, context::pem);
         boost::system::error_code ec;
         socket_acceptor.cancel(ec);
         async_accept();
-        Log::log_with_date_time("certificate and private key reloaded", Log::WARN);
+        _log_with_date_time("certificate and private key reloaded", Log::WARN);
     } else {
-        Log::log_with_date_time("cannot reload certificate and private key: wrong run_type", Log::ERROR);
+        _log_with_date_time("cannot reload certificate and private key: wrong run_type", Log::ERROR);
     }
 }
 

@@ -45,7 +45,7 @@ bool ClientSession::prepare_session(){
     start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint(ec);
     if (ec) {
-        Log::log_with_date_time("cannot get in_endpoint in prepare_session", Log::FATAL);
+        _log_with_date_time("cannot get in_endpoint in prepare_session", Log::FATAL);
         destroy();
         return false;
     }
@@ -190,7 +190,7 @@ void ClientSession::in_recv(const string &data) {
     switch (status) {
         case HANDSHAKE: {
             if (data.length() < 2 || data[0] != 5 || data.length() != (unsigned int)(unsigned char)data[1] + 2) {
-                Log::log_with_endpoint(in_endpoint, "unknown protocol", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "unknown protocol", Log::ERROR);
                 destroy();
                 return;
             }
@@ -202,7 +202,7 @@ void ClientSession::in_recv(const string &data) {
                 }
             }
             if (!has_method) {
-                Log::log_with_endpoint(in_endpoint, "unsupported auth method", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "unsupported auth method", Log::ERROR);
                 in_async_write(string("\x05\xff", 2));
                 status = INVALID;
                 return;
@@ -212,14 +212,14 @@ void ClientSession::in_recv(const string &data) {
         }
         case REQUEST: {
             if (data.length() < 7 || data[0] != 5 || data[2] != 0) {
-                Log::log_with_endpoint(in_endpoint, "bad request", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "bad request", Log::ERROR);
                 destroy();
                 return;
             }
             out_write_buf = config.password.cbegin()->first + "\r\n" + data[1] + data.substr(3) + "\r\n";
             TrojanRequest req;
             if (req.parse(out_write_buf) == -1) {
-                Log::log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);
                 in_async_write(string("\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                 status = INVALID;
                 return;
@@ -235,10 +235,10 @@ void ClientSession::in_recv(const string &data) {
                     return;
                 }
                 udp_socket.bind(bindpoint);
-                Log::log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port) + ", open UDP socket " + udp_socket.local_endpoint().address().to_string() + ':' + to_string(udp_socket.local_endpoint().port()) + " for relay", Log::INFO);
+                _log_with_endpoint(in_endpoint, "requested UDP associate to " + req.address.address + ':' + to_string(req.address.port) + ", open UDP socket " + udp_socket.local_endpoint().address().to_string() + ':' + to_string(udp_socket.local_endpoint().port()) + " for relay", Log::INFO);
                 in_async_write(string("\x05\x00\x00", 3) + SOCKS5Address::generate(udp_socket.local_endpoint()));
             } else {
-                Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
+                _log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
                 in_async_write(string("\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00", 10));
             }
             break;
@@ -255,7 +255,7 @@ void ClientSession::in_recv(const string &data) {
             break;
         }
         case UDP_FORWARD: {
-            Log::log_with_endpoint(in_endpoint, "unexpected data from TCP port", Log::ERROR);
+            _log_with_endpoint(in_endpoint, "unexpected data from TCP port", Log::ERROR);
             destroy();
             break;
         }
@@ -341,7 +341,7 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint&) {
         return;
     }
     if (data.length() < 3 || data[0] || data[1] || data[2]) {
-        Log::log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
+        _log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
         destroy();
         return;
     }
@@ -349,12 +349,12 @@ void ClientSession::udp_recv(const string &data, const udp::endpoint&) {
     size_t address_len;
     bool is_addr_valid = address.parse(data.substr(3), address_len);
     if (!is_addr_valid) {
-        Log::log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
+        _log_with_endpoint(in_endpoint, "bad UDP packet", Log::ERROR);
         destroy();
         return;
     }
     size_t length = data.length() - 3 - address_len;
-    Log::log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " bytes to " + address.address + ':' + to_string(address.port));
+    _log_with_endpoint(in_endpoint, "sent a UDP packet of length " + to_string(length) + " bytes to " + address.address + ':' + to_string(address.port));
     string packet = data.substr(3, address_len) + char(uint8_t(length >> 8)) + char(uint8_t(length & 0xFF)) + "\r\n" + data.substr(address_len + 3);
     sent_len += length;
     if (status == CONNECT) {
@@ -372,19 +372,19 @@ void ClientSession::udp_sent() {
         bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
         if (!is_packet_valid) {
             if (udp_data_buf.length() > MAX_LENGTH) {
-                Log::log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "UDP packet too long", Log::ERROR);
                 destroy();
                 return;
             }
             out_async_read();
             return;
         }
-        Log::log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
+        _log_with_endpoint(in_endpoint, "received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
         SOCKS5Address address;
         size_t address_len;
         bool is_addr_valid = address.parse(udp_data_buf, address_len);
         if (!is_addr_valid) {
-            Log::log_with_endpoint(in_endpoint, "udp_sent: invalid UDP packet address", Log::ERROR);
+            _log_with_endpoint(in_endpoint, "udp_sent: invalid UDP packet address", Log::ERROR);
             destroy();
             return;
         }
@@ -402,7 +402,7 @@ void ClientSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    Log::log_with_endpoint(in_endpoint, " client session: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(in_endpoint, " client session: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
     if (in_socket.is_open()) {

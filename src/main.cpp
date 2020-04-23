@@ -41,7 +41,7 @@ void signal_async_wait(signal_set &sig, Service &service, bool &restart) {
         if (error) {
             return;
         }
-        Log::log_with_date_time("got signal: " + to_string(signum), Log::WARN);
+        _log_with_date_time("got signal: " + to_string(signum), Log::WARN);
         switch (signum) {
             case SIGINT:
             case SIGTERM:
@@ -142,7 +142,7 @@ int main(int argc, const char *argv[]) {
         do {
             restart = false;
             if (config.sip003()) {
-                Log::log_with_date_time("SIP003 is loaded", Log::WARN);
+                _log_with_date_time("SIP003 is loaded", Log::WARN);
             } else {
                 config.load(config_file);
             }
@@ -161,15 +161,15 @@ int main(int argc, const char *argv[]) {
             signal_async_wait(sig, service, restart);
             service.run();
             if (restart) {
-                Log::log_with_date_time("trojan service restarting. . . ", Log::WARN);
+                _log_with_date_time("trojan service restarting. . . ", Log::WARN);
             }
         } while (restart);
-        Log::log_with_date_time("trojan service exit.", Log::WARN);
+        _log_with_date_time("trojan service exit.", Log::WARN);
         Log::reset();
         exit(EXIT_SUCCESS);
     } catch (const exception &e) {
-        Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
-        Log::log_with_date_time("exiting. . . ", Log::FATAL);
+        _log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
+        _log_with_date_time("exiting. . . ", Log::FATAL);
         exit(EXIT_FAILURE);
     }
 }
