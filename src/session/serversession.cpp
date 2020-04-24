@@ -240,8 +240,23 @@ void ServerSession::in_recv(const string &data) {
         }
         sent_len += out_write_buf.length();
         has_queried_out = true;
+
         auto self = shared_from_this();
-        resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, tcp::resolver::results_type results) {
+        auto timeout_timer = shared_ptr<boost::asio::deadline_timer>(nullptr);
+        if(config.tcp.connect_time_out > 0){
+            // out_socket.next_layer().async_connect will be stuck forever
+            // we must set a timeout timer
+            timeout_timer = make_shared<boost::asio::deadline_timer>(out_socket.get_io_context());
+            timeout_timer->expires_from_now(boost::posix_time::milliseconds(config.tcp.connect_time_out));
+            timeout_timer->async_wait([this, self, timeout_timer, query_addr, query_port](const boost::system::error_code error) {
+                if(!error){
+                    _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query_addr + ':' + query_port + ": timeout", Log::ERROR);
+                    destroy();
+                }
+            });
+        }
+
+        resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port, timeout_timer](const boost::system::error_code error, tcp::resolver::results_type results) {
             if (error || results.size() == 0) {
                 _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
@@ -278,7 +293,10 @@ void ServerSession::in_recv(const string &data) {
                 out_socket.set_option(fastopen_connect(true), ec);
             }
 #endif // TCP_FASTOPEN_CONNECT
-            out_socket.async_connect(*iterator, [this, self, query_addr, query_port](const boost::system::error_code error) {
+            out_socket.async_connect(*iterator, [this, self, query_addr, query_port, timeout_timer](const boost::system::error_code error) {
+                if(timeout_timer){
+                    timeout_timer->cancel();
+                }
                 if (error) {
                     _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query_addr + ':' + query_port + ": " + error.message(), Log::ERROR);
                     destroy();

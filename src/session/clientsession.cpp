@@ -313,8 +313,8 @@ void ClientSession::request_remote(){
 
     if(pipeline_service){
         cb();
-    }else{        
-        connect_remote_server(config, resolver, out_socket, this, in_endpoint,cb);
+    }else{  
+        connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, in_endpoint,cb);
     }    
 }
 

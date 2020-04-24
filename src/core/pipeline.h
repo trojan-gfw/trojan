@@ -41,7 +41,7 @@ private:
     static uint32_t s_pipeline_id_counter;
 
     bool destroyed;
-    const Config& config;
+    
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     bool connected;
     uint64_t sent_data_length;
@@ -61,6 +61,7 @@ public:
     Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context);
     void start();
     void destroy();
+    const Config& config;
     uint64_t get_sent_data_speed()const{ return sent_data_speed; }
 
     void session_start(Session& session,  std::function<void(boost::system::error_code ec)> started_handler);
@@ -69,7 +70,7 @@ public:
 
     inline bool is_connected()const { return connected; }
     bool is_in_pipeline(Session& session);
-
+    
     uint32_t get_pipeline_id()const{ return pipeline_id; }
 };
 

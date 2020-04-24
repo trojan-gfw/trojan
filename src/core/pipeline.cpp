@@ -29,19 +29,19 @@ uint32_t Pipeline::s_pipeline_id_counter = 0;
 
 Pipeline::Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context):
     destroyed(false),
-    config(config),
     out_socket(io_context,ssl_context),
     connected(false),
     sent_data_length(0),
     sent_data_speed(0),
-    resolver(io_context){
+    resolver(io_context),
+    config(config){
     sent_data_former_time = time(NULL);
     pipeline_id = s_pipeline_id_counter++;
 }
 
 void Pipeline::start(){
     auto self = shared_from_this();
-    connect_remote_server(config, resolver, out_socket, this, tcp::endpoint(), [this, self](){
+    connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, tcp::endpoint(), [this, self](){
         connected = true;
 
         string data(config.password.cbegin()->first);

@@ -65,79 +65,91 @@ public:
     void session_destroy_in_pipeline(Session& session);
 };
 
-template<typename ThisT, typename EndPoint>
-void connect_remote_server(const Config& config, boost::asio::ip::tcp::resolver& resolver, 
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& out_socket, ThisT this_ptr, EndPoint in_endpoint, std::function<void()> connected_handler){
 
+template<typename ThisT, typename EndPoint>
+void connect_out_socket(ThisT this_ptr, std::string addr, std::string port, boost::asio::ip::tcp::resolver& resolver, 
+    boost::asio::ip::tcp::socket& out_socket, EndPoint in_endpoint, std::function<void()> connected_handler){
+    
+    auto self = this_ptr->shared_from_this();
     auto timeout_timer = std::shared_ptr<boost::asio::deadline_timer>(nullptr);
-    if(config.tcp.connect_time_out > 0){
+    if(this_ptr->config.tcp.connect_time_out > 0){
         // out_socket.next_layer().async_connect will be stuck forever
         // we must set a timeout timer
-        timeout_timer = std::make_shared<boost::asio::deadline_timer>(out_socket.next_layer().get_io_context());
-        timeout_timer->expires_from_now(boost::posix_time::milliseconds(config.tcp.connect_time_out));
+        timeout_timer = std::make_shared<boost::asio::deadline_timer>(out_socket.get_io_context());
+        timeout_timer->expires_from_now(boost::posix_time::milliseconds(this_ptr->config.tcp.connect_time_out));
         timeout_timer->async_wait([=, &out_socket](const boost::system::error_code error) {
             if(!error){
-                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": timeout", Log::ERROR);
+                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + addr + ':' + port + " reason: timeout", Log::ERROR);
                 this_ptr->destroy();
             }
         });
     }
-
-    auto self = this_ptr->shared_from_this();
-    resolver.async_resolve(config.remote_addr, std::to_string(config.remote_port), [=, &config, &out_socket](const boost::system::error_code error, boost::asio::ip::tcp::resolver::results_type results) {
+    
+    resolver.async_resolve(addr, port, [=, &out_socket](const boost::system::error_code error, boost::asio::ip::tcp::resolver::results_type results) {
         if (error || results.size() == 0) {
-            _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
+            _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + addr + ":" + port + " reason: " + error.message(), Log::ERROR);
             this_ptr->destroy();
             return;
         }
         auto iterator = results.begin();
-        _log_with_endpoint(in_endpoint, config.remote_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
+        _log_with_endpoint(in_endpoint, addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
         boost::system::error_code ec;
-        out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
+        out_socket.open(iterator->endpoint().protocol(), ec);
         if (ec) {
             this_ptr->destroy();
             return;
         }
-        if (config.tcp.no_delay) {
-            out_socket.next_layer().set_option(boost::asio::ip::tcp::no_delay(true));
+        if (this_ptr->config.tcp.no_delay) {
+            out_socket.set_option(boost::asio::ip::tcp::no_delay(true));
         }
-        if (config.tcp.keep_alive) {
-            out_socket.next_layer().set_option(boost::asio::socket_base::keep_alive(true));
+        if (this_ptr->config.tcp.keep_alive) {
+            out_socket.set_option(boost::asio::socket_base::keep_alive(true));
         }
 #ifdef TCP_FASTOPEN_CONNECT
-        if (config.tcp.fast_open) {
+        if (this_ptr->config.tcp.fast_open) {
             using fastopen_connect = boost::asio::detail::socket_option::boolean<IPPROTO_TCP, TCP_FASTOPEN_CONNECT>;
             boost::system::error_code ec;
-            out_socket.next_layer().set_option(fastopen_connect(true), ec);
+            out_socket.set_option(fastopen_connect(true), ec);
         }
 #endif // TCP_FASTOPEN_CONNECT
         
-        out_socket.next_layer().async_connect(*iterator, [=, &config, &out_socket](const boost::system::error_code error) {
+        out_socket.async_connect(*iterator, [=, &out_socket](const boost::system::error_code error) {
             if (error) {
-                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + addr + ':' + port + " reason: " + error.message(), Log::ERROR);
                 this_ptr->destroy();
                 return;
             }
-            out_socket.async_handshake(boost::asio::ssl::stream_base::client, [=, &config, &out_socket](const boost::system::error_code error) {
-                if(timeout_timer){
-                    timeout_timer->cancel();
+
+            if(timeout_timer){
+                timeout_timer->cancel();
+            }
+
+            connected_handler();
+        });        
+    });
+}
+
+template<typename ThisT, typename EndPoint>
+void connect_remote_server_ssl(ThisT this_ptr, std::string addr, std::string port, boost::asio::ip::tcp::resolver& resolver, 
+    boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& out_socket, EndPoint in_endpoint, std::function<void()> connected_handler){
+    
+    connect_out_socket(this_ptr, addr, port, resolver, out_socket.next_layer(), in_endpoint, [=, &out_socket](){
+        out_socket.async_handshake(boost::asio::ssl::stream_base::client, [=, &out_socket](const boost::system::error_code error) {
+            if (error) {
+                _log_with_endpoint(in_endpoint, "SSL handshake failed with " + addr + ':' + port + " reason: " + error.message(), Log::ERROR);
+                this_ptr->destroy();
+                return;
+            }
+            _log_with_endpoint(in_endpoint, "tunnel established");
+            if (this_ptr->config.ssl.reuse_session) {
+                auto ssl = out_socket.native_handle();
+                if (!SSL_session_reused(ssl)) {
+                    _log_with_endpoint(in_endpoint, "SSL session not reused");
+                } else {
+                    _log_with_endpoint(in_endpoint, "SSL session reused");
                 }
-                if (error) {
-                    _log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + std::to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
-                    this_ptr->destroy();
-                    return;
-                }
-                _log_with_endpoint(in_endpoint, "tunnel established");
-                if (config.ssl.reuse_session) {
-                    auto ssl = out_socket.native_handle();
-                    if (!SSL_session_reused(ssl)) {
-                        _log_with_endpoint(in_endpoint, "SSL session not reused");
-                    } else {
-                        _log_with_endpoint(in_endpoint, "SSL session reused");
-                    }
-                }
-                connected_handler();
-            });
+            }
+            connected_handler();
         });        
     });
 }
@@ -160,7 +172,7 @@ void shutdown_ssl_socket(ThisPtr this_ptr, boost::asio::ssl::stream<boost::asio:
         boost::system::error_code ec;
         socket.next_layer().cancel(ec);
         socket.async_shutdown(ssl_shutdown_cb);
-        ssl_shutdown_timer.get()->expires_after(std::chrono::seconds(5));
+        ssl_shutdown_timer.get()->expires_after(std::chrono::seconds(30));
         ssl_shutdown_timer.get()->async_wait(ssl_shutdown_cb);
     }    
 }

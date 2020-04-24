@@ -63,7 +63,7 @@ void UDPForwardSession::start() {
         _log_with_endpoint(udp_recv_endpoint, "forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
 
         auto self = shared_from_this();
-        connect_remote_server(config, resolver, out_socket, this, udp_recv_endpoint, [this, self](){
+        connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, udp_recv_endpoint, [this, self](){
             status = FORWARDING;
             out_async_read();
             out_async_write(out_write_buf);
