@@ -492,21 +492,25 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         
         prepare_pipelines();
 
-        // find the pipeline which has sent the least data 
+        // find the connected pipeline which has sent the least data 
         Pipeline* pipeline = nullptr;
         auto it = pipelines.begin();
-        uint64_t send_least_speed = 0;
+        uint32_t send_least_speed = numeric_limits<uint32_t>::max();
         while(it != pipelines.end()){
             if(it->expired()){
                 it = pipelines.erase(it);
             }else{
                 auto p = it->lock().get();
-                if(!pipeline || send_least_speed > p->get_sent_data_speed()){
+                if(p->is_connected() && send_least_speed > p->get_sent_data_speed()){
                     send_least_speed = p->get_sent_data_speed();
                     pipeline = p;
                 }
                 ++it;
             }
+        }
+
+        if(!pipeline && !pipelines.empty()){
+            pipeline = pipelines.begin()->lock().get();
         }
 
         if(!pipeline){

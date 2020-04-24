@@ -41,12 +41,11 @@ private:
     static uint32_t s_pipeline_id_counter;
 
     bool destroyed;
-    
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     bool connected;
-    uint64_t sent_data_length;
+    uint32_t sent_data_length;
     clock_t sent_data_former_time;
-    uint64_t sent_data_speed;
+    uint32_t sent_data_speed;
     char out_read_buf[MAX_LENGTH];
     std::string out_read_data;
     std::string cache_out_send_data;
@@ -62,7 +61,7 @@ public:
     void start();
     void destroy();
     const Config& config;
-    uint64_t get_sent_data_speed()const{ return sent_data_speed; }
+    uint32_t get_sent_data_speed()const{ return sent_data_speed; }
 
     void session_start(Session& session,  std::function<void(boost::system::error_code ec)> started_handler);
     void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
