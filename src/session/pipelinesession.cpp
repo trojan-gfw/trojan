@@ -193,7 +193,7 @@ void PipelineSession::process_streaming_data(){
             }
         }else if(req.command == PipelineRequest::CLOSE){
             auto found = find_and_process_session(req.session_id, [this, &req](SessionsList::iterator& it){ 
-                _log_with_endpoint(in_endpoint, "PipelineSession recv client CLOSE cmd to destroy session:" + to_string(req.session_id), Log::WARN);
+                _log_with_endpoint(in_endpoint, "PipelineSession recv client CLOSE cmd to destroy session:" + to_string(req.session_id));
                 it->get()->destroy(true);   
                 all_sessions.erase(it);                        
             });
@@ -203,7 +203,7 @@ void PipelineSession::process_streaming_data(){
             }
         }else if(req.command == PipelineRequest::ACK){
             auto found = find_and_process_session(req.session_id, [this, &req](SessionsList::iterator& it){ 
-                _log_with_endpoint(in_endpoint, "PipelineSession recv client ACK cmd session:" + to_string(req.session_id), Log::WARN);
+                _log_with_endpoint(in_endpoint, "PipelineSession recv client ACK cmd session:" + to_string(req.session_id));
                 it->get()->out_async_read(true);
             });
 

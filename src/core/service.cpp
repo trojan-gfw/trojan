@@ -520,7 +520,7 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
 
         session.get()->set_use_pipeline(this, is_udp_forward);
         pipeline->session_start(*(session.get()), started_handler);
-        _log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session:" + to_string(session->session_id));
+        _log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session:" + to_string(session->session_id), Log::INFO);
     }else{
         started_handler(boost::system::error_code());
     }

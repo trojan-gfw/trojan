@@ -64,9 +64,9 @@ extern char __debug_str_buf[1024];
     if(Log::level != Log::OFF) { Log::log(__VA_ARGS__); }
 
 #define output_debug_info_ec(ec) \
-    if(Log::level != Log::OFF) { Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s> ec:%s",__FILE__, __LINE__, __FUNCTION__,(ec.message().c_str())), __debug_str_buf)), Log::INFO); }
+    if(Log::level != Log::OFF) { Log::log_with_date_time(std::string((sprintf(__debug_str_buf, "%s:%d-<%s> ec:%s",__FILE__, __LINE__, __FUNCTION__,(ec.message().c_str())), __debug_str_buf))); }
 
 #define output_debug_info() \
-    if(Log::level != Log::OFF) { Log::log(std::string((sprintf(__debug_str_buf, "%s:%d-<%s>",__FILE__, __LINE__, __FUNCTION__), __debug_str_buf)), Log::INFO); }
+    if(Log::level != Log::OFF) { Log::log_with_date_time(std::string((sprintf(__debug_str_buf, "%s:%d-<%s>",__FILE__, __LINE__, __FUNCTION__), __debug_str_buf))); }
 
 #endif // _LOG_H_
