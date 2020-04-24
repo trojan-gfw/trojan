@@ -689,7 +689,7 @@ void Service::udp_async_read() {
                 }             
             });
 
-            start_session(session, true, [this, session, &data](boost::system::error_code ec){
+            start_session(session, true, [this, session, data](boost::system::error_code ec){
                 if(!ec){
                     udp_sessions.emplace_back(session);
                     session->start();

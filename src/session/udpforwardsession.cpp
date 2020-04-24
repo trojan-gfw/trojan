@@ -48,7 +48,20 @@ void UDPForwardSession::start() {
     timer_async_wait();
     start_time = time(NULL);
 
-    if(!pipeline_service){
+    auto self = shared_from_this();
+    auto cb = [this, self](){
+        status = FORWARDING;
+        out_async_read();
+        out_async_write(out_write_buf);
+        out_write_buf.clear();
+    };
+
+    out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, udp_target.first, udp_target.second, false);
+    _log_with_endpoint(udp_recv_endpoint, "forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
+
+    if(pipeline_service){
+        cb();
+    }else{
         auto ssl = out_socket.native_handle();
         if (config.ssl.sni != "") {
             SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
@@ -59,16 +72,7 @@ void UDPForwardSession::start() {
                 SSL_set_session(ssl, session);
             }
         }
-        out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, udp_target.first, udp_target.second, false);
-        _log_with_endpoint(udp_recv_endpoint, "forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
-
-        auto self = shared_from_this();
-        connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, udp_recv_endpoint, [this, self](){
-            status = FORWARDING;
-            out_async_read();
-            out_async_write(out_write_buf);
-            out_write_buf.clear();
-        });
+        connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, udp_recv_endpoint, cb);
     }    
 }
 
