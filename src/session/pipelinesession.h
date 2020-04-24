@@ -42,7 +42,7 @@ class PipelineSession : public Session {
     std::string auth_password;
     const std::string &plain_http_response;
 
-    static SessionsList all_sessions;
+    SessionsList sessions;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket> live_socket;
 
     boost::asio::steady_timer gc_timer;

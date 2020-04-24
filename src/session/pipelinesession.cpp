@@ -28,8 +28,6 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-PipelineSession::SessionsList PipelineSession::all_sessions;
-
 PipelineSession::PipelineSession(const Config &config, boost::asio::io_context &io_context, 
     boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response):
     Session(config, io_context),
@@ -142,8 +140,8 @@ void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& sessi
 
 bool PipelineSession::find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator&)> processor){
 
-    auto it = all_sessions.begin();
-    while(it != all_sessions.end()){
+    auto it = sessions.begin();
+    while(it != sessions.end()){
         if(it->get()->session_id == session_id){
             processor(it);
             return true;
@@ -169,20 +167,20 @@ void PipelineSession::process_streaming_data(){
             return;
         }
 
-        _log_with_endpoint(in_endpoint, "PipelineSession recv and process streaming data cmd: " + to_string(req.command) + " length:" + to_string(req.packet_data.length()));
+        _log_with_endpoint(in_endpoint, "PipelineSession recv and process streaming data cmd: " + to_string(req.command) + " session:" + to_string(req.session_id) + " length:" + to_string(req.packet_data.length()));
 
         if(req.command == PipelineRequest::CONNECT){
             find_and_process_session(req.session_id, [this](SessionsList::iterator& it){
                 it->get()->destroy(true);
-                all_sessions.erase(it);
+                sessions.erase(it);
             });
 
             auto session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
             session->session_id = req.session_id;
             session->set_use_pipeline(shared_from_this());
             session->start();
-            all_sessions.emplace_back(session);
-            _log_with_endpoint(in_endpoint, "PipelineSession starts a session " + to_string(req.session_id) + ", now remain " + to_string(all_sessions.size()));
+            sessions.emplace_back(session);
+            _log_with_endpoint(in_endpoint, "PipelineSession starts a session " + to_string(req.session_id) + ", now remain " + to_string(sessions.size()));
         }else if(req.command == PipelineRequest::DATA){
             auto found = find_and_process_session(req.session_id, [&,req](SessionsList::iterator& it){ 
                 it->get()->in_recv(req.packet_data);
@@ -195,7 +193,7 @@ void PipelineSession::process_streaming_data(){
             auto found = find_and_process_session(req.session_id, [this, &req](SessionsList::iterator& it){ 
                 _log_with_endpoint(in_endpoint, "PipelineSession recv client CLOSE cmd to destroy session:" + to_string(req.session_id));
                 it->get()->destroy(true);   
-                all_sessions.erase(it);                        
+                sessions.erase(it);                        
             });
 
             if(!found){
@@ -243,8 +241,8 @@ void PipelineSession::remove_session_after_destroy(ServerSession& session){
     if(status != DESTROY){
         find_and_process_session(session.session_id, [this, &session](SessionsList::iterator& it){
             in_send(PipelineRequest::CLOSE, session, "",[](){});
-            all_sessions.erase(it);
-            _log_with_endpoint(in_endpoint, "PipelineSession remove session " + to_string(session.session_id) + ", now remain " + to_string(all_sessions.size()));
+            sessions.erase(it);
+            _log_with_endpoint(in_endpoint, "PipelineSession remove session " + to_string(session.session_id) + ", now remain " + to_string(sessions.size()));
         });
     }    
 }
@@ -256,24 +254,13 @@ void PipelineSession::destroy(bool /*pipeline_call = false*/){
     status = DESTROY;
     gc_timer.cancel();
 
-    _log_with_endpoint(in_endpoint, "PipelineSession remove all all_sessions in this PipelineSession... current: " + to_string(all_sessions.size()));
+    _log_with_endpoint(in_endpoint, "PipelineSession remove all sessions: " + to_string(sessions.size()));
 
-    // clear all all_sessions which attached this PipelineSession
-    auto it = all_sessions.begin();
-    while(it != all_sessions.end()){
-        auto sess = it->get();
-        auto pipe = sess->get_pipeline();
-
-        if(!pipe.expired() && pipe.lock().get() == this){
-            sess->destroy(true);
-            it = all_sessions.erase(it);
-        }else{
-            ++it;
-        }        
+    // clear all sessions which attached this PipelineSession
+    for(auto it = sessions.begin(); it != sessions.end();it++){
+        it->get()->destroy(true);
     }
-
-    _log_with_endpoint(in_endpoint, "after: " + to_string(all_sessions.size()));
-    
+    sessions.clear();    
     shutdown_ssl_socket(this, live_socket);
 }
 
