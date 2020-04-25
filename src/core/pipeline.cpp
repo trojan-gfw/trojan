@@ -93,7 +93,7 @@ void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& ses
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
-    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send to server cmd " +  to_string(cmd) + " session_id: " + to_string(session.session_id) + " data length:" + to_string(send_data.length()));
+    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send to server cmd: " +  PipelineRequest::get_cmd_string(cmd) + " session_id: " + to_string(session.session_id) + " data length:" + to_string(send_data.length()));
     async_send_data(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler);
 }
 
@@ -152,7 +152,7 @@ void Pipeline::out_async_recv(){
                     return;
                 }
 
-                _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv from server cmd: " +  to_string(req.command) + " session_id: " + to_string(req.session_id) + " data length:" + to_string(req.packet_data.length()));
+                _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv from server cmd: " + req.get_cmd_string() + " session_id: " + to_string(req.session_id) + " data length:" + to_string(req.packet_data.length()));
                 
                 bool found = false;
                 auto it = sessions.begin();
@@ -160,15 +160,17 @@ void Pipeline::out_async_recv(){
                     auto session = it->get();
                     if(session->session_id == req.session_id){
                         if(req.command == PipelineRequest::CLOSE){
-                            _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv server session CLOSE cmd to destroy session:" + to_string(req.session_id));
                             session->destroy(true);
                             it = sessions.erase(it);
                         }else if(req.command == PipelineRequest::ACK){
-                            _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv server session ACK cmd, session:" + to_string(req.session_id));
                             if(session->is_udp_forward()){
                                 _log_with_date_time("UDP don't need ACK command", Log::ERROR);
                             }else{
-                                static_cast<ClientSession*>(session)->in_async_read(true);
+                                auto client = static_cast<ClientSession*>(session);
+                                client->recv_ack_cmd();
+                                if(client->is_wait_for_pipeline_ack()){
+                                    client->in_async_read();
+                                }
                             }
                         }else{
                             if(session->is_udp_forward()){

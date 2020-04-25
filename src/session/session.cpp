@@ -21,9 +21,17 @@
 
 uint32_t Session::s_session_id_counter = 0;
 
-Session::Session(const Config &config, boost::asio::io_context &io_context) : recv_len(0), sent_len(0), resolver(io_context),
- udp_socket(io_context), pipeline_service(nullptr), config(config) {
+Session::Session(const Config &config, boost::asio::io_context &io_context) : 
+ recv_len(0), 
+ sent_len(0), 
+ resolver(io_context),
+ udp_socket(io_context), 
+ pipeline_service(nullptr), 
+ pipeline_wait_for_ack(false),
+ pipeline_first_call_ack(true),
+ config(config){
     session_id = s_session_id_counter++;
+    pipeline_ack_counter = static_cast<int>(config.experimental.pipeline_ack_window);
 }
 
 Session::~Session() {}

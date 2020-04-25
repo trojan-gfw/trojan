@@ -86,6 +86,7 @@ public:
     class Experimental{
     public:
         uint32_t pipeline_num;
+        uint32_t pipeline_ack_window;
     } experimental;
     void load(const std::string &filename);
     void populate(const std::string &JSON);

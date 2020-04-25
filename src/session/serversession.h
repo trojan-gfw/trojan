@@ -55,14 +55,13 @@ private:
     std::weak_ptr<Session> pipeline;
     bool use_pipeline;
     bool has_queried_out;
-    bool first_out_async_read;
 public:
     ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
     void set_use_pipeline(std::weak_ptr<Session> pipeline);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
     void destroy(bool pipeline_call = false);
-    void out_async_read(bool called_by_pipeline = false);
+    void out_async_read();
     void in_recv(const std::string &data);
     bool is_destoryed()const{ return status == DESTROY; }
 

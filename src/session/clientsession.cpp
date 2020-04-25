@@ -32,7 +32,6 @@ ClientSession::ClientSession(const Config &config, boost::asio::io_context &io_c
     status(HANDSHAKE),
     is_udp(false),
     first_packet_recv(false),
-    first_forward_async_read(true),
     in_socket(io_context),
     out_socket(io_context, ssl_context){}
 
@@ -68,15 +67,11 @@ void ClientSession::start() {
     }
 }
 
-void ClientSession::in_async_read(bool called_by_pipeline /*= false*/) {
-    if(pipeline_service && !called_by_pipeline){
-        if(status == FORWARD && !first_forward_async_read){
+void ClientSession::in_async_read() {
+    if(pipeline_service && status == FORWARD){
+        if(!pre_call_ack_func()){
             return;
-        }        
-    }
-
-    if(status == FORWARD){
-        first_forward_async_read = false;
+        }
     }
 
     auto self = shared_from_this();

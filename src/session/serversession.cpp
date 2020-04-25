@@ -35,8 +35,7 @@ ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_c
     auth(auth),
     plain_http_response(plain_http_response),
     use_pipeline(false),
-    has_queried_out(false),
-    first_out_async_read(true) {}
+    has_queried_out(false) {}
 
 void ServerSession::set_use_pipeline(weak_ptr<Session> pl){
     pipeline = pl;
@@ -119,12 +118,13 @@ void ServerSession::in_async_write(const string &data) {
     }
 }
 
-void ServerSession::out_async_read(bool called_by_pipeline /*= false*/) {
-    if(use_pipeline && !called_by_pipeline && !first_out_async_read){
-        return;
+void ServerSession::out_async_read() {
+    if(pipeline_service){
+        if(!pre_call_ack_func()){
+            return;
+        }
     }
 
-    first_out_async_read = false;
     auto self = shared_from_this();
     out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error) {

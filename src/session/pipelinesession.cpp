@@ -116,7 +116,7 @@ void PipelineSession::in_recv(const string &data) {
 void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler){
     auto found = find_and_process_session(session.session_id, [&](SessionsList::iterator&){
 
-        _log_with_endpoint(in_endpoint, "PipelineSession send session: " + to_string(session.session_id) + " cmd:" + to_string(cmd) + " data length:" + to_string(session_data.length()));
+        _log_with_endpoint(in_endpoint, "PipelineSession send session: " + to_string(session.session_id) + " cmd:" + PipelineRequest::get_cmd_string(cmd) + " data length:" + to_string(session_data.length()));
 
         auto data = PipelineRequest::generate(cmd, session.session_id, session_data);
         auto self = shared_from_this();
@@ -167,7 +167,7 @@ void PipelineSession::process_streaming_data(){
             return;
         }
 
-        _log_with_endpoint(in_endpoint, "PipelineSession recv and process streaming data cmd: " + to_string(req.command) + " session:" + to_string(req.session_id) + " length:" + to_string(req.packet_data.length()));
+        _log_with_endpoint(in_endpoint, "PipelineSession recv and process streaming data cmd: " + req.get_cmd_string() + " session:" + to_string(req.session_id) + " length:" + to_string(req.packet_data.length()));
 
         if(req.command == PipelineRequest::CONNECT){
             find_and_process_session(req.session_id, [this](SessionsList::iterator& it){
@@ -191,7 +191,6 @@ void PipelineSession::process_streaming_data(){
             }
         }else if(req.command == PipelineRequest::CLOSE){
             auto found = find_and_process_session(req.session_id, [this, &req](SessionsList::iterator& it){ 
-                _log_with_endpoint(in_endpoint, "PipelineSession recv client CLOSE cmd to destroy session:" + to_string(req.session_id));
                 it->get()->destroy(true);   
                 sessions.erase(it);                        
             });
@@ -201,8 +200,11 @@ void PipelineSession::process_streaming_data(){
             }
         }else if(req.command == PipelineRequest::ACK){
             auto found = find_and_process_session(req.session_id, [this, &req](SessionsList::iterator& it){ 
-                _log_with_endpoint(in_endpoint, "PipelineSession recv client ACK cmd session:" + to_string(req.session_id));
-                it->get()->out_async_read(true);
+                auto session = it->get();
+                session->recv_ack_cmd();
+                if(session->is_wait_for_pipeline_ack()){
+                    it->get()->out_async_read();
+                }
             });
 
             if(!found){

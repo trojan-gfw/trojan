@@ -29,6 +29,10 @@
 
 class Service;
 class Session : public std::enable_shared_from_this<Session> {
+    
+    // session id counter for pipeline mode
+    static uint32_t s_session_id_counter;
+
 protected:
     enum {
         MAX_LENGTH = 8192,
@@ -48,7 +52,9 @@ protected:
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
     Service* pipeline_service;
     bool is_udp_forward_session;
-    static uint32_t s_session_id_counter;
+    int pipeline_ack_counter;
+    bool pipeline_wait_for_ack;
+    bool pipeline_first_call_ack;
 public:
     Session(const Config &config, boost::asio::io_context &io_context);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
@@ -59,11 +65,25 @@ public:
     boost::asio::ip::tcp::endpoint in_endpoint;
 
     uint32_t session_id;
-    void set_use_pipeline(Service* service, bool is_udp_forward) { 
+    inline void set_use_pipeline(Service* service, bool is_udp_forward) { 
         pipeline_service = service; 
         is_udp_forward_session = is_udp_forward;
     };
-    bool is_udp_forward()const { return is_udp_forward_session; }
+    inline bool is_udp_forward()const { return is_udp_forward_session; }
+    inline void recv_ack_cmd(){ pipeline_ack_counter++;}
+    inline bool is_wait_for_pipeline_ack()const { return pipeline_wait_for_ack; }
+
+    inline bool pre_call_ack_func(){
+        if(!pipeline_first_call_ack){
+            if(pipeline_ack_counter <= 0){
+                pipeline_wait_for_ack = true;
+                return false;
+            }
+            pipeline_ack_counter--;
+        }
+        pipeline_first_call_ack = false;
+        return true;
+    }
 };
 
 #endif // _SESSION_H_

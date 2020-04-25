@@ -36,6 +36,16 @@ public:
         MAX_COMMANDS
     } command;
     int parse(std::string &data);
+    inline std::string get_cmd_string() const { return get_cmd_string(command); }
+    static inline std::string get_cmd_string(enum Command cmd){
+        switch(cmd){
+            case CONNECT: return "CONNECT";
+            case DATA: return "DATA";
+            case ACK: return "ACK";
+            case CLOSE: return "CLOSE";
+            default:return "UNKNOW!!";
+        }
+    }
     static std::string generate(enum Command cmd, uint32_t session_id, const std::string& data);
 };
 

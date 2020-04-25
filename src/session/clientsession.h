@@ -36,7 +36,6 @@ protected:
     } status;
     bool is_udp;
     bool first_packet_recv;
-    bool first_forward_async_read;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     
@@ -61,7 +60,7 @@ public:
     void start();
     void destroy(bool pipeline_call = false);
 
-    void in_async_read(bool called_by_pipeline = false);
+    void in_async_read();
     void out_recv(const std::string &data);   
 };
 
