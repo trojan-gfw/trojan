@@ -119,10 +119,12 @@ void ServerSession::in_async_write(const string &data) {
 }
 
 void ServerSession::out_async_read() {
-    if(pipeline_service){
+    if(use_pipeline){
         if(!pre_call_ack_func()){
+            _log_with_endpoint(in_endpoint, "Cannot ServerSession::out_async_read ! Is waiting for ack");
             return;
         }
+        _log_with_endpoint(in_endpoint, "Permit to ServerSession::out_async_read aysnc! ack:" + to_string(pipeline_ack_counter));
     }
 
     auto self = shared_from_this();
@@ -241,77 +243,16 @@ void ServerSession::in_recv(const string &data) {
         sent_len += out_write_buf.length();
         has_queried_out = true;
 
-        auto self = shared_from_this();
-        auto timeout_timer = shared_ptr<boost::asio::deadline_timer>(nullptr);
-        if(config.tcp.connect_time_out > 0){
-            // out_socket.next_layer().async_connect will be stuck forever
-            // we must set a timeout timer
-            timeout_timer = make_shared<boost::asio::deadline_timer>(out_socket.get_io_context());
-            timeout_timer->expires_from_now(boost::posix_time::milliseconds(config.tcp.connect_time_out));
-            timeout_timer->async_wait([this, self, timeout_timer, query_addr, query_port](const boost::system::error_code error) {
-                if(!error){
-                    _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query_addr + ':' + query_port + ": timeout", Log::ERROR);
-                    destroy();
-                }
-            });
-        }
-
-        resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port, timeout_timer](const boost::system::error_code error, tcp::resolver::results_type results) {
-            if (error || results.size() == 0) {
-                _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
-                destroy();
-                return;
+        connect_out_socket(this, query_addr, query_port, resolver, out_socket, in_endpoint, [=](){
+            status = FORWARD;
+            out_async_read();
+            if (!out_write_buf.empty()) {
+                out_async_write(out_write_buf);
+            } else {
+                in_async_read();
             }
-            auto iterator = results.begin();
-            if (config.tcp.prefer_ipv4) {
-                for (auto it = results.begin(); it != results.end(); ++it) {
-                    const auto &addr = it->endpoint().address();
-                    if (addr.is_v4()) {
-                        iterator = it;
-                        break;
-                    }
-                }
-            }
-            _log_with_endpoint(in_endpoint, query_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
-            boost::system::error_code ec;
-            out_socket.open(iterator->endpoint().protocol(), ec);
-            if (ec) {
-                output_debug_info_ec(error);
-                destroy();
-                return;
-            }
-            if (config.tcp.no_delay) {
-                out_socket.set_option(tcp::no_delay(true));
-            }
-            if (config.tcp.keep_alive) {
-                out_socket.set_option(boost::asio::socket_base::keep_alive(true));
-            }
-#ifdef TCP_FASTOPEN_CONNECT
-            if (config.tcp.fast_open) {
-                using fastopen_connect = boost::asio::detail::socket_option::boolean<IPPROTO_TCP, TCP_FASTOPEN_CONNECT>;
-                boost::system::error_code ec;
-                out_socket.set_option(fastopen_connect(true), ec);
-            }
-#endif // TCP_FASTOPEN_CONNECT
-            out_socket.async_connect(*iterator, [this, self, query_addr, query_port, timeout_timer](const boost::system::error_code error) {
-                if(timeout_timer){
-                    timeout_timer->cancel();
-                }
-                if (error) {
-                    _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + query_addr + ':' + query_port + ": " + error.message(), Log::ERROR);
-                    destroy();
-                    return;
-                }
-                _log_with_endpoint(in_endpoint, "tunnel established");
-                status = FORWARD;
-                out_async_read();
-                if (!out_write_buf.empty()) {
-                    out_async_write(out_write_buf);
-                } else {
-                    in_async_read();
-                }
-            });
         });
+
     } else if (status == FORWARD) {
         sent_len += data.length();
         out_async_write(data);
@@ -409,7 +350,7 @@ void ServerSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    _log_with_endpoint(in_endpoint, " server session: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(in_endpoint, " server session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }

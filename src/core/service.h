@@ -71,20 +71,6 @@ void connect_out_socket(ThisT this_ptr, std::string addr, std::string port, boos
     boost::asio::ip::tcp::socket& out_socket, EndPoint in_endpoint, std::function<void()> connected_handler){
     
     auto self = this_ptr->shared_from_this();
-    auto timeout_timer = std::shared_ptr<boost::asio::deadline_timer>(nullptr);
-    if(this_ptr->config.tcp.connect_time_out > 0){
-        // out_socket.next_layer().async_connect will be stuck forever
-        // we must set a timeout timer
-        timeout_timer = std::make_shared<boost::asio::deadline_timer>(out_socket.get_io_context());
-        timeout_timer->expires_from_now(boost::posix_time::milliseconds(this_ptr->config.tcp.connect_time_out));
-        timeout_timer->async_wait([=, &out_socket](const boost::system::error_code error) {
-            if(!error){
-                _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + addr + ':' + port + " reason: timeout", Log::ERROR);
-                this_ptr->destroy();
-            }
-        });
-    }
-    
     resolver.async_resolve(addr, port, [=, &out_socket](const boost::system::error_code error, boost::asio::ip::tcp::resolver::results_type results) {
         if (error || results.size() == 0) {
             _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + addr + ":" + port + " reason: " + error.message(), Log::ERROR);
@@ -112,17 +98,31 @@ void connect_out_socket(ThisT this_ptr, std::string addr, std::string port, boos
             out_socket.set_option(fastopen_connect(true), ec);
         }
 #endif // TCP_FASTOPEN_CONNECT
+        self = this_ptr->shared_from_this(); // F**k this line, we must assign this variable again, gcc has a bug when 2-level lamda to capture var (in template?)
+        auto timeout_timer = std::shared_ptr<boost::asio::steady_timer>(nullptr);
+        if(this_ptr->config.tcp.connect_time_out > 0){
+            // out_socket.async_connect will be stuck forever when the host is not reachable
+            // we must set a timeout timer
+            timeout_timer = std::make_shared<boost::asio::steady_timer>(out_socket.get_io_context());
+            timeout_timer->expires_after(std::chrono::seconds(this_ptr->config.tcp.connect_time_out));
+            timeout_timer->async_wait([=](const boost::system::error_code error) {
+                if(!error){
+                    _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + addr + ':' + port + " reason: timeout", Log::ERROR);
+                    this_ptr->destroy();
+                }
+            });
+        }
         
-        out_socket.async_connect(*iterator, [=, &out_socket](const boost::system::error_code error) {
+        out_socket.async_connect(*iterator, [=](const boost::system::error_code error) {
+            if(timeout_timer){
+                timeout_timer->cancel();
+            }
+
             if (error) {
                 _log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + addr + ':' + port + " reason: " + error.message(), Log::ERROR);
                 this_ptr->destroy();
                 return;
-            }
-
-            if(timeout_timer){
-                timeout_timer->cancel();
-            }
+            }        
 
             connected_handler();
         });        

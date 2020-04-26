@@ -26,7 +26,7 @@ Session::Session(const Config &config, boost::asio::io_context &io_context) :
  sent_len(0), 
  resolver(io_context),
  udp_socket(io_context), 
- pipeline_service(nullptr), 
+ pipeline_client_service(nullptr), 
  pipeline_wait_for_ack(false),
  pipeline_first_call_ack(true),
  config(config){

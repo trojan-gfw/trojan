@@ -59,7 +59,7 @@ void UDPForwardSession::start() {
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, udp_target.first, udp_target.second, false);
     _log_with_endpoint(udp_recv_endpoint, "forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
 
-    if(pipeline_service){
+    if(pipeline_client_service){
         cb();
     }else{
         auto ssl = out_socket.native_handle();
@@ -85,7 +85,7 @@ bool UDPForwardSession::process(const udp::endpoint &endpoint, const string &dat
 }
 
 void UDPForwardSession::out_async_read() {
-    if(!pipeline_service){
+    if(!pipeline_client_service){
         auto self = shared_from_this();
         out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
@@ -99,8 +99,8 @@ void UDPForwardSession::out_async_read() {
 
 void UDPForwardSession::out_async_write(const string &data) {
     auto self = shared_from_this();
-    if(pipeline_service){
-        pipeline_service->session_async_send_to_pipeline(*this, PipelineRequest::DATA, data, [this, self](const boost::system::error_code error) {
+    if(pipeline_client_service){
+        pipeline_client_service->session_async_send_to_pipeline(*this, PipelineRequest::DATA, data, [this, self](const boost::system::error_code error) {
             if (error) {
                 destroy();
                 return;
@@ -195,7 +195,7 @@ void UDPForwardSession::destroy(bool pipeline_call /*= false*/) {
     gc_timer.cancel();
     shutdown_ssl_socket(this, out_socket);
     
-    if(!pipeline_call && pipeline_service){
-        pipeline_service->session_destroy_in_pipeline(*this);
+    if(!pipeline_call && pipeline_client_service){
+        pipeline_client_service->session_destroy_in_pipeline(*this);
     }
 }

@@ -68,10 +68,12 @@ void ClientSession::start() {
 }
 
 void ClientSession::in_async_read() {
-    if(pipeline_service && status == FORWARD){
+    if(pipeline_client_service && status == FORWARD){
         if(!pre_call_ack_func()){
+            _log_with_endpoint(in_endpoint, "Cannot ClientSession::in_async_read ! Is waiting for ack");
             return;
         }
+        _log_with_endpoint(in_endpoint, "Permit to ClientSession::in_async_read! ack:" + to_string(pipeline_ack_counter));
     }
 
     auto self = shared_from_this();
@@ -98,8 +100,8 @@ void ClientSession::in_async_write(const string &data) {
             return;
         }
 
-        if(pipeline_service && status == FORWARD){
-            pipeline_service->session_async_send_to_pipeline(*this, PipelineRequest::ACK, "", [this, self](const boost::system::error_code error) {
+        if(pipeline_client_service && status == FORWARD){
+            pipeline_client_service->session_async_send_to_pipeline(*this, PipelineRequest::ACK, "", [this, self](const boost::system::error_code error) {
                 if (error) {
                     output_debug_info_ec(error);
                     destroy();
@@ -115,7 +117,7 @@ void ClientSession::in_async_write(const string &data) {
 }
 
 void ClientSession::out_async_read() {
-    if(!pipeline_service){
+    if(!pipeline_client_service){
         auto self = shared_from_this();
         out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
@@ -130,8 +132,8 @@ void ClientSession::out_async_read() {
 
 void ClientSession::out_async_write(const string &data) {
     auto self = shared_from_this();
-    if(pipeline_service){
-        pipeline_service->session_async_send_to_pipeline(*this, PipelineRequest::DATA, data, [this, self](const boost::system::error_code error) {
+    if(pipeline_client_service){
+        pipeline_client_service->session_async_send_to_pipeline(*this, PipelineRequest::DATA, data, [this, self](const boost::system::error_code error) {
             if (error) {
                 output_debug_info_ec(error);
                 destroy();
@@ -306,7 +308,7 @@ void ClientSession::request_remote(){
         out_async_write(out_write_buf);
     };
 
-    if(pipeline_service){
+    if(pipeline_client_service){
         cb();
     }else{  
         connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, in_endpoint,cb);
@@ -397,7 +399,7 @@ void ClientSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    _log_with_endpoint(in_endpoint, " client session: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(in_endpoint, " client session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
     if (in_socket.is_open()) {
@@ -412,7 +414,7 @@ void ClientSession::destroy(bool pipeline_call /*= false*/) {
 
     shutdown_ssl_socket(this, out_socket);
 
-    if(!pipeline_call && pipeline_service){
-        pipeline_service->session_destroy_in_pipeline(*this);
+    if(!pipeline_call && pipeline_client_service){
+        pipeline_client_service->session_destroy_in_pipeline(*this);
     }
 }

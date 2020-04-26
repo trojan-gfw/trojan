@@ -93,7 +93,7 @@ void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& ses
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
-    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " send to server cmd: " +  PipelineRequest::get_cmd_string(cmd) + " session_id: " + to_string(session.session_id) + " data length:" + to_string(send_data.length()));
+    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " session_id: " + to_string(session.session_id) + " --> send to server cmd: " +  PipelineRequest::get_cmd_string(cmd) + " data length:" + to_string(send_data.length()));
     async_send_data(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler);
 }
 
@@ -152,7 +152,7 @@ void Pipeline::out_async_recv(){
                     return;
                 }
 
-                _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " recv from server cmd: " + req.get_cmd_string() + " session_id: " + to_string(req.session_id) + " data length:" + to_string(req.packet_data.length()));
+                _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " session_id: " + to_string(req.session_id) + " <-- recv from server cmd: " + req.get_cmd_string() + " data length:" + to_string(req.packet_data.length()));
                 
                 bool found = false;
                 auto it = sessions.begin();
@@ -188,7 +188,7 @@ void Pipeline::out_async_recv(){
                 }
                 
                 if(!found){
-                    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " cannot find session:" + to_string(req.session_id) + " current sessions:" + to_string(sessions.size()));
+                    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " cannot find session_id:" + to_string(req.session_id) + " current sessions:" + to_string(sessions.size()));
                 }
             }            
 

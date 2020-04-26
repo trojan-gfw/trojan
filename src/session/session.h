@@ -50,7 +50,7 @@ protected:
     
     boost::asio::ip::udp::socket udp_socket;
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
-    Service* pipeline_service;
+    Service* pipeline_client_service;
     bool is_udp_forward_session;
     int pipeline_ack_counter;
     bool pipeline_wait_for_ack;
@@ -66,7 +66,7 @@ public:
 
     uint32_t session_id;
     inline void set_use_pipeline(Service* service, bool is_udp_forward) { 
-        pipeline_service = service; 
+        pipeline_client_service = service; 
         is_udp_forward_session = is_udp_forward;
     };
     inline bool is_udp_forward()const { return is_udp_forward_session; }
@@ -81,6 +81,7 @@ public:
             }
             pipeline_ack_counter--;
         }
+        pipeline_wait_for_ack = false;
         pipeline_first_call_ack = false;
         return true;
     }
