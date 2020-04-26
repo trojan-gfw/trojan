@@ -21,7 +21,7 @@
 #define _PIPELINE_H_
 
 #include <memory>
-#include <deque>
+#include <list>
 #include <functional>
 #include <time.h>
 #include <boost/asio/io_context.hpp>
