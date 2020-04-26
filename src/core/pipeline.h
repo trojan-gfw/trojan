@@ -21,6 +21,7 @@
 #define _PIPELINE_H_
 
 #include <memory>
+#include <deque>
 #include <functional>
 #include <time.h>
 #include <boost/asio/io_context.hpp>
@@ -33,6 +34,7 @@
 
 class Pipeline : public std::enable_shared_from_this<Pipeline> {
 private:
+    typedef std::function<void(boost::system::error_code ec)> SentHandler;
     enum {
         MAX_LENGTH = 8192,
         STAT_SENT_DATA_SPEED_INTERVAL = 5
@@ -40,22 +42,28 @@ private:
 
     static uint32_t s_pipeline_id_counter;
 
+    class SendData{
+    public:
+        std::string send_data;
+        SentHandler sent_handler;
+        SendData(std::string data, SentHandler handler):send_data(data),sent_handler(handler){}
+    };
+    std::list<std::shared_ptr<SendData>> sending_data_cache;
     bool destroyed;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     bool connected;
+    bool is_async_sending;
     uint32_t sent_data_length;
     clock_t sent_data_former_time;
     uint32_t sent_data_speed;
     char out_read_buf[MAX_LENGTH];
     std::string out_read_data;
-    std::string cache_out_send_data;
-    std::function<void(boost::system::error_code ec)> cache_out_sent_handler;
     boost::asio::ip::tcp::resolver resolver; 
     std::vector<std::shared_ptr<Session>> sessions;
     uint32_t pipeline_id;
+
     void out_async_recv();
-    void async_send_data(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
-    
+    void out_async_send();
 public:
     Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context);
     void start();
@@ -63,8 +71,8 @@ public:
     const Config& config;
     uint32_t get_sent_data_speed()const{ return sent_data_speed; }
 
-    void session_start(Session& session,  std::function<void(boost::system::error_code ec)> started_handler);
-    void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void session_start(Session& session,  SentHandler started_handler);
+    void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler sent_handler);
     void session_destroyed(Session& session);
 
     inline bool is_connected()const { return connected; }

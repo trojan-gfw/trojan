@@ -31,6 +31,7 @@ Pipeline::Pipeline(const Config& config, boost::asio::io_context& io_context, bo
     destroyed(false),
     out_socket(io_context,ssl_context),
     connected(false),
+    is_async_sending(false),
     sent_data_length(0),
     sent_data_speed(0),
     resolver(io_context),
@@ -46,58 +47,26 @@ void Pipeline::start(){
 
         string data(config.password.cbegin()->first);
         data += "\r\n";
-        data += cache_out_send_data;
+        sending_data_cache.emplace_front(std::make_shared<SendData>(data, [](boost::system::error_code){}));
         
         _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " is going to connect remote server and send password...");
 
-        if(cache_out_send_data.length() == 0){
-            async_send_data(data, [](boost::system::error_code){});
-        }else{
-            async_send_data(data, cache_out_sent_handler);
-            cache_out_send_data = "";
-        }
-
+        out_async_send();
         out_async_recv();
     });
 }
 
-void Pipeline::async_send_data(const std::string& data, function<void(boost::system::error_code ec)> sent_handler){
-    if(!connected){
-        cache_out_send_data += data;
-        cache_out_sent_handler = sent_handler;
-        _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " haven't connected, cache data length:" + to_string(cache_out_send_data.length()));
-    }else{
-        auto self = shared_from_this();
-        auto data_copy = make_shared<string>(data);
-        boost::asio::async_write(out_socket, boost::asio::buffer(*data_copy), [this, self, data_copy, sent_handler](const boost::system::error_code error, size_t) {
-            if (error) {
-                output_debug_info_ec(error);
-                destroy();
-            }else{
-                auto current_time = time(NULL);
-                if(current_time - sent_data_former_time > STAT_SENT_DATA_SPEED_INTERVAL){
-                    sent_data_speed = sent_data_length / (current_time - sent_data_former_time);
-                    sent_data_former_time = current_time;
-                    sent_data_length = 0;
-                }
-                sent_data_length += data_copy->length();
-            }
-              
-            sent_handler(error);
-        });
-    }    
-}
-
-void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, function<void(boost::system::error_code ec)> sent_handler){
+void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler sent_handler){
     if(destroyed){
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
     _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " session_id: " + to_string(session.session_id) + " --> send to server cmd: " +  PipelineRequest::get_cmd_string(cmd) + " data length:" + to_string(send_data.length()));
-    async_send_data(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler);
+    sending_data_cache.emplace_back(std::make_shared<SendData>(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler));
+    out_async_send();
 }
 
-void Pipeline::session_start(Session& session, function<void(boost::system::error_code ec)> started_handler){
+void Pipeline::session_start(Session& session, SentHandler started_handler){
     sessions.emplace_back(session.shared_from_this());
     session_async_send_cmd(PipelineRequest::CONNECT, session, "", started_handler);
 }
@@ -128,6 +97,40 @@ bool Pipeline::is_in_pipeline(Session& session){
     }
 
     return false;
+}
+
+void Pipeline::out_async_send(){
+    if(sending_data_cache.empty() || !is_connected() || is_async_sending){
+        return;
+    }
+
+    is_async_sending = true;
+
+    auto sending_data = sending_data_cache.front();
+    auto self = shared_from_this();
+    boost::asio::async_write(out_socket, boost::asio::buffer(sending_data->send_data), [this, self, sending_data](const boost::system::error_code error, size_t) {
+
+        is_async_sending = false;
+
+        if (error) {
+            output_debug_info_ec(error);
+            destroy();
+        }else{
+            auto current_time = time(NULL);
+            if(current_time - sent_data_former_time > STAT_SENT_DATA_SPEED_INTERVAL){
+                sent_data_speed = sent_data_length / (current_time - sent_data_former_time);
+                sent_data_former_time = current_time;
+                sent_data_length = 0;
+            }
+            sent_data_length += sending_data->send_data.length();
+        }
+
+        sending_data->sent_handler(error);
+
+        out_async_send();
+    });
+
+    sending_data_cache.pop_front();
 }
 
 void Pipeline::out_async_recv(){

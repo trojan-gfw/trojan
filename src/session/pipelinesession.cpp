@@ -116,7 +116,7 @@ void PipelineSession::in_recv(const string &data) {
 void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler){
     auto found = find_and_process_session(session.session_id, [&](SessionsList::iterator&){
 
-        _log_with_endpoint(in_endpoint, "PipelineSession session_id: " + to_string(session.session_id) + " <-- send cmd:" + PipelineRequest::get_cmd_string(cmd) + " length:" + to_string(session_data.length()));
+        _log_with_endpoint(in_endpoint, "PipelineSession session_id: " + to_string(session.session_id) + " <-- send cmd: " + PipelineRequest::get_cmd_string(cmd) + " length:" + to_string(session_data.length()));
 
         auto data = PipelineRequest::generate(cmd, session.session_id, session_data);
         auto self = shared_from_this();
@@ -167,7 +167,7 @@ void PipelineSession::process_streaming_data(){
             return;
         }
 
-        _log_with_endpoint(in_endpoint, "PipelineSession session_id:" + to_string(req.session_id) + " --> recv cmd: " + req.get_cmd_string() + " length:" + to_string(req.packet_data.length()));
+        _log_with_endpoint(in_endpoint, "PipelineSession session_id: " + to_string(req.session_id) + " --> recv cmd: " + req.get_cmd_string() + " length:" + to_string(req.packet_data.length()));
 
         if(req.command == PipelineRequest::CONNECT){
             find_and_process_session(req.session_id, [this](SessionsList::iterator& it){
