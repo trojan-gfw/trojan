@@ -33,14 +33,8 @@
 
 
 class Pipeline : public std::enable_shared_from_this<Pipeline> {
-private:
-    typedef std::function<void(boost::system::error_code ec)> SentHandler;
-    enum {
-        MAX_LENGTH = 8192,
-        STAT_SENT_DATA_SPEED_INTERVAL = 5
-    };
-
-    static uint32_t s_pipeline_id_counter;
+public:
+    typedef std::function<void(const boost::system::error_code ec)> SentHandler;
 
     class SendData{
     public:
@@ -48,6 +42,15 @@ private:
         SentHandler sent_handler;
         SendData(std::string data, SentHandler handler):send_data(data),sent_handler(handler){}
     };
+
+private:
+    enum {
+        MAX_LENGTH = 8192,
+        STAT_SENT_DATA_SPEED_INTERVAL = 5
+    };
+
+    static uint32_t s_pipeline_id_counter;   
+
     std::list<std::shared_ptr<SendData>> sending_data_cache;
     bool destroyed;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;

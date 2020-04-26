@@ -20,12 +20,14 @@
 #ifndef _PIPELINEESSION_H_
 #define _PIPELINEESSION_H_
 
+#include <list>
+#include <boost/asio/ssl.hpp>
+
 #include "session.h"
 #include "serversession.h"
 #include "proto/pipelinerequest.h"
-#include <list>
-#include <boost/asio/ssl.hpp>
 #include "core/authenticator.h"
+#include "core/pipeline.h"
 
 class ServerSession;
 class PipelineSession : public Session {
@@ -41,12 +43,15 @@ class PipelineSession : public Session {
     Authenticator *auth;
     std::string auth_password;
     const std::string &plain_http_response;
-
+    
     SessionsList sessions;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket> live_socket;
 
     boost::asio::steady_timer gc_timer;
     std::string in_recv_streaming_data;
+
+    std::list<std::shared_ptr<Pipeline::SendData>> sending_data_cache;
+    bool is_async_sending;
     
     boost::asio::io_context& io_context;
     boost::asio::ssl::context& ssl_context;
@@ -55,8 +60,10 @@ class PipelineSession : public Session {
     void process_streaming_data();
 
     void in_async_read();
+    void in_async_send();
+
     void in_recv(const std::string& data);
-    void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler);
+    void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler);
     bool find_and_process_session(uint32_t session_id, std::function<void(SessionsList::iterator&)> processor);
 public:
     PipelineSession(const Config &config, boost::asio::io_context &io_context, 
@@ -66,8 +73,8 @@ public:
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
 
-    void session_write_ack(ServerSession& session,std::function<void()> sent_handler);
-    void session_write_data(ServerSession& session, const std::string& session_data, std::function<void()> sent_handler);
+    void session_write_ack(ServerSession& session, Pipeline::SentHandler sent_handler);
+    void session_write_data(ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler);
     void remove_session_after_destroy(ServerSession& session);
 };
 

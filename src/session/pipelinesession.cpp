@@ -36,6 +36,7 @@ PipelineSession::PipelineSession(const Config &config, boost::asio::io_context &
     plain_http_response(plain_http_response),
     live_socket(io_context, ssl_context),
     gc_timer(io_context),
+    is_async_sending(false),
     io_context(io_context),
     ssl_context(ssl_context){
 }
@@ -72,6 +73,32 @@ void PipelineSession::start(){
         }
         in_async_read();
     });
+}
+
+void PipelineSession::in_async_send(){
+    if(sending_data_cache.empty() || is_async_sending){
+        return;
+    }
+
+    is_async_sending = true;
+
+    auto sending_data = sending_data_cache.front();
+    auto self = shared_from_this();
+    boost::asio::async_write(live_socket, boost::asio::buffer(sending_data->send_data), [this, self, sending_data](const boost::system::error_code error, size_t) {
+
+        is_async_sending = false;
+
+        if (error) {
+            output_debug_info_ec(error);
+            destroy();
+            return;
+        }
+
+        sending_data->sent_handler(error);
+        in_async_send();
+    });
+
+    sending_data_cache.pop_front();
 }
 
 void PipelineSession::in_async_read(){
@@ -113,23 +140,11 @@ void PipelineSession::in_recv(const string &data) {
     }
 }
 
-void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, std::function<void()> sent_handler){
+void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler){
     auto found = find_and_process_session(session.session_id, [&](SessionsList::iterator&){
-
         _log_with_endpoint(in_endpoint, "PipelineSession session_id: " + to_string(session.session_id) + " <-- send cmd: " + PipelineRequest::get_cmd_string(cmd) + " length:" + to_string(session_data.length()));
-
-        auto data = PipelineRequest::generate(cmd, session.session_id, session_data);
-        auto self = shared_from_this();
-        auto data_copy = make_shared<string>(data);
-        boost::asio::async_write(live_socket, boost::asio::buffer(*data_copy), [this, self, data_copy, sent_handler](const boost::system::error_code error, size_t) {
-            if (error) {
-                output_debug_info_ec(error);
-                destroy();
-                return;
-            }
-
-            sent_handler();
-        });
+        sending_data_cache.emplace_back(make_shared<Pipeline::SendData>(PipelineRequest::generate(cmd, session.session_id, session_data), sent_handler));
+        in_async_send();
     });
 
     if(!found){
@@ -220,11 +235,11 @@ void PipelineSession::process_streaming_data(){
     in_async_read();
 }
 
-void PipelineSession::session_write_ack(ServerSession& session,std::function<void()> sent_handler){
+void PipelineSession::session_write_ack(ServerSession& session, Pipeline::SentHandler sent_handler){
     in_send(PipelineRequest::ACK, session, "", sent_handler);
 }
 
-void PipelineSession::session_write_data(ServerSession& session, const std::string& session_data, std::function<void()> sent_handler){
+void PipelineSession::session_write_data(ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler){
     in_send(PipelineRequest::DATA, session, session_data, sent_handler);
 }
 
@@ -242,7 +257,7 @@ void PipelineSession::timer_async_wait(){
 void PipelineSession::remove_session_after_destroy(ServerSession& session){
     if(status != DESTROY){
         find_and_process_session(session.session_id, [this, &session](SessionsList::iterator& it){
-            in_send(PipelineRequest::CLOSE, session, "",[](){});
+            in_send(PipelineRequest::CLOSE, session, "",[](const boost::system::error_code){});
             sessions.erase(it);
             _log_with_endpoint(in_endpoint, "PipelineSession remove session " + to_string(session.session_id) + ", now remain " + to_string(sessions.size()));
         });

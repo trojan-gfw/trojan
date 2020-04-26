@@ -98,7 +98,7 @@ void ServerSession::in_async_write(const string &data) {
     auto self = shared_from_this();
     if(use_pipeline){
         if(!pipeline.expired()){
-            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_data(*this, data, [this, self](){
+            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_data(*this, data, [this, self](const boost::system::error_code){
                 in_sent();
             });            
         }else{
@@ -149,7 +149,7 @@ void ServerSession::out_async_write(const string &data) {
         }
         
         if(use_pipeline && !pipeline.expired()){
-            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_ack(*this, [this](){
+            (static_cast<PipelineSession*>(pipeline.lock().get()))->session_write_ack(*this, [this, self](const boost::system::error_code){
                 out_sent();
             });
         }else{
