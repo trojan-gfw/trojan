@@ -46,8 +46,11 @@ UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_conte
 tcp::socket& UDPForwardSession::accept_socket() {
     throw logic_error("accept_socket does not exist in UDPForwardSession");
 }
+void UDPForwardSession::start(){
+    throw logic_error("start does not exist in UDPForwardSession");
+}
 
-void UDPForwardSession::start() {
+void UDPForwardSession::start_udp(const std::string& data) {
     timer_async_wait();
     start_time = time(NULL);
 
@@ -83,9 +86,11 @@ void UDPForwardSession::start() {
     };
 
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, udp_target.first, udp_target.second, false);
+    process(udp_recv_endpoint, data);
+
     _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
 
-    if(pipeline_client_service){
+    if(pipeline_client_service){    
         cb();
     }else{
         auto ssl = out_socket.native_handle();

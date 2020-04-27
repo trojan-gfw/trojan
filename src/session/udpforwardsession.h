@@ -53,6 +53,7 @@ public:
         const boost::asio::ip::udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& targetdst, const UDPWrite &in_write);
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
+    void start_udp(const std::string& data);
     void destroy(bool pipeline_call = false);
     bool process(const boost::asio::ip::udp::endpoint &endpoint, const std::string &data);
     void out_recv(const std::string &data);
