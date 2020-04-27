@@ -36,6 +36,7 @@ private:
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>in_socket;
     boost::asio::ip::tcp::socket out_socket;
     boost::asio::ip::udp::resolver udp_resolver;
+    boost::asio::ip::udp::endpoint out_udp_endpoint;
     Authenticator *auth;
     std::string auth_password;
     const std::string &plain_http_response;

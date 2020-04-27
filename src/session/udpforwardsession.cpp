@@ -57,7 +57,7 @@ void UDPForwardSession::start() {
     };
 
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, udp_target.first, udp_target.second, false);
-    _log_with_endpoint(udp_recv_endpoint, "forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
+    _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " forwarding UDP packets to " + udp_target.first + ':' + to_string(udp_target.second) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
 
     if(pipeline_client_service){
         cb();
@@ -124,7 +124,7 @@ void UDPForwardSession::timer_async_wait(){
     auto self = shared_from_this();
     gc_timer.async_wait([this, self](const boost::system::error_code error) {
         if (!error) {
-            _log_with_endpoint(udp_recv_endpoint, "UDP session timeout");
+            _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " UDP session timeout");
             destroy();
         }
     });
@@ -138,7 +138,7 @@ void UDPForwardSession::in_recv(const string &data) {
     timer_async_wait();
     string packet = UDPPacket::generate(udp_target.first, udp_target.second, data);
     size_t length = data.length();
-    _log_with_endpoint(udp_recv_endpoint, "sent a UDP packet of length " + to_string(length) + " bytes to " + udp_target.first + ':' + to_string(udp_target.second));
+    _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " sent a UDP packet of length " + to_string(length) + " bytes to " + udp_target.first + ':' + to_string(udp_target.second));
     sent_len += length;
     if (status == FORWARD) {
         status = FORWARDING;
@@ -159,13 +159,13 @@ void UDPForwardSession::out_recv(const string &data) {
             bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
             if (!is_packet_valid) {
                 if (udp_data_buf.length() > MAX_LENGTH) {
-                    _log_with_endpoint(udp_recv_endpoint, "UDP packet too long", Log::ERROR);
+                    _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " UDP packet too long", Log::ERROR);
                     destroy();
                     return;
                 }
                 break;
             }
-            _log_with_endpoint(udp_recv_endpoint, "received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
+            _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
             udp_data_buf = udp_data_buf.substr(packet_len);
             recv_len += packet.length;
             in_write(udp_recv_endpoint, udp_target, packet.payload);
@@ -190,7 +190,7 @@ void UDPForwardSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    _log_with_endpoint(udp_recv_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     gc_timer.cancel();
     shutdown_ssl_socket(this, out_socket);

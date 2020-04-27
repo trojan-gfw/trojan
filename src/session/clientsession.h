@@ -38,6 +38,7 @@ protected:
     bool first_packet_recv;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
+    boost::asio::ip::udp::endpoint in_udp_endpoint;
     
     void in_async_write(const std::string &data);
     
