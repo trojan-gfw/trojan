@@ -31,7 +31,7 @@ class Service;
 class Session : public std::enable_shared_from_this<Session> {
     
     // session id counter for pipeline mode
-    static uint32_t s_session_id_counter;
+    static uint16_t s_session_id_counter;
 
 public:
 
@@ -40,7 +40,6 @@ public:
     };
 
 protected:
-    
     
     uint8_t in_read_buf[MAX_BUF_LENGTH];
     uint8_t out_read_buf[MAX_BUF_LENGTH];
@@ -68,7 +67,7 @@ public:
     const Config &config;
     boost::asio::ip::tcp::endpoint in_endpoint;
 
-    uint32_t session_id;
+    uint16_t session_id;
     inline void set_use_pipeline(Service* service, bool is_udp_forward) { 
         pipeline_client_service = service; 
         is_udp_forward_session = is_udp_forward;

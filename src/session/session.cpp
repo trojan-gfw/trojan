@@ -19,7 +19,7 @@
 
 #include "session.h"
 
-uint32_t Session::s_session_id_counter = 0;
+uint16_t Session::s_session_id_counter = 0;
 
 Session::Session(const Config &config, boost::asio::io_context &io_context) : 
  recv_len(0), 

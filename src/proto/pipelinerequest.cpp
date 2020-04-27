@@ -23,18 +23,15 @@
 
 using namespace std;
 
+// please don't return uint16_t for the performance, maybe byte align problem
 static 
-uint32_t parse_uint32(int start_pos, const string& data){
-    return uint32_t(uint8_t(data[0 + start_pos])) << 24 | 
-           uint32_t(uint8_t(data[1 + start_pos])) << 16 | 
-           uint32_t(uint8_t(data[2 + start_pos])) << 8 | 
-           uint32_t(uint8_t(data[3 + start_pos]));
+size_t parse_uint16(int start_pos, const string& data){
+    return size_t(uint8_t(data[0 + start_pos])) << 8 | 
+           size_t(uint8_t(data[1 + start_pos]));
 }
 
 static 
-void generate_uint32(string& data, uint32_t value){
-    data += char(value >> 24);
-    data += char(value >> 16 & 0xff);
+void generate_uint16(string& data, uint16_t value){
     data += char(value >> 8 & 0xff);
     data += char(value & 0xff);
 }
@@ -42,7 +39,7 @@ void generate_uint32(string& data, uint32_t value){
 int PipelineRequest::parse(std::string &data){
     /*
         |-------------------|-----------------------|---------------------|-----------------------|
-        | 1 byte as command | 4 bytes as session id | <4 bytes as length> | <trojan request data> |
+        | 1 byte as command | 2 bytes as session id | <2 bytes as length> | <trojan request data> |
         |-------------------|-----------------------|---------------------|-----------------------|
     */
 
@@ -51,38 +48,34 @@ int PipelineRequest::parse(std::string &data){
     }
 
     uint8_t cmd = data[0];
-    bool compress = (cmd & 0x80) != 0;
-    cmd = cmd & 0x7f;
-
-    if(cmd >= (MAX_COMMANDS)){
+    if(cmd >= MAX_COMMANDS){
         return -2;
     }
 
     command = (Command) cmd;
 
     if(command == DATA){
-        const size_t DATA_CMD_HEADER_LENGTH = 9;
+
+        const size_t DATA_CMD_HEADER_LENGTH = 5;
+
         if(data.length() < DATA_CMD_HEADER_LENGTH){
             return -1;
         }
 
-        uint32_t trojan_request_length = parse_uint32(5, data);
+        size_t trojan_request_length = parse_uint16(3, data);
         if(data.length() < DATA_CMD_HEADER_LENGTH + trojan_request_length){
             return -1;
         }
 
-        session_id = parse_uint32(1, data);       
+        session_id = parse_uint16(1, data);       
         packet_data = data.substr(DATA_CMD_HEADER_LENGTH, trojan_request_length);
-        if(compress){
-            // TODO decompress
-        }
         data = data.substr(DATA_CMD_HEADER_LENGTH + trojan_request_length);
     }else{
-        const size_t CMD_HEADER_LENGTH = 5;
+        const size_t CMD_HEADER_LENGTH = 3;
         if(data.length() < CMD_HEADER_LENGTH){
             return -1;
         }
-        session_id = parse_uint32(1, data);
+        session_id = parse_uint16(1, data);
         data = data.substr(CMD_HEADER_LENGTH);
         // no packet data;
     }
@@ -90,16 +83,22 @@ int PipelineRequest::parse(std::string &data){
     return packet_data.length();
 }
 
-std::string PipelineRequest::generate(enum Command cmd, uint32_t session_id, const std::string& data){
+std::string PipelineRequest::generate(enum Command cmd, uint16_t session_id, const std::string& data){
     
-    // TODO compress
+    if(data.length() >= MAX_PACK_LENGTH){
+        throw logic_error("PipelineRequest::generate data.length() " + to_string(data.length()) + " > MAX_PACK_LENGTH " + to_string(MAX_PACK_LENGTH));
+    }
+
+    if(session_id > numeric_limits<uint16_t>::max()){
+        throw logic_error("PipelineRequest::generate session_id " + to_string(session_id) + " > numeric_limits<uint16_t>::max() ");
+    }
 
     string ret_data;
     ret_data += char(uint8_t(cmd));
-    generate_uint32(ret_data, session_id);
+    generate_uint16(ret_data, session_id);
 
     if(cmd == DATA){
-        generate_uint32(ret_data, data.size());
+        generate_uint16(ret_data, data.length());
         ret_data += data;
     }    
 
