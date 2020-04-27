@@ -35,8 +35,11 @@ UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_conte
     in_write(in_write),
     out_socket(io_context, ssl_context),
     gc_timer(io_context),
-    udp_target(targetdst) {
+    udp_target(targetdst) ,
+    udp_target_socket(io_context){
+
     udp_recv_endpoint = endpoint;
+    udp_target_endpoint = udp::endpoint(boost::asio::ip::make_address(udp_target.first), udp_target.second);    
     in_endpoint = tcp::endpoint(endpoint.address(), endpoint.port());
 }
 
@@ -50,6 +53,29 @@ void UDPForwardSession::start() {
 
     auto self = shared_from_this();
     auto cb = [this, self](){
+        if(config.run_type == Config::NAT){
+            udp_target_socket.open(udp_target_endpoint.protocol());
+            bool succ = true;
+            int opt = 1;
+            int fd = udp_target_socket.native_handle();
+            int sol = udp_target_endpoint.protocol().family() == boost::asio::ip::tcp::v6().family() ? SOL_IPV6 : SOL_IP;
+            if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
+                _log_with_endpoint(udp_target_endpoint, "[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
+                succ = false;
+            }
+            
+            if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+                _log_with_endpoint(udp_target_endpoint, "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
+                succ = false;
+            }            
+            if(succ){
+                udp_target_socket.bind(udp_target_endpoint);   
+            }else{
+                destroy();
+                return;
+            }
+        }
+        
         status = FORWARDING;
         out_async_read();
         out_async_write(out_write_buf);
@@ -168,7 +194,20 @@ void UDPForwardSession::out_recv(const string &data) {
             _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " received a UDP packet of length " + to_string(packet.length) + " bytes from " + packet.address.address + ':' + to_string(packet.address.port));
             udp_data_buf = udp_data_buf.substr(packet_len);
             recv_len += packet.length;
-            in_write(udp_recv_endpoint, udp_target, packet.payload);
+
+            if(config.run_type == Config::NAT){
+                boost::system::error_code ec;
+                udp_target_socket.send_to(boost::asio::buffer(packet.payload), udp_recv_endpoint, 0 , ec);
+                if (ec == boost::asio::error::no_permission) {
+                    _log_with_endpoint(udp_recv_endpoint, "[udp] dropped a packet due to firewall policy or rate limit");
+                } else if (ec) {
+                    output_debug_info_ec(ec);
+                    destroy();
+                    return;
+                } 
+            }else{
+                in_write(udp_recv_endpoint, packet.payload);
+            }            
         }
         out_async_read();
     }
@@ -193,6 +232,12 @@ void UDPForwardSession::destroy(bool pipeline_call /*= false*/) {
     _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     gc_timer.cancel();
+
+    if(udp_target_socket.is_open()){
+        udp_target_socket.cancel();
+        udp_target_socket.close();
+    }
+
     shutdown_ssl_socket(this, out_socket);
     
     if(!pipeline_call && pipeline_client_service){

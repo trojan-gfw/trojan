@@ -43,43 +43,6 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-#ifdef ENABLE_REUSE_PORT
-typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
-#endif // ENABLE_REUSE_PORT
-
-// copied from shadowsocks-libe udprelay.h
-#ifndef IP_TRANSPARENT
-#define IP_TRANSPARENT       19
-#endif
-
-#ifndef IP_RECVORIGDSTADDR
-#ifdef  IP_ORIGDSTADDR
-#define IP_RECVORIGDSTADDR   IP_ORIGDSTADDR
-#else
-#define IP_RECVORIGDSTADDR   20
-#endif
-#endif
-
-#ifndef IPV6_RECVORIGDSTADDR
-#ifdef  IPV6_ORIGDSTADDR
-#define IPV6_RECVORIGDSTADDR   IPV6_ORIGDSTADDR
-#else
-#define IPV6_RECVORIGDSTADDR   74
-#endif
-#endif
-
-#ifndef SOL_IP
-#define SOL_IP  IPPROTO_IP
-#endif
-
-#ifndef SOL_IPV6
-#define SOL_IPV6  IPPROTO_IPV6
-#endif
-
-#define PACKET_HEADER_SIZE (1 + 28 + 2 + 64)
-#define DEFAULT_PACKET_SIZE 1397 // 1492 - PACKET_HEADER_SIZE = 1397, the default MTU for UDP relay
-
-
 // copied from shadowsocks-libev udpreplay.c
 static int get_dstaddr(struct msghdr *msg, struct sockaddr_storage *dstaddr)
 {
@@ -514,8 +477,7 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         }
 
         if(!pipeline){
-            _log_with_date_time("pipeline fatal logic!", Log::FATAL);
-            return;
+            throw logic_error("pipeline fatal logic!");
         }
 
         session.get()->set_use_pipeline(this, is_udp_forward);
@@ -654,43 +616,19 @@ void Service::udp_async_read() {
             
             _log_with_endpoint(udp_recv_endpoint, "new UDP session");
             auto session = make_shared<UDPForwardSession>(config, io_context, ssl_context, udp_recv_endpoint, targetdst, 
-             [this](const udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& target, const string &data) {
-                boost::system::error_code ec;
-
+             [this](const udp::endpoint &endpoint, const string &data) {
                 if(config.run_type == Config::NAT){
-                    auto target_endpoint = udp::endpoint(boost::asio::ip::make_address(target.first), target.second);
-                    auto new_udp_socket = udp::socket(io_context);
-                    new_udp_socket.open(target_endpoint.protocol());
-
-                    bool succ = true;
-                    int opt = 1;
-                    int fd = new_udp_socket.native_handle();
-                    int sol = endpoint.protocol().family() == boost::asio::ip::tcp::v6().family() ? SOL_IPV6 : SOL_IP;
-                    if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
-                        _log_with_endpoint(target_endpoint, "[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
-                        succ = false;
-                    }
-                    
-                    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-                        _log_with_endpoint(target_endpoint, "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
-                        succ = false;
-                    }
-                    
-                    if(succ){
-                        new_udp_socket.bind(target_endpoint);
-                        new_udp_socket.send_to(boost::asio::buffer(data), endpoint,0,ec);
-                    }                   
-                    
-                    new_udp_socket.close(ec);
+                    throw logic_error("[udp] logic fatal error, cannot call in_write function for NAT type!");
                 }else{
+                    boost::system::error_code ec;
                     udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
+                        
+                    if (ec == boost::asio::error::no_permission) {
+                        _log_with_endpoint(udp_recv_endpoint, "[udp] dropped a packet due to firewall policy or rate limit");
+                    } else if (ec) {
+                        throw runtime_error(ec.message());
+                    }             
                 }
-
-                if (ec == boost::asio::error::no_permission) {
-                    _log_with_endpoint(udp_recv_endpoint, "dropped a UDP packet due to firewall policy or rate limit");
-                } else if (ec) {
-                    throw runtime_error(ec.message());
-                }             
             });
 
             start_session(session, true, [this, session, data](boost::system::error_code ec){

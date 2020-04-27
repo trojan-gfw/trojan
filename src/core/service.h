@@ -31,6 +31,43 @@
 #include "authenticator.h"
 #include "session/udpforwardsession.h"
 
+
+#ifdef ENABLE_REUSE_PORT
+typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
+#endif // ENABLE_REUSE_PORT
+
+// copied from shadowsocks-libe udprelay.h
+#ifndef IP_TRANSPARENT
+#define IP_TRANSPARENT       19
+#endif
+
+#ifndef IP_RECVORIGDSTADDR
+#ifdef  IP_ORIGDSTADDR
+#define IP_RECVORIGDSTADDR   IP_ORIGDSTADDR
+#else
+#define IP_RECVORIGDSTADDR   20
+#endif
+#endif
+
+#ifndef IPV6_RECVORIGDSTADDR
+#ifdef  IPV6_ORIGDSTADDR
+#define IPV6_RECVORIGDSTADDR   IPV6_ORIGDSTADDR
+#else
+#define IPV6_RECVORIGDSTADDR   74
+#endif
+#endif
+
+#ifndef SOL_IP
+#define SOL_IP  IPPROTO_IP
+#endif
+
+#ifndef SOL_IPV6
+#define SOL_IPV6  IPPROTO_IPV6
+#endif
+
+#define PACKET_HEADER_SIZE (1 + 28 + 2 + 64)
+#define DEFAULT_PACKET_SIZE 1397 // 1492 - PACKET_HEADER_SIZE = 1397, the default MTU for UDP relay
+
 class Service {
 private:
     typedef std::list<std::weak_ptr<Pipeline>> PipelineList;
