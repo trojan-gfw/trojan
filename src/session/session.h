@@ -33,14 +33,18 @@ class Session : public std::enable_shared_from_this<Session> {
     // session id counter for pipeline mode
     static uint32_t s_session_id_counter;
 
-protected:
+public:
+
     enum {
-        MAX_LENGTH = 8192,
+        MAX_BUF_LENGTH = 8192,
     };
+
+protected:
     
-    uint8_t in_read_buf[MAX_LENGTH];
-    uint8_t out_read_buf[MAX_LENGTH];
-    uint8_t udp_read_buf[MAX_LENGTH];
+    
+    uint8_t in_read_buf[MAX_BUF_LENGTH];
+    uint8_t out_read_buf[MAX_BUF_LENGTH];
+    uint8_t udp_read_buf[MAX_BUF_LENGTH];
     uint64_t recv_len;
     uint64_t sent_len;
     time_t start_time;

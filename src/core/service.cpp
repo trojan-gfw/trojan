@@ -648,7 +648,7 @@ void Service::udp_async_read() {
     if(config.run_type == Config::NAT){
         udp_socket.async_receive_from(boost::asio::null_buffers(), udp_recv_endpoint, cb);
     }else{
-        udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, cb);
+        udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, Session::MAX_BUF_LENGTH), udp_recv_endpoint, cb);
     }    
 }
 

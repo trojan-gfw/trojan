@@ -77,7 +77,7 @@ void ClientSession::in_async_read() {
     }
 
     auto self = shared_from_this();
-    in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
+    in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_BUF_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error == boost::asio::error::operation_aborted) {
             return;
         }
@@ -119,7 +119,7 @@ void ClientSession::in_async_write(const string &data) {
 void ClientSession::out_async_read() {
     if(!pipeline_client_service){
         auto self = shared_from_this();
-        out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
+        out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_BUF_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
                 output_debug_info_ec(error);
                 destroy();
@@ -157,7 +157,7 @@ void ClientSession::out_async_write(const string &data) {
 
 void ClientSession::udp_async_read() {
     auto self = shared_from_this();
-    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_LENGTH), udp_recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
+    udp_socket.async_receive_from(boost::asio::buffer(udp_read_buf, MAX_BUF_LENGTH), udp_recv_endpoint, [this, self](const boost::system::error_code error, size_t length) {
         if (error == boost::asio::error::operation_aborted) {
             return;
         }
@@ -369,7 +369,7 @@ void ClientSession::udp_sent() {
         size_t packet_len;
         bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
         if (!is_packet_valid) {
-            if (udp_data_buf.length() > MAX_LENGTH) {
+            if (udp_data_buf.length() > MAX_BUF_LENGTH) {
                 _log_with_endpoint(in_udp_endpoint, "session_id: " + to_string(session_id) + " UDP packet too long", Log::ERROR);
                 destroy();
                 return;

@@ -103,7 +103,7 @@ void PipelineSession::in_async_send(){
 
 void PipelineSession::in_async_read(){
     auto self = shared_from_this();
-    live_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
+    live_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_BUF_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
             output_debug_info_ec(error);
             destroy();

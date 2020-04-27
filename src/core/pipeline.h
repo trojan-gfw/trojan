@@ -45,7 +45,7 @@ public:
 
 private:
     enum {
-        MAX_LENGTH = 8192,
+        MAX_BUF_LENGTH = 8192,
         STAT_SENT_DATA_SPEED_INTERVAL = 5
     };
 
@@ -59,7 +59,7 @@ private:
     uint32_t sent_data_length;
     clock_t sent_data_former_time;
     uint32_t sent_data_speed;
-    char out_read_buf[MAX_LENGTH];
+    char out_read_buf[MAX_BUF_LENGTH];
     std::string out_read_data;
     boost::asio::ip::tcp::resolver resolver; 
     std::vector<std::shared_ptr<Session>> sessions;

@@ -118,7 +118,7 @@ bool UDPForwardSession::process(const udp::endpoint &endpoint, const string &dat
 void UDPForwardSession::out_async_read() {
     if(!pipeline_client_service){
         auto self = shared_from_this();
-        out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
+        out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_BUF_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
                 destroy();
                 return;
@@ -189,7 +189,7 @@ void UDPForwardSession::out_recv(const string &data) {
             size_t packet_len;
             bool is_packet_valid = packet.parse(udp_data_buf, packet_len);
             if (!is_packet_valid) {
-                if (udp_data_buf.length() > MAX_LENGTH) {
+                if (udp_data_buf.length() > MAX_BUF_LENGTH) {
                     _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " UDP packet too long", Log::ERROR);
                     destroy();
                     return;

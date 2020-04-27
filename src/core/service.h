@@ -71,9 +71,7 @@ typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> re
 class Service {
 private:
     typedef std::list<std::weak_ptr<Pipeline>> PipelineList;
-    enum {
-        MAX_LENGTH = 8192
-    };
+    
     const Config &config;
     boost::asio::io_context io_context;
     boost::asio::ip::tcp::acceptor socket_acceptor;
@@ -82,7 +80,7 @@ private:
     std::string plain_http_response;
     boost::asio::ip::udp::socket udp_socket;
     std::list<std::weak_ptr<UDPForwardSession> > udp_sessions;
-    uint8_t udp_read_buf[MAX_LENGTH];
+    uint8_t udp_read_buf[Session::MAX_BUF_LENGTH];
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
     void async_accept();
     void udp_async_read();
