@@ -136,7 +136,8 @@ Service::Service(Config &config, bool test) :
     socket_acceptor(io_context),
     ssl_context(context::sslv23),
     auth(nullptr),
-    udp_socket(io_context) {
+    udp_socket(io_context),
+    pipeline_select_idx(0) {
 #ifndef ENABLE_NAT
     if (config.run_type == Config::NAT) {
         throw runtime_error("NAT is not supported");
@@ -455,34 +456,36 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         
         prepare_pipelines();
 
-        // find the connected pipeline which has sent the least data 
-        Pipeline* pipeline = nullptr;
-        auto it = pipelines.begin();
-        uint32_t send_least_speed = numeric_limits<uint32_t>::max();
-        while(it != pipelines.end()){
-            if(it->expired()){
-                it = pipelines.erase(it);
-            }else{
-                auto p = it->lock().get();
-                if(p->is_connected() && send_least_speed > p->get_sent_data_speed()){
-                    send_least_speed = p->get_sent_data_speed();
-                    pipeline = p;
-                }
-                ++it;
-            }
+        if(pipelines.empty()){
+            throw logic_error("pipeline is empty after preparing!");
         }
 
-        if(!pipeline && !pipelines.empty()){
-            pipeline = pipelines.begin()->lock().get();
-        }
+        auto pipeline = shared_ptr<Pipeline>(nullptr);
+        auto it = pipelines.begin();
+        if(pipeline_select_idx >= pipelines.size()){
+            pipeline_select_idx = 0;
+            pipeline = it->lock();
+        }else{            
+            size_t idx = 0;            
+            while(it != pipelines.end()){
+                if(idx == pipeline_select_idx){
+                    pipeline = it->lock();
+                    break;
+                }
+                ++it;
+                ++idx;          
+            }
+        }        
+
+        pipeline_select_idx++;
 
         if(!pipeline){
             throw logic_error("pipeline fatal logic!");
         }
 
-        session.get()->set_use_pipeline(this, is_udp_forward);
-        pipeline->session_start(*(session.get()), started_handler);
         _log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session_id:" + to_string(session->session_id), Log::INFO);
+        session.get()->set_use_pipeline(this, is_udp_forward);
+        pipeline->session_start(*(session.get()), started_handler);        
     }else{
         started_handler(boost::system::error_code());
     }

@@ -86,6 +86,7 @@ private:
     void udp_async_read();
 
     PipelineList pipelines;
+    size_t pipeline_select_idx;
     void prepare_pipelines();
     void start_session(std::shared_ptr<Session> session, bool is_udp_forward, std::function<void(boost::system::error_code ec)> started_handler);
 public:

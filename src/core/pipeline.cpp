@@ -32,11 +32,8 @@ Pipeline::Pipeline(const Config& config, boost::asio::io_context& io_context, bo
     out_socket(io_context,ssl_context),
     connected(false),
     is_async_sending(false),
-    sent_data_length(0),
-    sent_data_speed(0),
     resolver(io_context),
     config(config){
-    sent_data_former_time = time(NULL);
     pipeline_id = s_pipeline_id_counter++;
 }
 
@@ -115,18 +112,10 @@ void Pipeline::out_async_send(){
         if (error) {
             output_debug_info_ec(error);
             destroy();
-        }else{
-            auto current_time = time(NULL);
-            if(current_time - sent_data_former_time > STAT_SENT_DATA_SPEED_INTERVAL){
-                sent_data_speed = sent_data_length / (current_time - sent_data_former_time);
-                sent_data_former_time = current_time;
-                sent_data_length = 0;
-            }
-            sent_data_length += sending_data->send_data.length();
+            return;
         }
 
         sending_data->sent_handler(error);
-
         out_async_send();
     });
 

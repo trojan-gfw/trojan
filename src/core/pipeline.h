@@ -56,9 +56,6 @@ private:
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     bool connected;
     bool is_async_sending;
-    uint32_t sent_data_length;
-    clock_t sent_data_former_time;
-    uint32_t sent_data_speed;
     char out_read_buf[MAX_BUF_LENGTH];
     std::string out_read_data;
     boost::asio::ip::tcp::resolver resolver; 
@@ -72,7 +69,6 @@ public:
     void start();
     void destroy();
     const Config& config;
-    uint32_t get_sent_data_speed()const{ return sent_data_speed; }
 
     void session_start(Session& session,  SentHandler started_handler);
     void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler sent_handler);
