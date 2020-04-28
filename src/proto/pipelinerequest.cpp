@@ -36,6 +36,22 @@ void generate_uint16(string& data, uint16_t value){
     data += char(value & 0xff);
 }
 
+static 
+uint32_t parse_uint32(int start_pos, const string& data){
+    return uint32_t(uint8_t(data[0 + start_pos])) << 24 | 
+           uint32_t(uint8_t(data[1 + start_pos])) << 16 | 
+           uint32_t(uint8_t(data[2 + start_pos])) << 8 | 
+           uint32_t(uint8_t(data[3 + start_pos]));
+}
+
+static 
+void generate_uint32(string& data, uint32_t value){
+    data += char(value >> 24);
+    data += char(value >> 16 & 0xff);
+    data += char(value >> 8 & 0xff);
+    data += char(value & 0xff);
+}
+
 int PipelineRequest::parse(std::string &data){
     /*
         |-------------------|-----------------------|---------------------|-----------------------|
@@ -56,13 +72,13 @@ int PipelineRequest::parse(std::string &data){
 
     if(command == DATA){
 
-        const size_t DATA_CMD_HEADER_LENGTH = 5;
+        const size_t DATA_CMD_HEADER_LENGTH = 7;
 
         if(data.length() < DATA_CMD_HEADER_LENGTH){
             return -1;
         }
 
-        size_t trojan_request_length = parse_uint16(3, data);
+        size_t trojan_request_length = parse_uint32(3, data);
         if(data.length() < DATA_CMD_HEADER_LENGTH + trojan_request_length){
             return -1;
         }
@@ -85,12 +101,8 @@ int PipelineRequest::parse(std::string &data){
 
 std::string PipelineRequest::generate(enum Command cmd, uint16_t session_id, const std::string& data){
     
-    if(data.length() >= MAX_PACK_LENGTH){
-        throw logic_error("PipelineRequest::generate data.length() " + to_string(data.length()) + " > MAX_PACK_LENGTH " + to_string(MAX_PACK_LENGTH));
-    }
-
-    if(session_id > numeric_limits<uint16_t>::max()){
-        throw logic_error("PipelineRequest::generate session_id " + to_string(session_id) + " > numeric_limits<uint16_t>::max() ");
+    if(session_id > MAX_SESSION_ID_LENGTH){
+        throw logic_error("PipelineRequest::generate session_id " + to_string(session_id) + " > numeric_limits<uint16_t>::max() " + to_string(MAX_SESSION_ID_LENGTH));
     }
 
     string ret_data;
@@ -98,7 +110,12 @@ std::string PipelineRequest::generate(enum Command cmd, uint16_t session_id, con
     generate_uint16(ret_data, session_id);
 
     if(cmd == DATA){
-        generate_uint16(ret_data, data.length());
+        auto data_length = data.length();
+        if(data_length >= MAX_PACK_LENGTH){
+            throw logic_error("PipelineRequest::generate data.length() " + to_string(data_length) + " > MAX_PACK_LENGTH " + to_string(MAX_PACK_LENGTH));
+        }
+        
+        generate_uint32(ret_data, data_length);
         ret_data += data;
     }    
 

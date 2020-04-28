@@ -36,7 +36,8 @@ public:
         ACK,
         CLOSE,
         MAX_COMMANDS,
-        MAX_PACK_LENGTH = std::numeric_limits<uint16_t>::max()
+        MAX_PACK_LENGTH = std::numeric_limits<uint32_t>::max(),
+        MAX_SESSION_ID_LENGTH = std::numeric_limits<uint16_t>::max()
     } command;
     int parse(std::string &data);
     inline std::string get_cmd_string() const { return get_cmd_string(command); }
