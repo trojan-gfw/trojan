@@ -34,7 +34,7 @@ private:
         INVALID,
         DESTROY
     } status;
-    bool is_udp;
+    bool is_udp{};
     bool first_packet_recv;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
@@ -53,8 +53,8 @@ private:
     void udp_sent();
 public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
-    boost::asio::ip::tcp::socket& accept_socket();
-    void start();
+    boost::asio::ip::tcp::socket& accept_socket() override;
+    void start() override;
 };
 
 #endif // _CLIENTSESSION_H_
