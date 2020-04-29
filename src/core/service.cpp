@@ -80,7 +80,7 @@ Service::Service(Config &config, bool test) :
     Log::level = config.log_level;
     auto native_context = ssl_context.native_handle();
     ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
-    if (config.ssl.curves != "") {
+    if (!config.ssl.curves.empty()) {
         SSL_CTX_set1_curves_list(native_context, config.ssl.curves.c_str());
     }
     if (config.run_type == Config::SERVER) {
@@ -92,7 +92,7 @@ Service::Service(Config &config, bool test) :
         if (config.ssl.prefer_server_cipher) {
             SSL_CTX_set_options(native_context, SSL_OP_CIPHER_SERVER_PREFERENCE);
         }
-        if (config.ssl.alpn != "") {
+        if (!config.ssl.alpn.empty()) {
             SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {
                 if (SSL_select_next_proto((unsigned char**)out, outlen, (unsigned char*)(((Config*)config)->ssl.alpn.c_str()), ((Config*)config)->ssl.alpn.length(), in, inlen) != OPENSSL_NPN_NEGOTIATED) {
                     return SSL_TLSEXT_ERR_NOACK;
@@ -109,14 +109,14 @@ Service::Service(Config &config, bool test) :
             SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
-        if (config.ssl.plain_http_response != "") {
+        if (!config.ssl.plain_http_response.empty()) {
             ifstream ifs(config.ssl.plain_http_response, ios::binary);
             if (!ifs.is_open()) {
                 throw runtime_error(config.ssl.plain_http_response + ": " + strerror(errno));
             }
             plain_http_response = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
         }
-        if (config.ssl.dhparam == "") {
+        if (config.ssl.dhparam.empty()) {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
         } else {
             ssl_context.use_tmp_dh_file(config.ssl.dhparam);
@@ -129,12 +129,12 @@ Service::Service(Config &config, bool test) :
 #endif // ENABLE_MYSQL
         }
     } else {
-        if (config.ssl.sni == "") {
+        if (config.ssl.sni.empty()) {
             config.ssl.sni = config.remote_addr;
         }
         if (config.ssl.verify) {
             ssl_context.set_verify_mode(verify_peer);
-            if (config.ssl.cert == "") {
+            if (config.ssl.cert.empty()) {
                 ssl_context.set_default_verify_paths();
 #ifdef _WIN32
                 HCERTSTORE h_store = CertOpenSystemStore(0, _T("ROOT"));
@@ -215,7 +215,7 @@ Service::Service(Config &config, bool test) :
         } else {
             ssl_context.set_verify_mode(verify_none);
         }
-        if (config.ssl.alpn != "") {
+        if (!config.ssl.alpn.empty()) {
             SSL_CTX_set_alpn_protos(native_context, (unsigned char*)(config.ssl.alpn.c_str()), config.ssl.alpn.length());
         }
         if (config.ssl.reuse_session) {
@@ -228,10 +228,10 @@ Service::Service(Config &config, bool test) :
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
     }
-    if (config.ssl.cipher != "") {
+    if (!config.ssl.cipher.empty()) {
         SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
     }
-    if (config.ssl.cipher_tls13 != "") {
+    if (!config.ssl.cipher_tls13.empty()) {
 #ifdef ENABLE_TLS13_CIPHERSUITES
         SSL_CTX_set_ciphersuites(native_context, config.ssl.cipher_tls13.c_str());
 #else  // ENABLE_TLS13_CIPHERSUITES

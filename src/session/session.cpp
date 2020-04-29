@@ -26,4 +26,4 @@ Session::Session(const Config &config, boost::asio::io_context &io_context) : co
                                                                               udp_socket(io_context),
                                                                               ssl_shutdown_timer(io_context) {}
 
-Session::~Session() {}
+Session::~Session() = default;
