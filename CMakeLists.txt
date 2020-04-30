@@ -67,7 +67,7 @@ if(ENABLE_MYSQL)
 endif()
 
 option(ENABLE_REDIS "Build with Redis support with HiRedis" ON)
-in(ENABLE_REDIS)
+if(ENABLE_REDIS)
     find_package(Hiredis REQUIRED)
     include_directories(${HIREDIS_INCLUDE_DIR})
     target_link_libraries(trojan ${HIREDIS_LIBRARY})
