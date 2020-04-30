@@ -98,6 +98,9 @@ void Config::populate(const ptree &tree) {
     mysql.database = tree.get("mysql.database", string("trojan"));
     mysql.username = tree.get("mysql.username", string("trojan"));
     mysql.password = tree.get("mysql.password", string());
+    redis.enabled = tree.get("redis.enabled", false);
+    redis.server_addr = tree.get("redis.server_addr", string("127.0.0.1"));
+    redis.server_port = tree.get("redis.server_port", uint16_t(6379));
 }
 
 bool Config::sip003() {

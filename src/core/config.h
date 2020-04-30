@@ -79,6 +79,12 @@ public:
         std::string username;
         std::string password;
     } mysql;
+    class RedisConfig {
+    public:
+        bool enabled;
+        std::string server_addr;
+        uint16_t server_port;
+    } redis;
     void load(const std::string &filename);
     void populate(const std::string &JSON);
     bool sip003();
