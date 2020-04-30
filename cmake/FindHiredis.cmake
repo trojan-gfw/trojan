@@ -46,7 +46,7 @@ else (HIREDIS_FOUND)
   endif (HIREDIS_FIND_REQUIRED)
 endif (HIREDIS_FOUND)
 
-mark_as_advances(
+mark_as_advanced(
   HIREDIS_LIBRARY
   HIREDIS_INCLUDE_DIR
   )
