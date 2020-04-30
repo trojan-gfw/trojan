@@ -29,7 +29,7 @@ add_executable(trojan
     src/session/session.cpp
     src/session/udpforwardsession.cpp
     src/ssl/ssldefaults.cpp
-    src/ssl/sslsession.cpp)
+    src/ssl/sslsession.cpp src/core/RedisHelper.cpp src/core/RedisHelper.h)
 include_directories(src)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -58,7 +58,7 @@ if(OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     endif()
 endif()
 
-option(ENABLE_MYSQL "Build with MySQL support" ON)
+option(ENABLE_MYSQL "Build with MySQL support" OFF)
 if(ENABLE_MYSQL)
     find_package(MySQL REQUIRED)
     include_directories(${MYSQL_INCLUDE_DIR})

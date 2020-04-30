@@ -23,6 +23,9 @@
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
+#ifdef ENABLE_REDIS
+#include "RedisHelper.h"
+#endif // ENABLE_REDIS
 #include "config.h"
 
 class Authenticator {
@@ -30,10 +33,13 @@ private:
 #ifdef ENABLE_MYSQL
     MYSQL con;
 #endif // ENABLE_MYSQL
+#ifdef ENABLE_REDIS
+    RedisHelper* redis = nullptr;
+#endif // ENABLE_REDIS
     enum {
         PASSWORD_LENGTH=56
     };
-    bool is_valid_password(const std::string &password);
+    static bool is_valid_password(const std::string &password);
 public:
     Authenticator(const Config &config);
     bool auth(const std::string &password);
