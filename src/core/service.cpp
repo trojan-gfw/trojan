@@ -127,6 +127,12 @@ Service::Service(Config &config, bool test) :
 #else // ENABLE_MYSQL
             Log::log_with_date_time("MySQL is not supported", Log::WARN);
 #endif // ENABLE_MYSQL
+        } else if (config.redis.enabled) {
+#ifdef ENABLE_REDIS
+            auth = new Authenticator(config);
+#else
+            Log::log_with_date_time("Redis is not supported", Log::WARN);
+#endif
         }
     } else {
         if (config.ssl.sni == "") {

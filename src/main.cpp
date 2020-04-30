@@ -95,7 +95,9 @@ int main(int argc, const char *argv[]) {
             Log::log("[Disabled] MySQL Support", Log::FATAL);
 #endif // ENABLE_MYSQL
 #ifdef ENABLE_REDIS
-            Log::log("[Enabled] Redis Support");
+            Log::log(" [Enabled] Redis Support");
+#else
+            Log::log("[Disabled] Redis Support");
 #endif
 #ifdef TCP_FASTOPEN
             Log::log(" [Enabled] TCP_FASTOPEN Support", Log::FATAL);
