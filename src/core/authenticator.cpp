@@ -138,7 +138,7 @@ bool Authenticator::is_valid_password(const std::string &password) {
 }
 
 Authenticator::~Authenticator() {
-    mysql_close(&con);
+    delete redis;
 }
 
 
