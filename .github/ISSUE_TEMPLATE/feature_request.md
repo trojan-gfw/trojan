@@ -3,8 +3,7 @@ name: Feature request
 about: Suggest an idea for this project
 title: "[Feature Request]"
 labels: enhancement
-assignees: GreaterFire
-
+assignees: DenrianWeiss
 ---
 
 - [ ] I certify that I have read the contributing guidelines and I acknowledge if I don't follow the format below or I don't check this box, my issue will be closed immediately without any notice.
