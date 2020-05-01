@@ -33,7 +33,13 @@ ClientSession::ClientSession(const Config &config, boost::asio::io_context &io_c
     is_udp(false),
     first_packet_recv(false),
     in_socket(io_context),
-    out_socket(io_context, ssl_context){}
+    out_socket(io_context, ssl_context){
+        allocate_session_id();
+}
+
+ClientSession::~ClientSession(){
+    free_session_id(); 
+}
 
 tcp::socket& ClientSession::accept_socket() {
     return in_socket;

@@ -51,6 +51,8 @@ private:
 public:
     UDPForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, 
         const boost::asio::ip::udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& targetdst, const UDPWrite &in_write);
+    ~UDPForwardSession();
+    
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
     void start_udp(const std::string& data);

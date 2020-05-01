@@ -21,6 +21,7 @@
 #define _SESSION_H_
 
 #include <ctime>
+#include <set>
 #include <memory>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/udp.hpp>
@@ -29,15 +30,18 @@
 
 class Service;
 class Session : public std::enable_shared_from_this<Session> {
-    
-    // session id counter for pipeline mode
-    static uint16_t s_session_id_counter;
 
 public:
-
+    typedef uint16_t SessionIdType;
     enum {
         MAX_BUF_LENGTH = 8192,
     };
+
+private:
+
+    // session id counter for pipeline mode
+    static SessionIdType s_session_id_counter;
+    static std::set<SessionIdType>  s_session_used_ids;
 
 protected:
     
@@ -58,6 +62,9 @@ protected:
     int pipeline_ack_counter;
     bool pipeline_wait_for_ack;
     bool pipeline_first_call_ack;
+
+    void allocate_session_id();
+    void free_session_id();
 public:
     Session(const Config &config, boost::asio::io_context &io_context);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
@@ -67,7 +74,7 @@ public:
     const Config &config;
     boost::asio::ip::tcp::endpoint in_endpoint;
 
-    uint16_t session_id;
+    SessionIdType session_id;
     inline void set_use_pipeline(Service* service, bool is_udp_forward) { 
         pipeline_client_service = service; 
         is_udp_forward_session = is_udp_forward;

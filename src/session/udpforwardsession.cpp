@@ -41,6 +41,12 @@ UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_conte
     udp_recv_endpoint = endpoint;
     udp_target_endpoint = udp::endpoint(boost::asio::ip::make_address(udp_target.first), udp_target.second);    
     in_endpoint = tcp::endpoint(endpoint.address(), endpoint.port());
+
+    allocate_session_id();
+}
+
+UDPForwardSession::~UDPForwardSession(){
+    free_session_id();
 }
 
 tcp::socket& UDPForwardSession::accept_socket() {

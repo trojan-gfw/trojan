@@ -57,6 +57,7 @@ protected:
     void request_remote();
 public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
+    ~ClientSession();
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
     void destroy(bool pipeline_call = false);

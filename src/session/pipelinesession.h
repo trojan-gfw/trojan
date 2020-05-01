@@ -64,7 +64,7 @@ class PipelineSession : public Session {
 
     void in_recv(const std::string& data);
     void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler);
-    bool find_and_process_session(uint16_t session_id, std::function<void(SessionsList::iterator&)> processor);
+    bool find_and_process_session(Session::SessionIdType session_id, std::function<void(SessionsList::iterator&)> processor);
 public:
     PipelineSession(const Config &config, boost::asio::io_context &io_context, 
         boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);

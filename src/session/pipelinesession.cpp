@@ -153,7 +153,7 @@ void PipelineSession::in_send(PipelineRequest::Command cmd, ServerSession& sessi
     }
 }
 
-bool PipelineSession::find_and_process_session(uint16_t session_id, std::function<void(SessionsList::iterator&)> processor){
+bool PipelineSession::find_and_process_session(SessionIdType session_id, std::function<void(SessionsList::iterator&)> processor){
 
     auto it = sessions.begin();
     while(it != sessions.end()){
