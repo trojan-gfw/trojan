@@ -6,16 +6,17 @@
 
 inline bool isRedisErrorNil(redisReply* r) {
     if(nullptr == r) {
-        return false;
+        return true;
     } else if (r->type == REDIS_REPLY_ERROR || r->type == REDIS_REPLY_NIL) {
         freeReplyObject(r);
-        return false;
-    } else {
         return true;
+    } else {
+        return false;
     }
 }
 
 RedisHelper::RedisHelper(const std::string& server_addr, uint16_t server_port) {
+    Log::log("[Redis] Connection created");
     client = redisConnect(server_addr.c_str(), server_port);
     if(client == nullptr || client->err) {
         if(client) {

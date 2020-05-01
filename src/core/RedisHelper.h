@@ -8,7 +8,7 @@
 #include <hiredis.h>
 #include <string>
 #include <stdexcept>
-
+#include "log.h"
 
 class RedisHelper {
 private:
