@@ -45,5 +45,10 @@
         "username": "trojan",
         "password": "",
         "cafile": ""
+    },
+    "redis": {
+        "enabled": true,
+        "server_addr": "127.0.0.1",
+        "server_port": 6379
     }
 }

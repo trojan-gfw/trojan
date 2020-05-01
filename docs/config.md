@@ -202,6 +202,11 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
         "username": "trojan",
         "password": "",
         "cafile": ""
+    },
+    "redis": {
+        "enabled": true,
+        "server_addr": "127.0.0.1",
+        "server_port": 6379
     }
 }
 ```
