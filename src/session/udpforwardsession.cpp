@@ -19,6 +19,7 @@
 
 #include "udpforwardsession.h"
 #include <stdexcept>
+#include <utility>
 #include "ssl/sslsession.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
@@ -26,10 +27,10 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, const udp::endpoint &endpoint, const UDPWrite &in_write) :
+UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, const udp::endpoint &endpoint, UDPWrite in_write) :
     Session(config, io_context),
     status(CONNECT),
-    in_write(in_write),
+    in_write(move(in_write)),
     out_socket(io_context, ssl_context),
     gc_timer(io_context) {
     udp_recv_endpoint = endpoint;
@@ -42,9 +43,9 @@ tcp::socket& UDPForwardSession::accept_socket() {
 
 void UDPForwardSession::start() {
     timer_async_wait();
-    start_time = time(NULL);
+    start_time = time(nullptr);
     auto ssl = out_socket.native_handle();
-    if (config.ssl.sni != "") {
+    if (!config.ssl.sni.empty()) {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
     }
     if (config.ssl.reuse_session) {
@@ -56,8 +57,8 @@ void UDPForwardSession::start() {
     out_write_buf = TrojanRequest::generate(config.password.cbegin()->first, config.target_addr, config.target_port, false);
     Log::log_with_endpoint(in_endpoint, "forwarding UDP packets to " + config.target_addr + ':' + to_string(config.target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     auto self = shared_from_this();
-    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
-        if (error) {
+    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, const tcp::resolver::results_type& results) {
+        if (error || results.empty()) {
             Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
             destroy();
             return;
@@ -216,7 +217,7 @@ void UDPForwardSession::destroy() {
         return;
     }
     status = DESTROY;
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     gc_timer.cancel();
     if (out_socket.next_layer().is_open()) {

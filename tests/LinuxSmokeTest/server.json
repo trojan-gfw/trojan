@@ -14,6 +14,7 @@
         "cipher_tls13": "",
         "prefer_server_cipher": true,
         "alpn": [],
+        "alpn_port_override": {},
         "reuse_session": false,
         "session_ticket": false,
         "session_timeout": 600,
@@ -35,6 +36,7 @@
         "server_port": 0,
         "database": "",
         "username": "",
-        "password": ""
+        "password": "",
+        "cafile": ""
     }
 }

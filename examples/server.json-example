@@ -19,6 +19,9 @@
         "alpn": [
             "http/1.1"
         ],
+        "alpn_port_override": {
+            "h2": 81
+        },
         "reuse_session": true,
         "session_ticket": false,
         "session_timeout": 600,
@@ -40,6 +43,7 @@
         "server_port": 3306,
         "database": "trojan",
         "username": "trojan",
-        "password": ""
+        "password": "",
+        "cafile": ""
     }
 }

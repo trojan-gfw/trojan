@@ -51,6 +51,7 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
     int fd = in_socket.native_handle();
     // Taken from https://github.com/shadowsocks/shadowsocks-libev/blob/v3.3.1/src/redir.c.
     sockaddr_storage destaddr;
+    memset(&destaddr, 0, sizeof(sockaddr_storage));
     socklen_t socklen = sizeof(destaddr);
     int error = getsockopt(fd, SOL_IPV6, IP6T_SO_ORIGINAL_DST, &destaddr, &socklen);
     if (error) {
@@ -62,11 +63,11 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
     char ipstr[INET6_ADDRSTRLEN];
     uint16_t port;
     if (destaddr.ss_family == AF_INET) {
-        sockaddr_in *sa = (sockaddr_in*) &destaddr;
+        auto *sa = (sockaddr_in*) &destaddr;
         inet_ntop(AF_INET, &(sa->sin_addr), ipstr, INET_ADDRSTRLEN);
         port = ntohs(sa->sin_port);
     } else {
-        sockaddr_in6 *sa = (sockaddr_in6*) &destaddr;
+        auto *sa = (sockaddr_in6*) &destaddr;
         inet_ntop(AF_INET6, &(sa->sin6_addr), ipstr, INET6_ADDRSTRLEN);
         port = ntohs(sa->sin6_port);
     }
@@ -78,14 +79,14 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
 
 void NATSession::start() {
     boost::system::error_code ec;
-    start_time = time(NULL);
+    start_time = time(nullptr);
     in_endpoint = in_socket.remote_endpoint(ec);
     if (ec) {
         destroy();
         return;
     }
     auto ssl = out_socket.native_handle();
-    if (config.ssl.sni != "") {
+    if (!config.ssl.sni.empty()) {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
     }
     if (config.ssl.reuse_session) {
@@ -105,8 +106,8 @@ void NATSession::start() {
     in_async_read();
     Log::log_with_endpoint(in_endpoint, "forwarding to " + target_addr + ':' + to_string(target_port) + " via " + config.remote_addr + ':' + to_string(config.remote_port), Log::INFO);
     auto self = shared_from_this();
-    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
-        if (error) {
+    resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, const tcp::resolver::results_type& results) {
+        if (error || results.empty()) {
             Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
             destroy();
             return;
@@ -249,7 +250,7 @@ void NATSession::destroy() {
         return;
     }
     status = DESTROY;
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
     if (in_socket.is_open()) {

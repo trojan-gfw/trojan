@@ -69,7 +69,9 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 
 ## A valid forward.json
 
-This forward config is for port forwarding. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint, and `udp_timeout`, which controls how long (in seconds) a UDP session will last in idle.
+This forward config is for port forwarding through a trojan connection. Everything is the same as the client config, except for `target_addr` and `target_port`, which point to the destination endpoint, and `udp_timeout`, which controls how long (in seconds) a UDP session will last in idle.
+
+PROTIP: If you simply want to redirect a raw TCP connection, you can use `iptables` or `socat` to do that. The forward mode is not for this purpose.
 
 ```json
 {
@@ -174,6 +176,9 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
         "alpn": [
             "http/1.1"
         ],
+        "alpn_port_override": {
+            "h2": 81
+        },
         "reuse_session": true,
         "session_ticket": false,
         "session_timeout": 600,
@@ -195,7 +200,8 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
         "server_port": 3306,
         "database": "trojan",
         "username": "trojan",
-        "password": ""
+        "password": "",
+        "cafile": ""
     }
 }
 ```
@@ -215,6 +221,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
     - `cipher_tls13`: a cipher list for TLS 1.3 to use
     - `prefer_server_cipher`: whether to prefer server cipher list in a connection
     - `alpn`: a list of `ALPN` protocols to reply
+    - `alpn_port_override`: overrides the remote port to the specified value if an `ALPN` is matched. Useful for running NGINX with HTTP/1.1 and HTTP/2 Cleartext on different ports.
     - `reuse_session`: whether to reuse `SSL` session
     - `session_ticket`: whether to use session tickets for session resumption
     - `session_timeout`: if `reuse_session` is set to `true`, specify `SSL` session timeout

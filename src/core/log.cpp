@@ -32,8 +32,9 @@ using namespace boost::posix_time;
 using namespace boost::asio::ip;
 
 Log::Level Log::level(INFO);
-FILE *Log::keylog(NULL);
+FILE *Log::keylog(nullptr);
 FILE *Log::output_stream(stderr);
+Log::LogCallback Log::log_callback{};
 
 void Log::log(const string &message, Level level) {
     if (level >= Log::level) {
@@ -44,12 +45,15 @@ void Log::log(const string &message, Level level) {
         fprintf(output_stream, "%s\n", message.c_str());
         fflush(output_stream);
 #endif // ENABLE_ANDROID_LOG
+        if (log_callback) {
+            log_callback(message, level);
+        }
     }
 }
 
 void Log::log_with_date_time(const string &message, Level level) {
     static const char *level_strings[]= {"ALL", "INFO", "WARN", "ERROR", "FATAL", "OFF"};
-    time_facet *facet = new time_facet("[%Y-%m-%d %H:%M:%S] ");
+    auto *facet = new time_facet("[%Y-%m-%d %H:%M:%S] ");
     ostringstream stream;
     stream.imbue(locale(stream.getloc(), facet));
     stream << second_clock::local_time();
@@ -63,7 +67,7 @@ void Log::log_with_endpoint(const tcp::endpoint &endpoint, const string &message
 
 void Log::redirect(const string &filename) {
     FILE *fp = fopen(filename.c_str(), "a");
-    if (fp == NULL) {
+    if (fp == nullptr) {
         throw runtime_error(filename + ": " + strerror(errno));
     }
     if (output_stream != stderr) {
@@ -74,13 +78,17 @@ void Log::redirect(const string &filename) {
 
 void Log::redirect_keylog(const string &filename) {
     FILE *fp = fopen(filename.c_str(), "a");
-    if (fp == NULL) {
+    if (fp == nullptr) {
         throw runtime_error(filename + ": " + strerror(errno));
     }
-    if (keylog != NULL) {
+    if (keylog != nullptr) {
         fclose(keylog);
     }
     keylog = fp;
+}
+
+void Log::set_callback(LogCallback cb) {
+    log_callback = move(cb);
 }
 
 void Log::reset() {
@@ -88,8 +96,8 @@ void Log::reset() {
         fclose(output_stream);
         output_stream = stderr;
     }
-    if (keylog != NULL) {
+    if (keylog != nullptr) {
         fclose(keylog);
-        keylog = NULL;
+        keylog = nullptr;
     }
 }

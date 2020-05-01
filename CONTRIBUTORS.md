@@ -2,6 +2,10 @@
 
 - [a-wing](https://github.com/a-wing)
     - Add Debian build instructions in the documentation.
+- [cybmp3](https://github.com/cybmp3)
+    - Add MySQL SSL support.
+- [du5](https://github.com/du5)
+    - Update OpenSSL version in Azure Pipelines config.
 - [felixonmars](https://github.com/felixonmars)
     - Fix incorrect systemd service path in the documentation.
 - [ffftwo](https://github.com/ffftwo)
@@ -16,8 +20,15 @@
     - Replace deprecated SHA224 functions with `EVP`.
 - [klzgrad](https://github.com/klzgrad)
     - Add Linux smoke test.
+- [LimiQS](https://github.com/LimiQS)
+    - Refine the config documentation.
+- [Qv2ray-dev](https://github.com/Qv2ray-dev)
+    - Fix Azure Pipelines config.
+    - Add log callback.
 - [WeidiDeng](https://github.com/WeidiDeng)
     - Fix incorrect Debian dependency in the documentation.
+- [WillyPillow](https://github.com/WillyPillow)
+    - Add `alpn_port_override` functionality.
 - [wongsyrone](https://github.com/wongsyrone)
     - Add conditional MySQL compilation.
     - Remove `SSL_CTX_set_ecdh_auto(native_context, 1)` call in new versions of OpenSSL.
@@ -35,3 +46,5 @@
     - Add TLS1.3 ciphersuites support.
 - [zhangsan946](https://github.com/zhangsan946)
     - Add macOS keychain support.
+- [zhyncs](https://github.com/zhyncs)
+    - Fix clang-tidy warnings.

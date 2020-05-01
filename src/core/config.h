@@ -54,6 +54,7 @@ public:
         bool prefer_server_cipher;
         std::string sni;
         std::string alpn;
+        std::map<std::string, uint16_t> alpn_port_override;
         bool reuse_session;
         bool session_ticket;
         long session_timeout;
@@ -78,6 +79,7 @@ public:
         std::string database;
         std::string username;
         std::string password;
+        std::string cafile;
     } mysql;
     class RedisConfig {
     public:

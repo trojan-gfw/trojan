@@ -39,7 +39,7 @@ tcp::socket& ServerSession::accept_socket() {
 
 void ServerSession::start() {
     boost::system::error_code ec;
-    start_time = time(NULL);
+    start_time = time(nullptr);
     in_endpoint = in_socket.next_layer().remote_endpoint(ec);
     if (ec) {
         destroy();
@@ -49,7 +49,7 @@ void ServerSession::start() {
     in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
         if (error) {
             Log::log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
-            if (error.message() == "http request" && plain_http_response != "") {
+            if (error.message() == "http request" && !plain_http_response.empty()) {
                 recv_len += plain_http_response.length();
                 boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
                     destroy();
@@ -153,7 +153,19 @@ void ServerSession::in_recv(const string &data) {
             }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;
-        string query_port = to_string(valid ? req.address.port : config.remote_port);
+        string query_port = to_string([&]() {
+            if (valid) {
+                return req.address.port;
+            }
+            const unsigned char *alpn_out;
+            unsigned int alpn_len;
+            SSL_get0_alpn_selected(in_socket.native_handle(), &alpn_out, &alpn_len);
+            if (alpn_out == nullptr) {
+                return config.remote_port;
+            }
+            auto it = config.ssl.alpn_port_override.find(string(alpn_out, alpn_out + alpn_len));
+            return it == config.ssl.alpn_port_override.end() ? config.remote_port : it->second;
+        }());
         if (valid) {
             out_write_buf = req.payload;
             if (req.command == TrojanRequest::UDP_ASSOCIATE) {
@@ -166,13 +178,13 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             }
         } else {
-            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + config.remote_addr + ':' + to_string(config.remote_port), Log::WARN);
+            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + query_addr + ':' + query_port, Log::WARN);
             out_write_buf = data;
         }
         sent_len += out_write_buf.length();
         auto self = shared_from_this();
-        resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, tcp::resolver::results_type results) {
-            if (error) {
+        resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, const tcp::resolver::results_type& results) {
+            if (error || results.empty()) {
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
@@ -280,8 +292,8 @@ void ServerSession::udp_sent() {
         udp_data_buf = udp_data_buf.substr(packet_len);
         string query_addr = packet.address.address;
         auto self = shared_from_this();
-        udp_resolver.async_resolve(query_addr, to_string(packet.address.port), [this, self, packet, query_addr](const boost::system::error_code error, udp::resolver::results_type results) {
-            if (error) {
+        udp_resolver.async_resolve(query_addr, to_string(packet.address.port), [this, self, packet, query_addr](const boost::system::error_code error, const udp::resolver::results_type& results) {
+            if (error || results.empty()) {
                 Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
@@ -319,7 +331,7 @@ void ServerSession::destroy() {
         return;
     }
     status = DESTROY;
-    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }
