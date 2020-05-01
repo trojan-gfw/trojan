@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <map>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/asio/ssl.hpp>
 #include "log.h"
 
 class Config {
@@ -87,10 +88,15 @@ public:
     public:
         uint32_t pipeline_num;
         uint32_t pipeline_ack_window;
+        std::vector<std::string> pipeline_loadbalance_configs;
+        std::vector<std::shared_ptr<Config>> _pipeline_loadbalance_configs;
+        std::vector<std::shared_ptr<boost::asio::ssl::context>> _pipeline_loadbalance_context;
     } experimental;
+
     void load(const std::string &filename);
     void populate(const std::string &JSON);
     bool sip003();
+    void prepare_ssl_context(boost::asio::ssl::context& ssl_context, std::string& plain_http_response);
     static std::string SHA224(const std::string &message);
 private:
     void populate(const boost::property_tree::ptree &tree);

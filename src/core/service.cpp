@@ -24,21 +24,12 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
-#ifdef _WIN32
-#include <wincrypt.h>
-#include <tchar.h>
-#endif // _WIN32
-#ifdef __APPLE__
-#include <Security/Security.h>
-#endif // __APPLE__
-#include <openssl/opensslv.h>
 #include "session/serversession.h"
 #include "session/clientsession.h"
 #include "session/forwardsession.h"
 #include "session/natsession.h"
 #include "session/pipelinesession.h"
-#include "ssl/ssldefaults.h"
-#include "ssl/sslsession.h"
+
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -138,11 +129,13 @@ Service::Service(Config &config, bool test) :
     auth(nullptr),
     udp_socket(io_context),
     pipeline_select_idx(0) {
+
 #ifndef ENABLE_NAT
     if (config.run_type == Config::NAT) {
         throw runtime_error("NAT is not supported");
     }
 #endif // ENABLE_NAT
+
     if (!test) {
         tcp::resolver resolver(io_context);
         tcp::endpoint listen_endpoint = *resolver.resolve(config.local_addr, to_string(config.local_port)).begin();
@@ -205,50 +198,10 @@ Service::Service(Config &config, bool test) :
             udp_socket.bind(udp_bind_endpoint);
         }
     }
-    Log::level = config.log_level;
-    auto native_context = ssl_context.native_handle();
-    ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
-    if (config.ssl.curves != "") {
-        SSL_CTX_set1_curves_list(native_context, config.ssl.curves.c_str());
-    }
-    if (config.run_type == Config::SERVER) {
-        ssl_context.use_certificate_chain_file(config.ssl.cert);
-        ssl_context.set_password_callback([this](size_t, context_base::password_purpose) {
-            return this->config.ssl.key_password;
-        });
-        ssl_context.use_private_key_file(config.ssl.key, context::pem);
-        if (config.ssl.prefer_server_cipher) {
-            SSL_CTX_set_options(native_context, SSL_OP_CIPHER_SERVER_PREFERENCE);
-        }
-        if (config.ssl.alpn != "") {
-            SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {
-                if (SSL_select_next_proto((unsigned char**)out, outlen, (unsigned char*)(((Config*)config)->ssl.alpn.c_str()), ((Config*)config)->ssl.alpn.length(), in, inlen) != OPENSSL_NPN_NEGOTIATED) {
-                    return SSL_TLSEXT_ERR_NOACK;
-                }
-                return SSL_TLSEXT_ERR_OK;
-            }, &config);
-        }
-        if (config.ssl.reuse_session) {
-            SSL_CTX_set_timeout(native_context, config.ssl.session_timeout);
-            if (!config.ssl.session_ticket) {
-                SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
-            }
-        } else {
-            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
-            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
-        }
-        if (config.ssl.plain_http_response != "") {
-            ifstream ifs(config.ssl.plain_http_response, ios::binary);
-            if (!ifs.is_open()) {
-                throw runtime_error(config.ssl.plain_http_response + ": " + strerror(errno));
-            }
-            plain_http_response = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
-        }
-        if (config.ssl.dhparam == "") {
-            ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
-        } else {
-            ssl_context.use_tmp_dh_file(config.ssl.dhparam);
-        }
+
+    config.prepare_ssl_context(ssl_context, plain_http_response);
+
+    if(config.run_type == Config::SERVER){
         if (config.mysql.enabled) {
 #ifdef ENABLE_MYSQL
             auth = new Authenticator(config);
@@ -256,115 +209,6 @@ Service::Service(Config &config, bool test) :
             _log_with_date_time("MySQL is not supported", Log::WARN);
 #endif // ENABLE_MYSQL
         }
-    } else {
-        if (config.ssl.sni == "") {
-            config.ssl.sni = config.remote_addr;
-        }
-        if (config.ssl.verify) {
-            ssl_context.set_verify_mode(verify_peer);
-            if (config.ssl.cert == "") {
-                ssl_context.set_default_verify_paths();
-#ifdef _WIN32
-                HCERTSTORE h_store = CertOpenSystemStore(0, _T("ROOT"));
-                if (h_store) {
-                    X509_STORE *store = SSL_CTX_get_cert_store(native_context);
-                    PCCERT_CONTEXT p_context = NULL;
-                    while ((p_context = CertEnumCertificatesInStore(h_store, p_context))) {
-                        const unsigned char *encoded_cert = p_context->pbCertEncoded;
-                        X509 *x509 = d2i_X509(NULL, &encoded_cert, p_context->cbCertEncoded);
-                        if (x509) {
-                            X509_STORE_add_cert(store, x509);
-                            X509_free(x509);
-                        }
-                    }
-                    CertCloseStore(h_store, 0);
-                }
-#endif // _WIN32
-#ifdef __APPLE__
-                SecKeychainSearchRef pSecKeychainSearch = NULL;
-                SecKeychainRef pSecKeychain;
-                OSStatus status = noErr;
-                X509 *cert = NULL;
-
-                // Leopard and above store location
-                status = SecKeychainOpen ("/System/Library/Keychains/SystemRootCertificates.keychain", &pSecKeychain);
-                if (status == noErr) {
-                    X509_STORE *store = SSL_CTX_get_cert_store(native_context);
-                    status = SecKeychainSearchCreateFromAttributes (pSecKeychain, kSecCertificateItemClass, NULL, &pSecKeychainSearch);
-                     for (;;) {
-                        SecKeychainItemRef pSecKeychainItem = nil;
-
-                        status = SecKeychainSearchCopyNext (pSecKeychainSearch, &pSecKeychainItem);
-                        if (status == errSecItemNotFound) {
-                            break;
-                        }
-
-                        if (status == noErr) {
-                            void *_pCertData;
-                            UInt32 _pCertLength;
-                            status = SecKeychainItemCopyAttributesAndData (pSecKeychainItem, NULL, NULL, NULL, &_pCertLength, &_pCertData);
-
-                            if (status == noErr && _pCertData != NULL) {
-                                unsigned char *ptr;
-
-                                ptr = (unsigned char *)_pCertData;       /*required because d2i_X509 is modifying pointer */
-                                cert = d2i_X509 (NULL, (const unsigned char **) &ptr, _pCertLength);
-                                if (cert == NULL) {
-                                    continue;
-                                }
-
-                                if (!X509_STORE_add_cert (store, cert)) {
-                                    X509_free (cert);
-                                    continue;
-                                }
-                                X509_free (cert);
-
-                                status = SecKeychainItemFreeAttributesAndData (NULL, _pCertData);
-                            }
-                        }
-                        if (pSecKeychainItem != NULL) {
-                            CFRelease (pSecKeychainItem);
-                        }
-                    }
-                    CFRelease (pSecKeychainSearch);
-                    CFRelease (pSecKeychain);
-                }
-#endif // __APPLE__
-            } else {
-                ssl_context.load_verify_file(config.ssl.cert);
-            }
-            if (config.ssl.verify_hostname) {
-                ssl_context.set_verify_callback(rfc2818_verification(config.ssl.sni));
-            }
-            X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
-            X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_PARTIAL_CHAIN);
-            SSL_CTX_set1_param(native_context, param);
-            X509_VERIFY_PARAM_free(param);
-        } else {
-            ssl_context.set_verify_mode(verify_none);
-        }
-        if (config.ssl.alpn != "") {
-            SSL_CTX_set_alpn_protos(native_context, (unsigned char*)(config.ssl.alpn.c_str()), config.ssl.alpn.length());
-        }
-        if (config.ssl.reuse_session) {
-            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_CLIENT);
-            SSLSession::set_callback(native_context);
-            if (!config.ssl.session_ticket) {
-                SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
-            }
-        } else {
-            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
-        }
-    }
-    if (config.ssl.cipher != "") {
-        SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
-    }
-    if (config.ssl.cipher_tls13 != "") {
-#ifdef ENABLE_TLS13_CIPHERSUITES
-        SSL_CTX_set_ciphersuites(native_context, config.ssl.cipher_tls13.c_str());
-#else  // ENABLE_TLS13_CIPHERSUITES
-        _log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
-#endif // ENABLE_TLS13_CIPHERSUITES
     }
 
     if (!test) {
@@ -387,15 +231,23 @@ Service::Service(Config &config, bool test) :
 #endif // TCP_FASTOPEN_CONNECT
         }
     }
-    if (Log::keylog) {
-#ifdef ENABLE_SSL_KEYLOG
-        SSL_CTX_set_keylog_callback(native_context, [](const SSL*, const char *line) {
-            fprintf(Log::keylog, "%s\n", line);
-            fflush(Log::keylog);
-        });
-#else // ENABLE_SSL_KEYLOG
-        _log_with_date_time("SSL KeyLog is not supported", Log::WARN);
-#endif // ENABLE_SSL_KEYLOG
+
+    if(!config.experimental.pipeline_loadbalance_configs.empty()){
+        _log_with_date_time("Pipeline will use load balance config:", Log::WARN);
+        string tmp;
+        for(auto it = config.experimental.pipeline_loadbalance_configs.begin(); 
+         it != config.experimental.pipeline_loadbalance_configs.end(); it++){
+            _log_with_date_time("Loading " + (*it) + " config..." , Log::WARN);
+
+            auto other = make_shared<Config>();
+            other->load(*it);
+
+            auto ssl = make_shared<boost::asio::ssl::context>(context::sslv23);
+            other->prepare_ssl_context(*ssl, tmp);
+
+            config.experimental._pipeline_loadbalance_configs.emplace_back(other);
+            config.experimental._pipeline_loadbalance_context.emplace_back(ssl);
+        }        
     }
 }
 
@@ -446,7 +298,22 @@ void Service::prepare_pipelines(){
             auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
             pipeline->start();
             pipelines.emplace_back(pipeline);
-            _log_with_date_time("Prepare pipelines start a new one, total:" + to_string(pipelines.size()));
+            
+            if(!config.experimental.pipeline_loadbalance_configs.empty()){
+                for(size_t balance_idx = 0;balance_idx < config.experimental._pipeline_loadbalance_configs.size();balance_idx++){
+                    auto config_file = config.experimental.pipeline_loadbalance_configs[balance_idx];
+                    auto balance_config = config.experimental._pipeline_loadbalance_configs[balance_idx];
+                    auto balance_ssl = config.experimental._pipeline_loadbalance_context[balance_idx];
+
+                    pipeline = make_shared<Pipeline>(*balance_config, io_context, *balance_ssl);
+                    pipeline->start();
+                    pipelines.emplace_back(pipeline);
+
+                    _log_with_date_time("Prepare pipelines start a balance one: " + config_file, Log::INFO);
+                }
+            }
+
+            _log_with_date_time("Prepare pipelines start a new one, total:" + to_string(pipelines.size()), Log::INFO);
         }        
     }
 }

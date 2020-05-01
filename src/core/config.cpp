@@ -23,8 +23,21 @@
 #include <stdexcept>
 #include <boost/property_tree/json_parser.hpp>
 #include <openssl/evp.h>
+
+#ifdef _WIN32
+#include <wincrypt.h>
+#include <tchar.h>
+#endif // _WIN32
+#ifdef __APPLE__
+#include <Security/Security.h>
+#endif // __APPLE__
+#include <openssl/opensslv.h>
+#include "ssl/ssldefaults.h"
+#include "ssl/sslsession.h"
+
 using namespace std;
 using namespace boost::property_tree;
+using namespace boost::asio::ssl;
 
 void Config::load(const string &filename) {
     ptree tree;
@@ -112,6 +125,15 @@ void Config::populate(const ptree &tree) {
     mysql.cafile = tree.get("mysql.cafile", string());
     experimental.pipeline_num = tree.get("experimental.pipeline_num", uint32_t(0));
     experimental.pipeline_ack_window = tree.get("experimental.pipeline_ack_window", uint32_t(3));
+    experimental.pipeline_loadbalance_configs.clear();
+    if(tree.get_child_optional("experimental.pipeline_loadbalance_configs")){
+        for (auto &item : tree.get_child("experimental.pipeline_loadbalance_configs")){
+            auto config = item.second.get_value<string>();
+            experimental.pipeline_loadbalance_configs.emplace_back(config);
+        }    
+    }
+    
+    
 }
 
 bool Config::sip003() {
@@ -137,6 +159,179 @@ bool Config::sip003() {
             break;
     }
     return true;
+}
+
+void Config::prepare_ssl_context(boost::asio::ssl::context& ssl_context, string& plain_http_response){
+
+    Log::level = log_level;
+    auto native_context = ssl_context.native_handle();
+    ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
+    if (ssl.curves != "") {
+        SSL_CTX_set1_curves_list(native_context, ssl.curves.c_str());
+    }
+    if (run_type == Config::SERVER) {
+        ssl_context.use_certificate_chain_file(ssl.cert);
+        ssl_context.set_password_callback([this](size_t, context_base::password_purpose) {
+            return this->ssl.key_password;
+        });
+        ssl_context.use_private_key_file(ssl.key, context::pem);
+        if (ssl.prefer_server_cipher) {
+            SSL_CTX_set_options(native_context, SSL_OP_CIPHER_SERVER_PREFERENCE);
+        }
+        if (ssl.alpn != "") {
+            SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {
+                if (SSL_select_next_proto((unsigned char**)out, outlen, (unsigned char*)(((Config*)config)->ssl.alpn.c_str()), ((Config*)config)->ssl.alpn.length(), in, inlen) != OPENSSL_NPN_NEGOTIATED) {
+                    return SSL_TLSEXT_ERR_NOACK;
+                }
+                return SSL_TLSEXT_ERR_OK;
+            }, this);
+        }
+        if (ssl.reuse_session) {
+            SSL_CTX_set_timeout(native_context, ssl.session_timeout);
+            if (!ssl.session_ticket) {
+                SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+            }
+        } else {
+            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
+            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+        }
+
+        if (ssl.plain_http_response != "") {
+            ifstream ifs(ssl.plain_http_response, ios::binary);
+            if (!ifs.is_open()) {
+                throw runtime_error(ssl.plain_http_response + ": " + strerror(errno));
+            }
+            plain_http_response = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+        }
+        if (ssl.dhparam == "") {
+            ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
+        } else {
+            ssl_context.use_tmp_dh_file(ssl.dhparam);
+        }
+
+    } else {
+        if (ssl.sni == "") {
+            ssl.sni = remote_addr;
+        }
+        if (ssl.verify) {
+            ssl_context.set_verify_mode(verify_peer);
+            if (ssl.cert == "") {
+                ssl_context.set_default_verify_paths();
+#ifdef _WIN32
+                HCERTSTORE h_store = CertOpenSystemStore(0, _T("ROOT"));
+                if (h_store) {
+                    X509_STORE *store = SSL_CTX_get_cert_store(native_context);
+                    PCCERT_CONTEXT p_context = NULL;
+                    while ((p_context = CertEnumCertificatesInStore(h_store, p_context))) {
+                        const unsigned char *encoded_cert = p_context->pbCertEncoded;
+                        X509 *x509 = d2i_X509(NULL, &encoded_cert, p_context->cbCertEncoded);
+                        if (x509) {
+                            X509_STORE_add_cert(store, x509);
+                            X509_free(x509);
+                        }
+                    }
+                    CertCloseStore(h_store, 0);
+                }
+#endif // _WIN32
+#ifdef __APPLE__
+                SecKeychainSearchRef pSecKeychainSearch = NULL;
+                SecKeychainRef pSecKeychain;
+                OSStatus status = noErr;
+                X509 *cert = NULL;
+
+                // Leopard and above store location
+                status = SecKeychainOpen ("/System/Library/Keychains/SystemRootCertificates.keychain", &pSecKeychain);
+                if (status == noErr) {
+                    X509_STORE *store = SSL_CTX_get_cert_store(native_context);
+                    status = SecKeychainSearchCreateFromAttributes (pSecKeychain, kSecCertificateItemClass, NULL, &pSecKeychainSearch);
+                     for (;;) {
+                        SecKeychainItemRef pSecKeychainItem = nil;
+
+                        status = SecKeychainSearchCopyNext (pSecKeychainSearch, &pSecKeychainItem);
+                        if (status == errSecItemNotFound) {
+                            break;
+                        }
+
+                        if (status == noErr) {
+                            void *_pCertData;
+                            UInt32 _pCertLength;
+                            status = SecKeychainItemCopyAttributesAndData (pSecKeychainItem, NULL, NULL, NULL, &_pCertLength, &_pCertData);
+
+                            if (status == noErr && _pCertData != NULL) {
+                                unsigned char *ptr;
+
+                                ptr = (unsigned char *)_pCertData;       /*required because d2i_X509 is modifying pointer */
+                                cert = d2i_X509 (NULL, (const unsigned char **) &ptr, _pCertLength);
+                                if (cert == NULL) {
+                                    continue;
+                                }
+
+                                if (!X509_STORE_add_cert (store, cert)) {
+                                    X509_free (cert);
+                                    continue;
+                                }
+                                X509_free (cert);
+
+                                status = SecKeychainItemFreeAttributesAndData (NULL, _pCertData);
+                            }
+                        }
+                        if (pSecKeychainItem != NULL) {
+                            CFRelease (pSecKeychainItem);
+                        }
+                    }
+                    CFRelease (pSecKeychainSearch);
+                    CFRelease (pSecKeychain);
+                }
+#endif // __APPLE__
+            } else {
+                ssl_context.load_verify_file(ssl.cert);
+            }
+            if (ssl.verify_hostname) {
+                ssl_context.set_verify_callback(rfc2818_verification(ssl.sni));
+            }
+            X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
+            X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_PARTIAL_CHAIN);
+            SSL_CTX_set1_param(native_context, param);
+            X509_VERIFY_PARAM_free(param);
+        } else {
+            ssl_context.set_verify_mode(verify_none);
+        }
+        if (ssl.alpn != "") {
+            SSL_CTX_set_alpn_protos(native_context, (unsigned char*)(ssl.alpn.c_str()), ssl.alpn.length());
+        }
+        if (ssl.reuse_session) {
+            SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_CLIENT);
+            SSLSession::set_callback(native_context);
+            if (!ssl.session_ticket) {
+                SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+            }
+        } else {
+            SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
+        }
+    }
+
+    if (ssl.cipher != "") {
+        SSL_CTX_set_cipher_list(native_context, ssl.cipher.c_str());
+    }
+
+    if (ssl.cipher_tls13 != "") {
+#ifdef ENABLE_TLS13_CIPHERSUITES
+        SSL_CTX_set_ciphersuites(native_context, ssl.cipher_tls13.c_str());
+#else  // ENABLE_TLS13_CIPHERSUITES
+        _log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
+#endif // ENABLE_TLS13_CIPHERSUITES
+    }
+    
+    if (Log::keylog) {
+#ifdef ENABLE_SSL_KEYLOG
+        SSL_CTX_set_keylog_callback(native_context, [](const SSL*, const char *line) {
+            fprintf(Log::keylog, "%s\n", line);
+            fflush(Log::keylog);
+        });
+#else // ENABLE_SSL_KEYLOG
+        _log_with_date_time("SSL KeyLog is not supported", Log::WARN);
+#endif // ENABLE_SSL_KEYLOG
+    }
 }
 
 string Config::SHA224(const string &message) {
