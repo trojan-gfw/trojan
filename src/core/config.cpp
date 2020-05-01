@@ -124,7 +124,7 @@ void Config::populate(const ptree &tree) {
     mysql.password = tree.get("mysql.password", string());
     mysql.cafile = tree.get("mysql.cafile", string());
     experimental.pipeline_num = tree.get("experimental.pipeline_num", uint32_t(0));
-    experimental.pipeline_ack_window = tree.get("experimental.pipeline_ack_window", uint32_t(3));
+    experimental.pipeline_ack_window = tree.get("experimental.pipeline_ack_window", uint32_t(200));
     experimental.pipeline_loadbalance_configs.clear();
     if(tree.get_child_optional("experimental.pipeline_loadbalance_configs")){
         for (auto &item : tree.get_child("experimental.pipeline_loadbalance_configs")){
