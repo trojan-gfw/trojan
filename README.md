@@ -11,7 +11,8 @@ This is a forked version of trojan, which is optimized for running as a server.
 ## Documentations
 
 An online documentation can be found [here](https://trojan-gfw.github.io/trojan/).  
-Installation guide on various platforms can be found in the [wiki](https://github.com/trojan-gfw/trojan/wiki/Binary-&-Package-Distributions).
+Installation guide on various platforms can be found in the [wiki](https://github.com/trojan-gfw/trojan/wiki/Binary-&-Package-Distributions).  
+If you want to use it with sspanel or something alike, see [llc's ssmgr for trojan](https://github.com/llc1123/ssmgr-trojan-client)
 
 ## Contributing
 
