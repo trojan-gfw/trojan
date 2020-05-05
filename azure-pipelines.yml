@@ -33,7 +33,6 @@ stages:
         chmod +x "$BINARY"
         mkdir results
         cp -r "$(tests/LinuxSmokeTest/basic.sh "$BINARY")" results/basic
-        cp -r "$(tests/LinuxSmokeTest/fake-client.sh "$BINARY")" results/fake-client
       env:
         PIPELINE_WORKSPACE: $(Pipeline.Workspace)
     - publish: $(System.DefaultWorkingDirectory)/results
