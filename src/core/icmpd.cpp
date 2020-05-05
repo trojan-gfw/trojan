@@ -79,11 +79,15 @@ void icmpd::start_recv() {
 
                 if (m_client_or_server) {
                     if (icmp_hdr.type() == icmp_header::echo_request) { // only proxy echo_request for client
-                        std::ostringstream os;
-                        os << ipv4_hdr << icmp_hdr << body;
-                        m_service->session_async_send_to_pipeline_icmp(os.str(), [this, self](const boost::system::error_code) {
-                            // nothing to process...
-                        });
+                        if(ipv4_hdr.time_to_live() == 1){
+                            send_back_time_exceeded(ipv4_hdr, icmp_hdr);
+                        }else{
+                            std::ostringstream os;
+                            os << ipv4_hdr << icmp_hdr << body;
+                            m_service->session_async_send_to_pipeline_icmp(os.str(), [this, self](const boost::system::error_code) {
+                                // nothing to process...
+                            });
+                        }
                     }
                 } else {
                     if (icmp_hdr.type() == icmp_header::echo_reply){ // for ping
@@ -117,6 +121,33 @@ void icmpd::start_recv() {
 
         start_recv();
     });
+}
+
+void icmpd::send_back_time_exceeded(ipv4_header& ipv4_hdr, icmp_header& icmp_hdr) {
+    std::ostringstream os;
+    os << ipv4_hdr << icmp_hdr;
+
+    auto send_back_body = os.str();
+    
+    os.clear();
+    os.seekp(ios::beg);
+
+    auto dst = ipv4_hdr.destination_address();
+    auto src = ipv4_hdr.source_address();
+
+    ipv4_hdr.destination_address(src);
+    ipv4_hdr.source_address(address_v4());
+    ipv4_hdr.identification(0);
+
+    icmp_hdr.type(icmp_header::time_exceeded);
+    icmp_hdr.code(0);
+    icmp_hdr.assign_checksum(send_back_body);
+
+    os << ipv4_hdr << icmp_hdr << send_back_body;
+
+    _log_with_date_time("[icmp] send_back_time_exceeded " + ipv4_hdr.source_address().to_string() + " -> " + ipv4_hdr.destination_address().to_string());
+
+    m_socket.send_to(boost::asio::buffer(os.str()), icmp::endpoint(dst, 0));
 }
 
 void icmpd::server_out_send(const std::string& data, std::weak_ptr<Session> pipeline_session){

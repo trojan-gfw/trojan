@@ -58,10 +58,11 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
     boost::asio::steady_timer m_timer;
     bool m_start_timer;
 
+    void send_back_time_exceeded(ipv4_header& ipv4_hdr, icmp_header& icmp_hdr);
     void timer_async_wait();
     bool read_icmp(std::istream& is, size_t length, ipv4_header& ipv4_hdr, icmp_header& icmp_hdr, std::string& body);
 
-   public: 
+public: 
     icmpd(boost::asio::io_service& io_service);
     void start_recv();
 
