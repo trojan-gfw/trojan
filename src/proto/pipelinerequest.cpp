@@ -55,9 +55,22 @@ void generate_uint32(string& data, uint32_t value){
 
 int PipelineRequest::parse(std::string &data){
     /*
-        |-------------------|-----------------------|---------------------|-----------------------|
-        | 1 byte as command | 2 bytes as session id | <2 bytes as length> | <trojan request data> |
-        |-------------------|-----------------------|---------------------|-----------------------|
+        +-------------------+-------------------------+
+        | 1 byte as command | diff options by command |
+        +-------------------+-------------------------+
+
+    command list:
+        +---------------------------+-----------------------+
+        | CONNECT or ACK or DESTORY | 2 bytes as session id |
+        +---------------------------+-----------------------+
+
+        +------+-----------------------+------------------------+
+        | DATA | 2 bytes as session id | 4 bytes as data length |
+        +------+-----------------------+------------------------+
+
+        +------+--------------------=---+------------------------+
+        | ICMP | 2 bytes as data length | 4 bytes as data length |
+        +------+-------------------==---+------------------------+
     */
 
     if(data.length() < 1){
@@ -87,7 +100,26 @@ int PipelineRequest::parse(std::string &data){
         session_id = parse_uint16(1, data);       
         packet_data = data.substr(DATA_CMD_HEADER_LENGTH, trojan_request_length);
         data = data.substr(DATA_CMD_HEADER_LENGTH + trojan_request_length);
-    }else{
+
+    }
+    else if(command == ICMP){
+        const size_t ICMP_CMD_HEADER_LENGTH = 3;
+
+        if (data.length() < ICMP_CMD_HEADER_LENGTH) {
+            return -1;
+        }
+
+        size_t icmp_length = parse_uint16(1, data);
+        if (data.length() < ICMP_CMD_HEADER_LENGTH + icmp_length) {
+            return -1;
+        }
+
+        session_id = 0;
+        packet_data = data.substr(ICMP_CMD_HEADER_LENGTH, icmp_length);
+        data = data.substr(ICMP_CMD_HEADER_LENGTH + icmp_length);
+    }
+    else{
+
         const size_t CMD_HEADER_LENGTH = 3;
         if(data.length() < CMD_HEADER_LENGTH){
             return -1;
@@ -108,17 +140,29 @@ std::string PipelineRequest::generate(enum Command cmd, Session::SessionIdType s
 
     string ret_data;
     ret_data += char(uint8_t(cmd));
-    generate_uint16(ret_data, session_id);
 
-    if(cmd == DATA){
+    if (cmd == ICMP) {
         auto data_length = data.length();
-        if(data_length >= MAX_PACK_LENGTH){
-            throw logic_error("PipelineRequest::generate data.length() " + to_string(data_length) + " > MAX_PACK_LENGTH " + to_string(MAX_PACK_LENGTH));
+        if (data_length >= MAX_ICMP_LENGTH) {
+            throw logic_error("PipelineRequest::generate data.length() " + to_string(data_length) + " > MAX_ICMP_LENGTH " + to_string(MAX_ICMP_LENGTH));
         }
-        
-        generate_uint32(ret_data, data_length);
+
+        generate_uint16(ret_data, (uint16_t)data_length);
         ret_data += data;
-    }    
+
+    } else {
+        generate_uint16(ret_data, session_id);
+
+        if (cmd == DATA) {
+            auto data_length = data.length();
+            if (data_length >= MAX_DATA_LENGTH) {
+                throw logic_error("PipelineRequest::generate data.length() " + to_string(data_length) + " > MAX_DATA_LENGTH " + to_string(MAX_DATA_LENGTH));
+            }
+
+            generate_uint32(ret_data, data_length);
+            ret_data += data;
+        }
+    }
 
     return ret_data;
 }

@@ -132,8 +132,7 @@ void Config::populate(const ptree &tree) {
             experimental.pipeline_loadbalance_configs.emplace_back(config);
         }    
     }
-    
-    
+    experimental.pipeline_proxy_icmp = tree.get("experimental.pipeline_proxy_icmp", false);
 }
 
 bool Config::sip003() {

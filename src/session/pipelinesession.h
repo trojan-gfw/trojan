@@ -55,7 +55,9 @@ class PipelineSession : public Session {
     
     boost::asio::io_context& io_context;
     boost::asio::ssl::context& ssl_context;
-    
+
+    std::shared_ptr<icmpd> icmp_processor;
+
     void timer_async_wait();
     void process_streaming_data();
 
@@ -75,7 +77,10 @@ public:
 
     void session_write_ack(ServerSession& session, Pipeline::SentHandler sent_handler);
     void session_write_data(ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler);
+    void session_write_icmp(const std::string& data, Pipeline::SentHandler sent_handler);
     void remove_session_after_destroy(ServerSession& session);
+
+    void set_icmpd(std::shared_ptr<icmpd> icmp) { icmp_processor = icmp; }
 };
 
 #endif // _PIPELINEESSION_H_

@@ -249,6 +249,17 @@ Service::Service(Config &config, bool test) :
             config.experimental._pipeline_loadbalance_context.emplace_back(ssl);
         }        
     }
+
+    if(config.experimental.pipeline_proxy_icmp){
+        _log_with_date_time("Pipeline will proxy ICMP message", Log::WARN);
+        if (config.run_type == Config::SERVER || config.run_type == Config::NAT) {
+            icmp_processor = make_shared<icmpd>(io_context);
+            icmp_processor->set_service(this, config.run_type == Config::NAT);
+            icmp_processor->start_recv();
+        }else{
+            _log_with_date_time("Pipeline proxy icmp can only run in NAT & SERVER type", Log::ERROR);
+        }   
+    }
 }
 
 void Service::run() {
@@ -298,7 +309,11 @@ void Service::prepare_pipelines(){
             auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
             pipeline->start();
             pipelines.emplace_back(pipeline);
-            
+
+            if (icmp_processor) {
+                pipeline->set_icmpd(icmp_processor);
+            }
+
             if(!config.experimental.pipeline_loadbalance_configs.empty()){
                 for(size_t balance_idx = 0;balance_idx < config.experimental._pipeline_loadbalance_configs.size();balance_idx++){
                     auto config_file = config.experimental.pipeline_loadbalance_configs[balance_idx];
@@ -387,6 +402,39 @@ void Service::session_async_send_to_pipeline(Session& session, PipelineRequest::
     }    
 }
 
+void Service::session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
+    if (config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER) {
+        prepare_pipelines();
+
+        if (pipelines.empty()) {
+            throw logic_error("pipeline is empty after preparing!");
+        }
+
+        Pipeline* pipeline = nullptr;
+        auto it = pipelines.begin();
+        while (it != pipelines.end()) {
+            if (it->expired()) {
+                it = pipelines.erase(it);
+            } else {
+                auto p = it->lock().get();
+                if (&(p->config) == (&config)) {
+                    pipeline = p;
+                    break;
+                }
+                ++it;
+            }
+        }
+
+        if (!pipeline) {
+            _log_with_date_time("pipeline is broken, destory session", Log::WARN);
+            sent_handler(boost::asio::error::broken_pipe);
+        } else {
+            pipeline->session_async_send_icmp(data, sent_handler);
+        }
+    } else {
+        _log_with_date_time("can't send data via pipeline!", Log::FATAL);
+    }
+}
 
 void Service::session_destroy_in_pipeline(Session& session){
     auto it = pipelines.begin();
@@ -410,7 +458,10 @@ void Service::async_accept() {
     if (config.run_type == Config::SERVER) {
         if(config.experimental.pipeline_num > 0){
             // start a pipeline mode in server run_type
-            session = make_shared<PipelineSession>(config, io_context, ssl_context, auth, plain_http_response);
+            auto pipeline = make_shared<PipelineSession>(config, io_context, ssl_context, auth, plain_http_response);
+            pipeline->set_icmpd(icmp_processor);
+
+            session = pipeline;
         }else{
             session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
         }        

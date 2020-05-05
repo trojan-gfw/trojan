@@ -225,6 +225,10 @@ void PipelineSession::process_streaming_data(){
             if(!found){
                 _log_with_endpoint(in_endpoint, "PipelineSession cann't find a session " + to_string(req.session_id) + " to ACK" , Log::WARN);
             }
+        }else if(req.command == PipelineRequest::ICMP){
+            if(icmp_processor){
+                icmp_processor->server_out_send(req.packet_data, shared_from_this());
+            }
         }else{
             _log_with_endpoint(in_endpoint, "PipelineSession error command");
             destroy();
@@ -241,6 +245,12 @@ void PipelineSession::session_write_ack(ServerSession& session, Pipeline::SentHa
 
 void PipelineSession::session_write_data(ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler){
     in_send(PipelineRequest::DATA, session, session_data, sent_handler);
+}
+
+void PipelineSession::session_write_icmp(const std::string& data, Pipeline::SentHandler sent_handler){
+    _log_with_endpoint(in_endpoint, "PipelineSession <-- send cmd: ICMP length:" + to_string(data.length()));
+    sending_data_cache.emplace_back(make_shared<Pipeline::SendData>(PipelineRequest::generate(PipelineRequest::ICMP, 0, data), sent_handler));
+    in_async_send();
 }
 
 void PipelineSession::timer_async_wait(){

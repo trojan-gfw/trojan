@@ -91,6 +91,7 @@ public:
         std::vector<std::string> pipeline_loadbalance_configs;
         std::vector<std::shared_ptr<Config>> _pipeline_loadbalance_configs;
         std::vector<std::shared_ptr<boost::asio::ssl::context>> _pipeline_loadbalance_context;
+        bool pipeline_proxy_icmp;
     } experimental;
 
     void load(const std::string &filename);

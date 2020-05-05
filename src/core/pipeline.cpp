@@ -63,6 +63,16 @@ void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& ses
     out_async_send();
 }
 
+void Pipeline::session_async_send_icmp(const std::string& send_data, SentHandler sent_handler) {
+    if (destroyed) {
+        sent_handler(boost::asio::error::broken_pipe);
+        return;
+    }
+    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " --> send to server cmd: ICMP data length:" + to_string(send_data.length()));
+    sending_data_cache.emplace_back(std::make_shared<SendData>(PipelineRequest::generate(PipelineRequest::ICMP, 0, send_data), sent_handler));
+    out_async_send();
+}
+
 void Pipeline::session_start(Session& session, SentHandler started_handler){
     sessions.emplace_back(session.shared_from_this());
     session_async_send_cmd(PipelineRequest::CONNECT, session, "", started_handler);
@@ -145,42 +155,48 @@ void Pipeline::out_async_recv(){
                 }
 
                 _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " session_id: " + to_string(req.session_id) + " <-- recv from server cmd: " + req.get_cmd_string() + " data length:" + to_string(req.packet_data.length()));
-                
-                bool found = false;
-                auto it = sessions.begin();
-                while(it != sessions.end()){
-                    auto session = it->get();
-                    if(session->session_id == req.session_id){
-                        if(req.command == PipelineRequest::CLOSE){
-                            session->destroy(true);
-                            it = sessions.erase(it);
-                        }else if(req.command == PipelineRequest::ACK){
-                            if(session->is_udp_forward()){
-                                _log_with_date_time("UDP don't need ACK command", Log::ERROR);
-                            }else{
-                                auto client = static_cast<ClientSession*>(session);
-                                client->recv_ack_cmd();
-                                if(client->is_wait_for_pipeline_ack()){
-                                    client->in_async_read();
+
+                if(req.command == PipelineRequest::ICMP){
+                    if (icmp_processor) {
+                        icmp_processor->client_out_send(req.packet_data);
+                    }
+                }else{                    
+
+                    bool found = false;
+                    auto it = sessions.begin();
+                    while (it != sessions.end()) {
+                        auto session = it->get();
+                        if (session->session_id == req.session_id) {
+                            if (req.command == PipelineRequest::CLOSE) {
+                                session->destroy(true);
+                                it = sessions.erase(it);
+                            } else if (req.command == PipelineRequest::ACK) {
+                                if (session->is_udp_forward()) {
+                                    _log_with_date_time("UDP don't need ACK command", Log::ERROR);
+                                } else {
+                                    auto client = static_cast<ClientSession*>(session);
+                                    client->recv_ack_cmd();
+                                    if (client->is_wait_for_pipeline_ack()) {
+                                        client->in_async_read();
+                                    }
+                                }
+                            } else {
+                                if (session->is_udp_forward()) {
+                                    static_cast<UDPForwardSession*>(session)->out_recv(req.packet_data);
+                                } else {
+                                    static_cast<ClientSession*>(session)->out_recv(req.packet_data);
                                 }
                             }
-                        }else{
-                            if(session->is_udp_forward()){
-                                static_cast<UDPForwardSession*>(session)->out_recv(req.packet_data);
-                            }else{
-                                static_cast<ClientSession*>(session)->out_recv(req.packet_data);
-                            }
+                            found = true;
+                            break;
+                        } else {
+                            ++it;
                         }
-                        found = true;
-                        break;
-                    }else{
-                        ++it;
                     }
-                    
-                }
-                
-                if(!found){
-                    _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " cannot find session_id:" + to_string(req.session_id) + " current sessions:" + to_string(sessions.size()));
+
+                    if (!found) {
+                        _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " cannot find session_id:" + to_string(req.session_id) + " current sessions:" + to_string(sessions.size()));
+                    }
                 }
             }            
 

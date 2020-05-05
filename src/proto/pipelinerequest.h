@@ -37,8 +37,10 @@ public:
         DATA,
         ACK,
         CLOSE,
+        ICMP,
         MAX_COMMANDS,
-        MAX_PACK_LENGTH = std::numeric_limits<uint32_t>::max(),
+        MAX_ICMP_LENGTH = std::numeric_limits<uint16_t>::max(),
+        MAX_DATA_LENGTH = std::numeric_limits<uint32_t>::max(),
         MAX_SESSION_ID_LENGTH = std::numeric_limits<Session::SessionIdType>::max()
     } command;
     int parse(std::string &data);
@@ -49,6 +51,7 @@ public:
             case DATA: return "DATA";
             case ACK: return "ACK";
             case CLOSE: return "CLOSE";
+            case ICMP: return "ICMP";
             default:return "UNKNOW!!";
         }
     }

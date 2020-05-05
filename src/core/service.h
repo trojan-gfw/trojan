@@ -20,17 +20,18 @@
 #ifndef _SERVICE_H_
 #define _SERVICE_H_
 
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/udp.hpp>
+#include <boost/asio/ssl.hpp>
+#include <functional>
 #include <list>
 #include <string>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/asio/ip/udp.hpp>
-#include <functional>
-#include "session/session.h"
-#include "pipeline.h"
-#include "authenticator.h"
-#include "session/udpforwardsession.h"
 
+#include "authenticator.h"
+#include "core/icmpd.h"
+#include "core/pipeline.h"
+#include "session/session.h"
+#include "session/udpforwardsession.h"
 
 #ifdef ENABLE_REUSE_PORT
 typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
@@ -68,6 +69,8 @@ typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> re
 #define PACKET_HEADER_SIZE (1 + 28 + 2 + 64)
 #define DEFAULT_PACKET_SIZE 1397 // 1492 - PACKET_HEADER_SIZE = 1397, the default MTU for UDP relay
 
+class Pipeline;
+class icmpd;
 class Service {
 private:
     typedef std::list<std::weak_ptr<Pipeline>> PipelineList;
@@ -89,6 +92,7 @@ private:
     size_t pipeline_select_idx;
     void prepare_pipelines();
     void start_session(std::shared_ptr<Session> session, bool is_udp_forward, std::function<void(boost::system::error_code ec)> started_handler);
+    std::shared_ptr<icmpd> icmp_processor;
 public:
     Service(Config &config, bool test = false);
     void run();
@@ -98,6 +102,7 @@ public:
     ~Service();
 
     void session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
     void session_destroy_in_pipeline(Session& session);
 };
 

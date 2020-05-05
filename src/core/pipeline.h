@@ -27,15 +27,15 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/tcp.hpp>
+
 #include "proto/pipelinerequest.h"
 #include "core/config.h"
 #include "session/session.h"
-
+#include "core/icmpd.h"
 
 class Pipeline : public std::enable_shared_from_this<Pipeline> {
 public:
     typedef std::function<void(const boost::system::error_code ec)> SentHandler;
-
     class SendData{
     public:
         std::string send_data;
@@ -61,6 +61,7 @@ private:
     boost::asio::ip::tcp::resolver resolver; 
     std::vector<std::shared_ptr<Session>> sessions;
     uint32_t pipeline_id;
+    std::shared_ptr<icmpd> icmp_processor;
 
     void out_async_recv();
     void out_async_send();
@@ -72,12 +73,15 @@ public:
 
     void session_start(Session& session,  SentHandler started_handler);
     void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler sent_handler);
+    void session_async_send_icmp(const std::string& send_data, SentHandler sent_handler);
     void session_destroyed(Session& session);
 
     inline bool is_connected()const { return connected; }
     bool is_in_pipeline(Session& session);
     
     uint32_t get_pipeline_id()const{ return pipeline_id; }
+
+    void set_icmpd(std::shared_ptr<icmpd> icmp){ icmp_processor = icmp; }
 };
 
 #endif // _PIPELINE_H_
