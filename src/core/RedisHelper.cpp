@@ -37,6 +37,9 @@ bool RedisHelper::exists(const std::string& key) {
 }
 
 bool RedisHelper::increaseValue(const std::string& key, const std::string& subkey, uint64_t val) {
+    if(isRedisErrorNil(static_cast<redisReply *>(redisCommand(client, "EXISTS %s", key.c_str())))) {
+        return false;
+    }
     auto* r = static_cast<redisReply *>(redisCommand(client, "HINCRBY %s %s %lld", key.c_str(), subkey.c_str(), val));
     if (isRedisErrorNil(r)) {
         return false;
