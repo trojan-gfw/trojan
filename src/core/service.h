@@ -37,6 +37,22 @@
 typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
 #endif // ENABLE_REUSE_PORT
 
+#ifndef IP_RECVTTL
+#define IP_RECVTTL 12
+#endif
+
+#ifndef IPV6_RECVHOPLIMIT
+#define IPV6_RECVHOPLIMIT 51
+#endif
+
+#ifndef IPV6_HOPLIMIT
+#define IPV6_HOPLIMIT 21
+#endif
+
+#ifndef IP_TTL
+#define IP_TTL 4
+#endif
+
 // copied from shadowsocks-libe udprelay.h
 #ifndef IP_TRANSPARENT
 #define IP_TRANSPARENT       19

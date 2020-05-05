@@ -54,6 +54,19 @@ static int get_dstaddr(struct msghdr *msg, struct sockaddr_storage *dstaddr)
     return 1;
 }
 
+static int get_ttl(struct msghdr *msg) {
+    struct cmsghdr *cmsg;
+    for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
+        if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_TTL) {
+            return *(int *)CMSG_DATA(cmsg);
+        } else if (cmsg->cmsg_level == SOL_IPV6 && cmsg->cmsg_type == IPV6_HOPLIMIT) {
+            return *(int *)CMSG_DATA(cmsg);
+        }
+    }
+
+    return -1;
+}
+
 static pair<string, uint16_t> get_addr(struct sockaddr_storage addr){
     
     const int buf_size = 256;
@@ -76,7 +89,7 @@ static pair<string, uint16_t> get_addr(struct sockaddr_storage addr){
 
 // copied from shadowsocks-libev udpreplay.c
 // it works if in NAT mode
-static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::endpoint& recv_endpoint, char* buf, int& buf_len){
+static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::endpoint& recv_endpoint, char* buf, int& buf_len, int& ttl){
     struct sockaddr_storage src_addr;
     memset(&src_addr, 0, sizeof(struct sockaddr_storage));
 
@@ -108,14 +121,16 @@ static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::
             _log_with_date_time(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
         }
 
+        ttl = get_ttl(&msg);
         if (get_dstaddr(&msg, &dst_addr)) {
             _log_with_date_time("[udp] unable to get dest addr!", Log::FATAL);
-        }else{
+        }
+        else {
             auto target_dst = get_addr(dst_addr);       
             auto src_dst = get_addr(src_addr);
             recv_endpoint.address(boost::asio::ip::make_address(src_dst.first));
             recv_endpoint.port(src_dst.second); 
-            return target_dst;           
+            return target_dst;
         }
     }    
 
@@ -163,14 +178,16 @@ Service::Service(Config &config, bool test) :
                 int fd = udp_socket.native_handle();
                 int sol;
                 int ip_recv;
+                bool ipv4 = udp_protocol.family() == boost::asio::ip::tcp::v4().family();
+                bool ipv6 = udp_protocol.family() == boost::asio::ip::tcp::v6().family();
 
-                if(udp_protocol.family() == boost::asio::ip::tcp::v4().family()){
+                if (ipv4) {
                     sol = SOL_IP;
                     ip_recv = IP_RECVORIGDSTADDR;
-                }else if (udp_protocol.family() == boost::asio::ip::tcp::v6().family()) {
+                } else if (ipv6) {
                     sol = SOL_IPV6;
                     ip_recv = IPV6_RECVORIGDSTADDR;
-                }else{
+                } else {
                     _log_with_date_time("[udp] protocol can't be recognized", Log::FATAL);
                     stop();
                     return;
@@ -192,6 +209,12 @@ Service::Service(Config &config, bool test) :
                     _log_with_date_time( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
                     stop();
                     return;
+                }
+
+                if (config.run_type == Config::NAT && config.experimental.pipeline_proxy_icmp) {
+                    if (setsockopt(fd, sol, ipv4 ? IP_RECVTTL : IPV6_RECVHOPLIMIT, &opt, sizeof(opt))) {
+                        _log_with_date_time("[udp] setsockopt IP_RECVOPTS/IPV6_RECVHOPLIMIT failed!", Log::ERROR);
+                    }
                 }
             }
 
@@ -515,8 +538,11 @@ void Service::udp_async_read() {
         
         if(config.run_type == Config::NAT){
             int read_length = (int)length;
-            targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char*)udp_read_buf, read_length);
+            int ttl = -1;
+            targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char *)udp_read_buf, read_length, ttl);
             length = read_length < 0 ? 0 : read_length;
+
+            _log_with_date_time("[udp] get ttl:" + to_string(ttl));
         }else{
             targetdst = make_pair(config.target_addr, config.target_port);
         }
