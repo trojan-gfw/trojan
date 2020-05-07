@@ -58,8 +58,8 @@ protected:
     void request_remote();
 public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
-    boost::asio::ip::tcp::socket& accept_socket();
-    void start();
+    boost::asio::ip::tcp::socket& accept_socket() override;
+    void start() override;
 };
 
 #endif // _CLIENTSESSION_H_

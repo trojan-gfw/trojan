@@ -76,7 +76,7 @@ typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> re
 #define PACKET_HEADER_SIZE (1 + 28 + 2 + 64)
 #define DEFAULT_PACKET_SIZE 1397 // 1492 - PACKET_HEADER_SIZE = 1397, the default MTU for UDP relay
 
-
+#ifndef _WIN32  // nat mode does not support in windows platform
 // copied from shadowsocks-libev udpreplay.c
 static int get_dstaddr(struct msghdr *msg, struct sockaddr_storage *dstaddr)
 {
@@ -164,6 +164,7 @@ static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::
 
     return make_pair("", 0);
 }
+#endif
 
 Service::Service(Config &config, bool test) :
     config(config),
@@ -198,6 +199,9 @@ Service::Service(Config &config, bool test) :
             udp_socket.open(udp_protocol);
             
             if(config.run_type == Config::NAT){
+#ifdef _WIN32
+                throw runtime_error("NAT is not supported in Windows");
+#else
                 // copy from shadowsocks-libev
                 int opt = 1;
                 int fd = udp_socket.native_handle();
@@ -233,6 +237,8 @@ Service::Service(Config &config, bool test) :
                     stop();
                     return;
                 }
+#endif // _WIN32
+
             }
 
             udp_socket.bind(udp_bind_endpoint);
@@ -241,7 +247,7 @@ Service::Service(Config &config, bool test) :
     Log::level = config.log_level;
     auto native_context = ssl_context.native_handle();
     ssl_context.set_options(context::default_workarounds | context::no_sslv2 | context::no_sslv3 | context::single_dh_use);
-    if (config.ssl.curves != "") {
+    if (!config.ssl.curves.empty()) {
         SSL_CTX_set1_curves_list(native_context, config.ssl.curves.c_str());
     }
     if (config.run_type == Config::SERVER) {
@@ -253,7 +259,7 @@ Service::Service(Config &config, bool test) :
         if (config.ssl.prefer_server_cipher) {
             SSL_CTX_set_options(native_context, SSL_OP_CIPHER_SERVER_PREFERENCE);
         }
-        if (config.ssl.alpn != "") {
+        if (!config.ssl.alpn.empty()) {
             SSL_CTX_set_alpn_select_cb(native_context, [](SSL*, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *config) -> int {
                 if (SSL_select_next_proto((unsigned char**)out, outlen, (unsigned char*)(((Config*)config)->ssl.alpn.c_str()), ((Config*)config)->ssl.alpn.length(), in, inlen) != OPENSSL_NPN_NEGOTIATED) {
                     return SSL_TLSEXT_ERR_NOACK;
@@ -270,14 +276,14 @@ Service::Service(Config &config, bool test) :
             SSL_CTX_set_session_cache_mode(native_context, SSL_SESS_CACHE_OFF);
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
-        if (config.ssl.plain_http_response != "") {
+        if (!config.ssl.plain_http_response.empty()) {
             ifstream ifs(config.ssl.plain_http_response, ios::binary);
             if (!ifs.is_open()) {
                 throw runtime_error(config.ssl.plain_http_response + ": " + strerror(errno));
             }
             plain_http_response = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
         }
-        if (config.ssl.dhparam == "") {
+        if (config.ssl.dhparam.empty()) {
             ssl_context.use_tmp_dh(boost::asio::const_buffer(SSLDefaults::g_dh2048_sz, SSLDefaults::g_dh2048_sz_size));
         } else {
             ssl_context.use_tmp_dh_file(config.ssl.dhparam);
@@ -290,12 +296,12 @@ Service::Service(Config &config, bool test) :
 #endif // ENABLE_MYSQL
         }
     } else {
-        if (config.ssl.sni == "") {
+        if (config.ssl.sni.empty()) {
             config.ssl.sni = config.remote_addr;
         }
         if (config.ssl.verify) {
             ssl_context.set_verify_mode(verify_peer);
-            if (config.ssl.cert == "") {
+            if (config.ssl.cert.empty()) {
                 ssl_context.set_default_verify_paths();
 #ifdef _WIN32
                 HCERTSTORE h_store = CertOpenSystemStore(0, _T("ROOT"));
@@ -376,7 +382,7 @@ Service::Service(Config &config, bool test) :
         } else {
             ssl_context.set_verify_mode(verify_none);
         }
-        if (config.ssl.alpn != "") {
+        if (!config.ssl.alpn.empty()) {
             SSL_CTX_set_alpn_protos(native_context, (unsigned char*)(config.ssl.alpn.c_str()), config.ssl.alpn.length());
         }
         if (config.ssl.reuse_session) {
@@ -389,10 +395,10 @@ Service::Service(Config &config, bool test) :
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
     }
-    if (config.ssl.cipher != "") {
+    if (!config.ssl.cipher.empty()) {
         SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
     }
-    if (config.ssl.cipher_tls13 != "") {
+    if (!config.ssl.cipher_tls13.empty()) {
 #ifdef ENABLE_TLS13_CIPHERSUITES
         SSL_CTX_set_ciphersuites(native_context, config.ssl.cipher_tls13.c_str());
 #else  // ENABLE_TLS13_CIPHERSUITES
@@ -505,9 +511,13 @@ void Service::udp_async_read() {
         pair<string,uint16_t> targetdst;
         
         if(config.run_type == Config::NAT){
+#ifdef _WIN32  // windows cannot support nat mode
+            targetdst = make_pair("", 0);
+#else
             int read_length = (int)length;
             targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char*)udp_read_buf, read_length);
             length = read_length < 0 ? 0 : read_length;
+#endif
         }else{
             targetdst = make_pair(config.target_addr, config.target_port);
         }
@@ -528,10 +538,13 @@ void Service::udp_async_read() {
             
             Log::log_with_endpoint(udp_recv_endpoint, "new UDP session");
             auto session = make_shared<UDPForwardSession>(config, io_context, ssl_context, udp_recv_endpoint, targetdst, 
-             [this](const udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& target, const string &data) {
+             [this](const udp::endpoint &endpoint, const pair<string, uint16_t>& target, const string &data) {
                 boost::system::error_code ec;
 
                 if(config.run_type == Config::NAT){
+#ifdef _WIN32
+                    throw runtime_error("NAT is not supported!" + target.first);
+#else
                     auto target_endpoint = udp::endpoint(boost::asio::ip::make_address(target.first), target.second);
                     auto new_udp_socket = udp::socket(io_context);
                     new_udp_socket.open(target_endpoint.protocol());
@@ -556,6 +569,7 @@ void Service::udp_async_read() {
                     }                   
                     
                     new_udp_socket.close(ec);
+#endif // _WIN32
                 }else{
                     udp_socket.send_to(boost::asio::buffer(data), endpoint, 0, ec);
                 }
