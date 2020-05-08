@@ -558,6 +558,9 @@ void Service::udp_async_read() {
             targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char *)udp_read_buf, read_length, ttl);
             length = read_length < 0 ? 0 : read_length;
 
+            // in the first design, if we want to proxy icmp, we need to transfer TTL of udp to server and set TTL when server sends upd out
+            // but now in most of traceroute programs just use icmp to trigger remote server back instead of udp, so we don't need pass TTL to server any more
+            // we just keep this codes of retreiving TTL if it will be used for some future features.
             _log_with_date_time("[udp] get ttl:" + to_string(ttl));
             
         }else{
