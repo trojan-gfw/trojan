@@ -120,6 +120,8 @@ public:
     void session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
     void session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
     void session_destroy_in_pipeline(Session& session);
+
+    Pipeline* search_default_pipeline();
 };
 
 

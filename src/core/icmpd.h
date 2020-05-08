@@ -24,6 +24,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <memory>
 #include <unordered_map>
+#include <list>
 
 #include "proto/icmp_header.h"
 #include "proto/ipv4_header.h"
@@ -54,15 +55,31 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
         }
     };
 
+    class IcmpSendingCache{
+    public:
+        std::string sending_data;
+        boost::asio::ip::address_v4 destination;
+        IcmpSendingCache(const std::string& data, boost::asio::ip::address_v4 dst):sending_data(data),destination(dst){}
+    };
+
     std::unordered_map<std::string, std::shared_ptr<IcmpSentData>> m_transfer_table;
     boost::asio::steady_timer m_timer;
     bool m_start_timer;
 
+    std::list<std::shared_ptr<IcmpSendingCache>> m_sending_data_cache;
+    bool m_is_sending_cache;
+
+    std::string generate_time_exceeded_icmp(ipv4_header& ipv4_hdr, icmp_header& icmp_hdr);
     void send_back_time_exceeded(ipv4_header& ipv4_hdr, icmp_header& icmp_hdr);
+
     void timer_async_wait();
     bool read_icmp(std::istream& is, size_t length, ipv4_header& ipv4_hdr, icmp_header& icmp_hdr, std::string& body);
+    std::shared_ptr<icmpd::IcmpSentData> find_icmp_sent_data(const std::string& hash, bool erase);
 
-public: 
+    void send_data_to_socket(const std::string& data, boost::asio::ip::address_v4 addr);
+    void async_out_send();
+
+public:
     icmpd(boost::asio::io_service& io_service);
     void start_recv();
 
@@ -73,7 +90,6 @@ public:
 
     void server_out_send(const std::string& data, std::weak_ptr<Session> pipeline_session);
     void client_out_send(const std::string& data);
-
 };
 
 #endif //ICMPD_HPP

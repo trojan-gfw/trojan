@@ -41,7 +41,8 @@ void Pipeline::start(){
     auto self = shared_from_this();
     connect_remote_server_ssl(this, config.remote_addr, to_string(config.remote_port), resolver, out_socket, tcp::endpoint(), [this, self](){
         connected = true;
-
+        out_socket_endpoint = out_socket.next_layer().remote_endpoint();
+        
         string data(config.password.cbegin()->first);
         data += "\r\n";
         sending_data_cache.emplace_front(std::make_shared<SendData>(data, [](boost::system::error_code){}));

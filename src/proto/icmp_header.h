@@ -59,6 +59,14 @@ public:
     uint8_t code() const { return rep_[1]; }
     uint16_t checksum() const { return decode(2, 3); }
 
+    std::string to_string() const {
+        std::ostringstream os;
+        os << "type: " << (int)type() << std::endl
+           << "code: " << (int)code() << std::endl
+           << "checksum: 0x" << std::hex << (int)checksum() << std::endl;
+        return os.str();
+    }
+
     // following functions are used for ping type
     uint16_t identifier() const { return decode(4, 5); }
     uint16_t sequence_number() const { return decode(6, 7); }
@@ -109,7 +117,7 @@ private:
         rep_[b] = static_cast<uint8_t>(n & 0xFF);
     }
 
-    uint8_t rep_[8];
+    uint8_t rep_[HEADER_LENGTH];
 };
 
 #endif  // ICMP_HEADER_HPP

@@ -220,6 +220,25 @@ Service::Service(Config &config, bool test) :
 
             udp_socket.bind(udp_bind_endpoint);
         }
+
+        if (config.experimental.pipeline_proxy_icmp) {
+            if (config.experimental.pipeline_num != 0) {
+                _log_with_date_time("Pipeline will proxy ICMP message", Log::WARN);
+                if (config.run_type == Config::SERVER || config.run_type == Config::NAT) {
+                    if (listen_endpoint.address().is_v4()) {
+                        icmp_processor = make_shared<icmpd>(io_context);
+                        icmp_processor->set_service(this, config.run_type == Config::NAT);
+                        icmp_processor->start_recv();
+                    } else {
+                        _log_with_date_time("Pipeline proxy icmp can only run in ipv4", Log::ERROR);
+                    }
+                } else {
+                    _log_with_date_time("Pipeline proxy icmp can only run in NAT & SERVER type", Log::ERROR);
+                }
+            }else{
+                _log_with_date_time("Pipeline proxy ICMP message need to enable pipeline (set pipeline_num as non zero)", Log::ERROR);
+            }            
+        }
     }
 
     config.prepare_ssl_context(ssl_context, plain_http_response);
@@ -256,32 +275,25 @@ Service::Service(Config &config, bool test) :
     }
 
     if(!config.experimental.pipeline_loadbalance_configs.empty()){
-        _log_with_date_time("Pipeline will use load balance config:", Log::WARN);
-        string tmp;
-        for(auto it = config.experimental.pipeline_loadbalance_configs.begin(); 
-         it != config.experimental.pipeline_loadbalance_configs.end(); it++){
-            _log_with_date_time("Loading " + (*it) + " config..." , Log::WARN);
+        if (config.experimental.pipeline_num != 0) {
+            _log_with_date_time("Pipeline will use load balance config:", Log::WARN);
+            string tmp;
+            for (auto it = config.experimental.pipeline_loadbalance_configs.begin();
+                 it != config.experimental.pipeline_loadbalance_configs.end(); it++) {
+                _log_with_date_time("Loading " + (*it) + " config...", Log::WARN);
 
-            auto other = make_shared<Config>();
-            other->load(*it);
+                auto other = make_shared<Config>();
+                other->load(*it);
 
-            auto ssl = make_shared<boost::asio::ssl::context>(context::sslv23);
-            other->prepare_ssl_context(*ssl, tmp);
+                auto ssl = make_shared<boost::asio::ssl::context>(context::sslv23);
+                other->prepare_ssl_context(*ssl, tmp);
 
-            config.experimental._pipeline_loadbalance_configs.emplace_back(other);
-            config.experimental._pipeline_loadbalance_context.emplace_back(ssl);
-        }        
-    }
-
-    if(config.experimental.pipeline_proxy_icmp){
-        _log_with_date_time("Pipeline will proxy ICMP message", Log::WARN);
-        if (config.run_type == Config::SERVER || config.run_type == Config::NAT) {
-            icmp_processor = make_shared<icmpd>(io_context);
-            icmp_processor->set_service(this, config.run_type == Config::NAT);
-            icmp_processor->start_recv();
+                config.experimental._pipeline_loadbalance_configs.emplace_back(other);
+                config.experimental._pipeline_loadbalance_context.emplace_back(ssl);
+            }
         }else{
-            _log_with_date_time("Pipeline proxy icmp can only run in NAT & SERVER type", Log::ERROR);
-        }   
+            _log_with_date_time("Pipeline load balance need to enable pipeline (set pipeline_num as non zero)", Log::ERROR);
+        }
     }
 }
 
@@ -427,27 +439,7 @@ void Service::session_async_send_to_pipeline(Session& session, PipelineRequest::
 
 void Service::session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
     if (config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER) {
-        prepare_pipelines();
-
-        if (pipelines.empty()) {
-            throw logic_error("pipeline is empty after preparing!");
-        }
-
-        Pipeline* pipeline = nullptr;
-        auto it = pipelines.begin();
-        while (it != pipelines.end()) {
-            if (it->expired()) {
-                it = pipelines.erase(it);
-            } else {
-                auto p = it->lock().get();
-                if (&(p->config) == (&config)) {
-                    pipeline = p;
-                    break;
-                }
-                ++it;
-            }
-        }
-
+        Pipeline *pipeline = search_default_pipeline();
         if (!pipeline) {
             _log_with_date_time("pipeline is broken, destory session", Log::WARN);
             sent_handler(boost::asio::error::broken_pipe);
@@ -476,6 +468,30 @@ void Service::session_destroy_in_pipeline(Session& session){
     }
 }
 
+Pipeline* Service::search_default_pipeline() {
+    prepare_pipelines();
+
+    if (pipelines.empty()) {
+        throw logic_error("pipeline is empty after preparing!");
+    }
+
+    Pipeline *pipeline = nullptr;
+    auto it = pipelines.begin();
+    while (it != pipelines.end()) {
+        if (it->expired()) {
+            it = pipelines.erase(it);
+        } else {
+            auto p = it->lock().get();
+            if (&(p->config) == (&config)) {  // find the default pipeline, cannot use load-balance server
+                pipeline = p;
+                break;
+            }
+            ++it;
+        }
+    }
+
+    return pipeline;
+}
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {

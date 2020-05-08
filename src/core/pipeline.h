@@ -62,6 +62,7 @@ private:
     std::vector<std::shared_ptr<Session>> sessions;
     uint32_t pipeline_id;
     std::shared_ptr<icmpd> icmp_processor;
+    boost::asio::ip::tcp::endpoint out_socket_endpoint;
 
     void out_async_recv();
     void out_async_send();
@@ -82,6 +83,7 @@ public:
     uint32_t get_pipeline_id()const{ return pipeline_id; }
 
     void set_icmpd(std::shared_ptr<icmpd> icmp){ icmp_processor = icmp; }
+    boost::asio::ip::tcp::endpoint get_out_socket_endpoint() const { return out_socket_endpoint;}
 };
 
 #endif // _PIPELINE_H_
