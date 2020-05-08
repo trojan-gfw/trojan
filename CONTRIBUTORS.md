@@ -22,6 +22,9 @@
     - Add Linux smoke test.
 - [LimiQS](https://github.com/LimiQS)
     - Refine the config documentation.
+- [Qv2ray-dev](https://github.com/Qv2ray-dev)
+    - Fix Azure Pipelines config.
+    - Add log callback.
 - [WeidiDeng](https://github.com/WeidiDeng)
     - Fix incorrect Debian dependency in the documentation.
 - [WillyPillow](https://github.com/WillyPillow)
@@ -43,3 +46,5 @@
     - Add TLS1.3 ciphersuites support.
 - [zhangsan946](https://github.com/zhangsan946)
     - Add macOS keychain support.
+- [zhyncs](https://github.com/zhyncs)
+    - Fix clang-tidy warnings.

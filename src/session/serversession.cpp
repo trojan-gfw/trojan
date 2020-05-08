@@ -48,7 +48,7 @@ tcp::socket& ServerSession::accept_socket() {
 
 void ServerSession::start() {
     
-    start_time = time(NULL);
+    start_time = time(nullptr);
 
     if(!use_pipeline){
         boost::system::error_code ec;
@@ -62,7 +62,7 @@ void ServerSession::start() {
         in_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
             if (error) {
                 _log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
-                if (error.message() == "http request" && plain_http_response != "") {
+                if (error.message() == "http request" && plain_http_response.empty()) {
                     recv_len += plain_http_response.length();
                     boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code, size_t) {
                         output_debug_info();
@@ -219,7 +219,7 @@ void ServerSession::in_recv(const string &data) {
             const unsigned char *alpn_out;
             unsigned int alpn_len;
             SSL_get0_alpn_selected(in_socket.native_handle(), &alpn_out, &alpn_len);
-            if (alpn_out == NULL) {
+            if (alpn_out == nullptr) {
                 return config.remote_port;
             }
             auto it = config.ssl.alpn_port_override.find(string(alpn_out, alpn_out + alpn_len));
@@ -313,7 +313,7 @@ void ServerSession::udp_sent() {
         string query_addr = packet.address.address;
         auto self = shared_from_this();
         udp_resolver.async_resolve(query_addr, to_string(packet.address.port), [this, self, packet, query_addr](const boost::system::error_code error, udp::resolver::results_type results) {
-            if (error || results.size() == 0) {
+            if (error || results.empty()) {
                 _log_with_endpoint(out_udp_endpoint, "session_id: " + to_string(session_id) + " cannot resolve remote server hostname " + query_addr + ": " + error.message(), Log::ERROR);
                 destroy();
                 return;
@@ -352,7 +352,7 @@ void ServerSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    _log_with_endpoint(in_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(in_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }

@@ -59,9 +59,9 @@ private:
 public:
     ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
     void set_use_pipeline(std::weak_ptr<Session> pipeline);
-    boost::asio::ip::tcp::socket& accept_socket();
-    void start();
-    void destroy(bool pipeline_call = false);
+    boost::asio::ip::tcp::socket &accept_socket() override;
+    void start() override;
+    void destroy(bool pipeline_call = false) override;
     void out_async_read();
     void in_recv(const std::string &data);
     bool is_destoryed()const{ return status == DESTROY; }

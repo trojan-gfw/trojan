@@ -28,14 +28,14 @@
 class Authenticator {
 private:
 #ifdef ENABLE_MYSQL
-    MYSQL con;
+    MYSQL con{};
 #endif // ENABLE_MYSQL
     enum {
         PASSWORD_LENGTH=56
     };
-    bool is_valid_password(const std::string &password);
+    static bool is_valid_password(const std::string &password);
 public:
-    Authenticator(const Config &config);
+    explicit Authenticator(const Config &config);
     bool auth(const std::string &password);
     void record(const std::string &password, uint64_t download, uint64_t upload);
     ~Authenticator();

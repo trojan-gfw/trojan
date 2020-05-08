@@ -47,7 +47,7 @@ tcp::socket& ClientSession::accept_socket() {
 
 bool ClientSession::prepare_session(){
     boost::system::error_code ec;
-    start_time = time(NULL);
+    start_time = time(nullptr);
     in_endpoint = in_socket.remote_endpoint(ec);
     if (ec) {
         _log_with_date_time("cannot get in_endpoint in prepare_session", Log::FATAL);
@@ -55,7 +55,7 @@ bool ClientSession::prepare_session(){
         return false;
     }
     auto ssl = out_socket.native_handle();
-    if (config.ssl.sni != "") {
+    if (!config.ssl.sni.empty()) {
         SSL_set_tlsext_host_name(ssl, config.ssl.sni.c_str());
     }
     if (config.ssl.reuse_session) {
@@ -406,7 +406,7 @@ void ClientSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    _log_with_endpoint(in_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(in_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     boost::system::error_code ec;
     resolver.cancel();
     if (in_socket.is_open()) {

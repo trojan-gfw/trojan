@@ -19,6 +19,7 @@
 
 #include "udpforwardsession.h"
 #include <stdexcept>
+#include <utility>
 #include "ssl/sslsession.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
@@ -29,10 +30,10 @@ using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
 UDPForwardSession::UDPForwardSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, 
-    const udp::endpoint &endpoint,const std::pair<std::string, uint16_t>& targetdst, const UDPWrite &in_write) :
+    const udp::endpoint &endpoint,const std::pair<std::string, uint16_t>& targetdst, UDPWrite in_write) :
     Session(config, io_context),
     status(CONNECT),
-    in_write(in_write),
+    in_write(move(in_write)),
     out_socket(io_context, ssl_context),
     gc_timer(io_context),
     udp_target(targetdst) ,
@@ -58,11 +59,14 @@ void UDPForwardSession::start(){
 
 void UDPForwardSession::start_udp(const std::string& data) {
     timer_async_wait();
-    start_time = time(NULL);
+    start_time = time(nullptr);
 
     auto self = shared_from_this();
     auto cb = [this, self](){
         if(config.run_type == Config::NAT){
+#ifdef _WIN32
+            throw runtime_error("NAT is not supported!" + target.first);
+#else
             udp_target_socket.open(udp_target_endpoint.protocol());
             bool succ = true;
             int opt = 1;
@@ -83,6 +87,7 @@ void UDPForwardSession::start_udp(const std::string& data) {
                 destroy();
                 return;
             }
+#endif // _WIN32
         }
         
         status = FORWARDING;
@@ -240,7 +245,7 @@ void UDPForwardSession::destroy(bool pipeline_call /*= false*/) {
         return;
     }
     status = DESTROY;
-    _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(NULL) - start_time) + " seconds", Log::INFO);
+    _log_with_endpoint(udp_recv_endpoint, "session_id: " + to_string(session_id) + " disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     resolver.cancel();
     gc_timer.cancel();
 

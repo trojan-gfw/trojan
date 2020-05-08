@@ -26,13 +26,12 @@
 class NATSession : public ClientSession {
 protected:
     virtual std::pair<std::string, uint16_t> get_target_endpoint();
-    virtual void in_recv(const std::string &data);
-    virtual void in_sent();
+    void in_recv(const std::string &data) override;
+    void in_sent() override;
 
-    
 public:
     NATSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
-    void start();
+    void start() override;
 };
 
 #endif // _NATSESSION_H_

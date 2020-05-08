@@ -36,7 +36,7 @@ Session::Session(const Config &config, boost::asio::io_context &io_context) :
     pipeline_ack_counter = static_cast<int>(config.experimental.pipeline_ack_window);
 }
 
-Session::~Session() {}
+Session::~Session() = default;
 
 void Session::allocate_session_id(){
     if(s_session_used_ids.size() >= numeric_limits<SessionIdType>::max()){

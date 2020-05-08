@@ -58,9 +58,9 @@ protected:
 public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
     ~ClientSession();
-    boost::asio::ip::tcp::socket& accept_socket();
-    void start();
-    void destroy(bool pipeline_call = false);
+    boost::asio::ip::tcp::socket &accept_socket() override;
+    void start() override;
+    void destroy(bool pipeline_call = false) override;
 
     void in_async_read();
     void out_recv(const std::string &data);   

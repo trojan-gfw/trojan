@@ -45,12 +45,12 @@ private:
 
 protected:
     
-    uint8_t in_read_buf[MAX_BUF_LENGTH];
-    uint8_t out_read_buf[MAX_BUF_LENGTH];
-    uint8_t udp_read_buf[MAX_BUF_LENGTH];
+    uint8_t in_read_buf[MAX_BUF_LENGTH]{};
+    uint8_t out_read_buf[MAX_BUF_LENGTH]{};
+    uint8_t udp_read_buf[MAX_BUF_LENGTH]{};
     uint64_t recv_len;
     uint64_t sent_len;
-    time_t start_time;
+    time_t start_time{};
     std::string out_write_buf;
     std::string udp_data_buf;
     boost::asio::ip::tcp::resolver resolver;

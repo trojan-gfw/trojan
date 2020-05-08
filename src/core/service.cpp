@@ -34,6 +34,7 @@ using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
+#ifndef _WIN32  // nat mode does not support in windows platform
 // copied from shadowsocks-libev udpreplay.c
 static int get_dstaddr(struct msghdr *msg, struct sockaddr_storage *dstaddr)
 {
@@ -136,6 +137,7 @@ static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::
 
     return make_pair("", 0);
 }
+#endif // _WIN32
 
 Service::Service(Config &config, bool test) :
     config(config),
@@ -173,6 +175,9 @@ Service::Service(Config &config, bool test) :
             udp_socket.open(udp_protocol);
             
             if(config.run_type == Config::NAT){
+#ifdef _WIN32
+                throw runtime_error("NAT is not supported in Windows");
+#else
                 // copy from shadowsocks-libev
                 int opt = 1;
                 int fd = udp_socket.native_handle();
@@ -216,6 +221,8 @@ Service::Service(Config &config, bool test) :
                         _log_with_date_time("[udp] setsockopt IP_RECVOPTS/IPV6_RECVHOPLIMIT failed!", Log::ERROR);
                     }
                 }
+#endif // _WIN32
+
             }
 
             udp_socket.bind(udp_bind_endpoint);
@@ -237,7 +244,7 @@ Service::Service(Config &config, bool test) :
                 }
             }else{
                 _log_with_date_time("Pipeline proxy ICMP message need to enable pipeline (set pipeline_num as non zero)", Log::ERROR);
-            }            
+            }    
         }
     }
 
@@ -553,6 +560,9 @@ void Service::udp_async_read() {
         pair<string,uint16_t> targetdst;
         
         if(config.run_type == Config::NAT){
+#ifdef _WIN32  // windows cannot support nat mode
+            targetdst = make_pair("", 0);
+#else
             int read_length = (int)length;
             int ttl = -1;
             targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char *)udp_read_buf, read_length, ttl);
@@ -562,7 +572,7 @@ void Service::udp_async_read() {
             // but now in most of traceroute programs just use icmp to trigger remote server back instead of udp, so we don't need pass TTL to server any more
             // we just keep this codes of retreiving TTL if it will be used for some future features.
             _log_with_date_time("[udp] get ttl:" + to_string(ttl));
-            
+#endif  //_WIN32
         }else{
             targetdst = make_pair(config.target_addr, config.target_port);
         }

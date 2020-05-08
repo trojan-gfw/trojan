@@ -50,13 +50,13 @@ private:
     void timer_async_wait();
 public:
     UDPForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, 
-        const boost::asio::ip::udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& targetdst, const UDPWrite &in_write);
+        const boost::asio::ip::udp::endpoint &endpoint, const std::pair<std::string, uint16_t>& targetdst, UDPWrite in_write);
     ~UDPForwardSession();
     
-    boost::asio::ip::tcp::socket& accept_socket();
-    void start();
+    boost::asio::ip::tcp::socket& accept_socket() override;
+    void start() override;
     void start_udp(const std::string& data);
-    void destroy(bool pipeline_call = false);
+    void destroy(bool pipeline_call = false) override;
     bool process(const boost::asio::ip::udp::endpoint &endpoint, const std::string &data);
     void out_recv(const std::string &data);
 };

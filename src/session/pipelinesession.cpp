@@ -59,7 +59,7 @@ void PipelineSession::start(){
     live_socket.async_handshake(stream_base::server, [this, self](const boost::system::error_code error) {
         if (error) {
             _log_with_endpoint(in_endpoint, "SSL handshake failed: " + error.message(), Log::ERROR);
-            if (error.message() == "http request" && plain_http_response != "") {
+            if (error.message() == "http request" && plain_http_response.empty()) {
                 recv_len += plain_http_response.length();
                 boost::asio::async_write(accept_socket(), boost::asio::buffer(plain_http_response), [this, self](const boost::system::error_code ec, size_t) {
                     output_debug_info_ec(ec);

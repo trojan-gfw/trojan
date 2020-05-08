@@ -99,7 +99,7 @@ private:
     std::string plain_http_response;
     boost::asio::ip::udp::socket udp_socket;
     std::list<std::weak_ptr<UDPForwardSession> > udp_sessions;
-    uint8_t udp_read_buf[Session::MAX_BUF_LENGTH];
+    uint8_t udp_read_buf[Session::MAX_BUF_LENGTH]{};
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
     void async_accept();
     void udp_async_read();
@@ -110,7 +110,7 @@ private:
     void start_session(std::shared_ptr<Session> session, bool is_udp_forward, std::function<void(boost::system::error_code ec)> started_handler);
     std::shared_ptr<icmpd> icmp_processor;
 public:
-    Service(Config &config, bool test = false);
+    explicit Service(Config &config, bool test = false);
     void run();
     void stop();
     boost::asio::io_context &service();
@@ -131,7 +131,7 @@ void connect_out_socket(ThisT this_ptr, std::string addr, std::string port, boos
     
     resolver.async_resolve(addr, port, [=, &out_socket]
      (const boost::system::error_code error, boost::asio::ip::tcp::resolver::results_type results) {
-        if (error || results.size() == 0) {
+        if (error || results.empty()) {
             _log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + addr + ":" + port + " reason: " + error.message(), Log::ERROR);
             this_ptr->destroy();
             return;

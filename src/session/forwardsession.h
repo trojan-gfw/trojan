@@ -26,7 +26,7 @@
 
 class ForwardSession : public NATSession {
 protected:
-    virtual std::pair<std::string, uint16_t> get_target_endpoint();
+    std::pair<std::string, uint16_t> get_target_endpoint() override;
 public:
     ForwardSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
 };
