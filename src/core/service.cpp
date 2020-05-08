@@ -206,7 +206,11 @@ Service::Service(Config &config, bool test) :
                 ssl_context.load_verify_file(config.ssl.cert);
             }
             if (config.ssl.verify_hostname) {
+#if BOOST_VERSION >= 107300
+                ssl_context.set_verify_callback(host_name_verification(config.ssl.sni));
+#else
                 ssl_context.set_verify_callback(rfc2818_verification(config.ssl.sni));
+#endif
             }
             X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
             X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_PARTIAL_CHAIN);

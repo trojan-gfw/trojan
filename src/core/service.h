@@ -21,6 +21,7 @@
 #define _SERVICE_H_
 
 #include <list>
+#include <boost/version.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/udp.hpp>
