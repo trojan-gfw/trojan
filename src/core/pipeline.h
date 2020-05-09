@@ -107,7 +107,7 @@ public:
     };
 
     class ReadDataCache{
-        std::list<std::string> data_queue;
+        std::string data_queue;
         ReadHandler read_handler;
         bool is_waiting;
     public :
@@ -117,7 +117,7 @@ public:
                 read_handler(data);
                 is_waiting = false;
             }else{
-                data_queue.emplace_back(std::move(data));
+                data_queue += data;
             }
         }
 
@@ -126,8 +126,8 @@ public:
                 is_waiting = true;
                 read_handler = std::move(handler);
             }else{
-                handler(data_queue.front());
-                data_queue.pop_front();
+                handler(data_queue);
+                data_queue.clear();
             }
         }
     };
