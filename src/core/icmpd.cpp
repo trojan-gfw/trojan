@@ -11,8 +11,6 @@ using namespace boost::asio::ip;
 
 icmpd::icmpd(boost::asio::io_service& io_service)
     : m_socket(io_service, icmp::v4()),
-      m_timer(io_service, boost::asio::chrono::seconds(ICMP_WAIT_TRANSFER_TIME)),
-      m_start_timer(false),
       m_is_sending_cache(false) {
     int fd = m_socket.native_handle();
     int opt = 1;
@@ -21,23 +19,42 @@ icmpd::icmpd(boost::asio::io_service& io_service)
     }
 }
 
-void icmpd::timer_async_wait(){
+void icmpd::add_transfer_table(std::string&& hash, std::shared_ptr<IcmpSentData>&& data) {
+    if(m_client_or_server){
+        throw logic_error("[icmp] client don't need use add_transfer_table");
+    }
+
+    check_transfer_table_timeout();
+    m_transfer_table.emplace(make_pair(hash, data));
+}
+
+void icmpd::check_transfer_table_timeout() {
     auto curr_time = time(NULL);
     for(auto it = m_transfer_table.begin();it != m_transfer_table.end();){
         if (curr_time - it->second->sent_time > ICMP_WAIT_TRANSFER_TIME) {
-            _log_with_date_time("[icmp] timeout, remove " + it->second->source.to_string() + " -> " + it->second->destination.to_string());
+            _log_with_date_time("[icmp] transfer table item timeout, remove " + it->second->source.to_string() + " -> " + it->second->destination.to_string());
             it = m_transfer_table.erase(it);
         }else{
             ++it;
         }
     }
+}
 
-    auto self = shared_from_this();
-    m_timer.async_wait([this, self](const boost::system::error_code error) {
-        if (!error) {
-            timer_async_wait();
-        }        
-    });
+std::shared_ptr<icmpd::IcmpSentData> icmpd::find_icmp_sent_data(const std::string& hash, bool erase) {    
+    check_transfer_table_timeout();
+
+    auto it = m_transfer_table.find(hash);
+    if (it != m_transfer_table.end()) {
+        auto session = it->second;
+        if (!session->pipeline_session.expired()) {
+            if (erase) {
+                m_transfer_table.erase(it);
+            }
+            return session;
+        }
+    }
+
+    return nullptr;
 }
 
 bool icmpd::read_icmp(std::istream& is, size_t length, ipv4_header& ipv4_hdr, icmp_header& icmp_hdr, std::string& body) {
@@ -57,29 +74,8 @@ bool icmpd::read_icmp(std::istream& is, size_t length, ipv4_header& ipv4_hdr, ic
     return false;
 }
 
-std::shared_ptr<icmpd::IcmpSentData> icmpd::find_icmp_sent_data(const std::string& hash, bool erase) {
-    auto it = m_transfer_table.find(hash);
-    if (it != m_transfer_table.end()) {
-        auto session = it->second;
-        if (!session->pipeline_session.expired()) {
-            if (erase) {
-                m_transfer_table.erase(it);
-            }
-            return session;
-        }
-    }
-
-    return nullptr;
-}
-
 void icmpd::start_recv() {
     auto self = shared_from_this();
-    if (!m_start_timer) {
-        m_start_timer = true;
-        m_timer.async_wait([this, self](const boost::system::error_code) {
-            timer_async_wait();
-        });
-    }
     m_buffer.consume(m_buffer.size());    
     m_socket.async_receive(m_buffer.prepare(65536), [this, self](boost::system::error_code ec, size_t length) {
         if (!ec) {
@@ -157,6 +153,8 @@ void icmpd::start_recv() {
                     }
                 }
             }
+        }else{
+            output_debug_info_ec(ec);
         }
 
         start_recv();
@@ -265,7 +263,7 @@ void icmpd::server_out_send(const std::string& data, std::weak_ptr<Session> pipe
         auto hash = dst.to_string() + to_string((int)icmp_header::echo_request) 
             + to_string(icmp_hdr.identifier()) + to_string(icmp_hdr.sequence_number());
 
-        m_transfer_table.emplace(make_pair(hash, make_shared<IcmpSentData>(pipeline_session, src, dst)));
+        add_transfer_table(move(hash), make_shared<IcmpSentData>(pipeline_session, src, dst));
     }
 }
 

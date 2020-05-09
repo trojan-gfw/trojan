@@ -63,8 +63,6 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
     };
 
     std::unordered_map<std::string, std::shared_ptr<IcmpSentData>> m_transfer_table;
-    boost::asio::steady_timer m_timer;
-    bool m_start_timer;
 
     std::list<std::shared_ptr<IcmpSendingCache>> m_sending_data_cache;
     bool m_is_sending_cache;
@@ -72,7 +70,8 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
     std::string generate_time_exceeded_icmp(ipv4_header& ipv4_hdr, icmp_header& icmp_hdr);
     void send_back_time_exceeded(ipv4_header& ipv4_hdr, icmp_header& icmp_hdr);
 
-    void timer_async_wait();
+    void check_transfer_table_timeout();
+    void add_transfer_table(std::string&& hash, std::shared_ptr<IcmpSentData>&& data);
     bool read_icmp(std::istream& is, size_t length, ipv4_header& ipv4_hdr, icmp_header& icmp_hdr, std::string& body);
     std::shared_ptr<icmpd::IcmpSentData> find_icmp_sent_data(const std::string& hash, bool erase);
 
