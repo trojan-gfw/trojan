@@ -169,8 +169,7 @@ string icmpd::generate_time_exceeded_icmp(ipv4_header& ipv4_hdr, icmp_header& ic
 
     auto send_back_body = os.str();
 
-    os.clear();
-    os.seekp(ios::beg);
+    os.str("");
 
     auto src = ipv4_hdr.source_address();
 
