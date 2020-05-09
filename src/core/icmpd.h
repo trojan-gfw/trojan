@@ -51,7 +51,7 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
         int sent_time;
         IcmpSentData(std::weak_ptr<Session> sess, boost::asio::ip::address_v4 src, boost::asio::ip::address_v4 dst) : 
             pipeline_session(sess), source(src), destination(dst) {
-            sent_time = time(NULL);
+            sent_time = time(nullptr);
         }
     };
 

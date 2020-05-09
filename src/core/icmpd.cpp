@@ -12,11 +12,15 @@ using namespace boost::asio::ip;
 icmpd::icmpd(boost::asio::io_service& io_service)
     : m_socket(io_service, icmp::v4()),
       m_is_sending_cache(false) {
+#ifdef _WIN32
+    throw runtime_error("[icmp] cannot crate icmpd in windows!");
+#else
     int fd = m_socket.native_handle();
     int opt = 1;
     if (setsockopt(fd, SOL_IP, IP_HDRINCL, &opt, sizeof(opt))) {
         throw runtime_error("[icmp] setsockopt IP_HDRINCL failed!");
     }
+#endif //_WIN32
 }
 
 void icmpd::add_transfer_table(std::string&& hash, std::shared_ptr<IcmpSentData>&& data) {
@@ -29,7 +33,7 @@ void icmpd::add_transfer_table(std::string&& hash, std::shared_ptr<IcmpSentData>
 }
 
 void icmpd::check_transfer_table_timeout() {
-    auto curr_time = time(NULL);
+    auto curr_time = time(nullptr);
     for(auto it = m_transfer_table.begin();it != m_transfer_table.end();){
         if (curr_time - it->second->sent_time > ICMP_WAIT_TRANSFER_TIME) {
             _log_with_date_time("[icmp] transfer table item timeout, remove " + it->second->source.to_string() + " -> " + it->second->destination.to_string());
@@ -287,7 +291,7 @@ void icmpd::client_out_send(const std::string& data){
                 auto addr = pipeline->get_out_socket_endpoint().address();
                 if(addr.is_v4()){
                     ipv4_hdr.source_address(addr.to_v4());
-                    ipv4_hdr.identification((uint16_t)time(NULL)); // don't let kernel fill the source address
+                    ipv4_hdr.identification((uint16_t)time(nullptr));  // don't let kernel fill the source address
 
                     std::ostringstream os;
                     os << ipv4_hdr << icmp_hdr << body;

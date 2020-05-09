@@ -63,7 +63,7 @@ tcp::socket& PipelineSession::accept_socket(){
 
 void PipelineSession::start(){
     boost::system::error_code ec;
-    start_time = time(NULL);
+    start_time = time(nullptr);
     timer_async_wait();
     in_endpoint = live_socket.next_layer().remote_endpoint(ec);
     if (ec) {
