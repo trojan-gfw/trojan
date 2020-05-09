@@ -21,7 +21,7 @@
 #define _PIPELINE_H_
 
 #include <memory>
-#include <list>
+#include <vector>
 #include <functional>
 #include <time.h>
 #include <boost/asio/io_context.hpp>
@@ -40,20 +40,22 @@ public:
     typedef std::function<void(const boost::system::error_code ec)> SentHandler;
     typedef std::function<void(const std::string& data, SentHandler handler)> AsyncWriter;
     typedef std::function<bool()> ConnectionFunc;
+
     typedef std::function<void(const std::string& data)> ReadHandler;
 
-    struct SendData{
-        std::string send_data;
-        SentHandler sent_handler;
-        SendData(std::string data, SentHandler&& handler):send_data(data),sent_handler(move(handler)){}
-    };
 
     class SendDataCache{
-        std::list<std::shared_ptr<SendData>> sending_data_queue;
+        std::vector<SentHandler> handler_queue;
+        std::string data_queue;
+
+        std::string sending_data_buff;
+        std::vector<SentHandler> sending_data_handler;
+
         bool is_async_sending;
         AsyncWriter async_writer;
         ConnectionFunc is_connected;
-    public : 
+
+    public: 
         SendDataCache() : is_async_sending(false) {
             is_connected = []() { return true; };
         }
@@ -67,28 +69,37 @@ public:
         }
 
         inline void insert_data(std::string&& data) {
-            sending_data_queue.emplace_front(std::make_shared<SendData>(std::move(data), [](const boost::system::error_code) {}));
+            data_queue = data + data_queue;
             async_send();
         }
 
         inline void push_data(std::string&& data, SentHandler&& handler) {
-            sending_data_queue.emplace_back(std::make_shared<SendData>(std::move(data), std::move(handler)));
+            data_queue += data;
+            handler_queue.emplace_back(std::move(handler));
             async_send();
         }
 
         inline void async_send(){
-            if (sending_data_queue.empty() || !is_connected() || is_async_sending) {
+            if (data_queue.empty() || !is_connected() || is_async_sending) {
                 return;
             }
 
             is_async_sending = true;
-            auto sending_data = sending_data_queue.front();
-            async_writer(sending_data->send_data, [this, sending_data](const boost::system::error_code ec) {
+
+            sending_data_buff = data_queue;
+            data_queue.clear();
+
+            std::move(handler_queue.begin(), handler_queue.end(), std::back_inserter(sending_data_handler));
+            handler_queue.clear();
+
+            async_writer(sending_data_buff, [this](const boost::system::error_code ec) {
                 is_async_sending = false;
 
                 if (!ec) {
-                    sending_data_queue.pop_front();    
-                    sending_data->sent_handler(ec);
+                    for (size_t i = 0;i < sending_data_handler.size();i++) {
+                        sending_data_handler[i](ec);
+                    }
+                    sending_data_handler.clear();
                     async_send();
                 }
             });
