@@ -76,12 +76,27 @@ void ServerSession::start() {
             }
             in_async_read();
         });
+    }else{
+        in_async_read();
     }
-    
+}
+
+void ServerSession::pipeline_in_recv(string &&data) {
+    if (!use_pipeline) {
+        throw logic_error("cannot call pipeline_in_recv without pipeline!");
+    }
+
+    if (status != DESTROY) {
+        pipeline_data_cache.push_data(std::move(data));
+    }
 }
 
 void ServerSession::in_async_read() {
-    if(!use_pipeline){    
+    if(use_pipeline){
+        pipeline_data_cache.async_read([this](const string &data) {
+            in_recv(data);
+        });
+    }else{
         auto self = shared_from_this();
         in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_BUF_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {

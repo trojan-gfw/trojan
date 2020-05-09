@@ -126,8 +126,22 @@ bool UDPForwardSession::process(const udp::endpoint &endpoint, const string &dat
     return true;
 }
 
+void UDPForwardSession::pipeline_out_recv(string &&data) {
+    if (!pipeline_client_service) {
+        throw logic_error("cannot call pipeline_out_recv without pipeline!");
+    }
+    
+    if (status != DESTROY) {
+        pipeline_data_cache.push_data(std::move(data));
+    }
+}
+
 void UDPForwardSession::out_async_read() {
-    if(!pipeline_client_service){
+    if (pipeline_client_service) {
+        pipeline_data_cache.async_read([this](const string &data) {
+            out_recv(data);
+        });
+    } else {
         auto self = shared_from_this();
         out_socket.async_read_some(boost::asio::buffer(out_read_buf, MAX_BUF_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
             if (error) {
@@ -136,7 +150,7 @@ void UDPForwardSession::out_async_read() {
             }
             out_recv(string((const char*)out_read_buf, length));
         });
-    }    
+    }
 }
 
 void UDPForwardSession::out_async_write(const string &data) {

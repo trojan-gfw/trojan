@@ -50,7 +50,7 @@ class PipelineSession : public Session {
     boost::asio::steady_timer gc_timer;
     std::string in_recv_streaming_data;
 
-    std::list<std::shared_ptr<Pipeline::SendData>> sending_data_cache;
+    Pipeline::SendDataCache sending_data_cache;
     bool is_async_sending;
     
     boost::asio::io_context& io_context;
@@ -62,10 +62,8 @@ class PipelineSession : public Session {
     void process_streaming_data();
 
     void in_async_read();
-    void in_async_send();
-
     void in_recv(const std::string& data);
-    void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler);
+    void in_send(PipelineRequest::Command cmd, ServerSession& session, const std::string& session_data, Pipeline::SentHandler&& sent_handler);
     bool find_and_process_session(Session::SessionIdType session_id, std::function<void(SessionsList::iterator&)> processor);
 public:
     PipelineSession(const Config &config, boost::asio::io_context &io_context, 
@@ -75,9 +73,9 @@ public:
     boost::asio::ip::tcp::socket& accept_socket();
     void start();
 
-    void session_write_ack(ServerSession& session, Pipeline::SentHandler sent_handler);
-    void session_write_data(ServerSession& session, const std::string& session_data, Pipeline::SentHandler sent_handler);
-    void session_write_icmp(const std::string& data, Pipeline::SentHandler sent_handler);
+    void session_write_ack(ServerSession& session, Pipeline::SentHandler&& sent_handler);
+    void session_write_data(ServerSession& session, const std::string& session_data, Pipeline::SentHandler&& sent_handler);
+    void session_write_icmp(const std::string& data, Pipeline::SentHandler&& sent_handler);
     void remove_session_after_destroy(ServerSession& session);
 
     void set_icmpd(std::shared_ptr<icmpd> icmp) { icmp_processor = icmp; }

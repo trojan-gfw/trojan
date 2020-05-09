@@ -107,7 +107,7 @@ private:
     PipelineList pipelines;
     size_t pipeline_select_idx;
     void prepare_pipelines();
-    void start_session(std::shared_ptr<Session> session, bool is_udp_forward, std::function<void(boost::system::error_code ec)> started_handler);
+    void start_session(std::shared_ptr<Session> session, bool is_udp_forward, Pipeline::SentHandler&& started_handler);
     std::shared_ptr<icmpd> icmp_processor;
 public:
     explicit Service(Config &config, bool test = false);
@@ -117,8 +117,8 @@ public:
     void reload_cert();
     ~Service();
 
-    void session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
-    void session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler);
+    void session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, Pipeline::SentHandler&& sent_handler);
+    void session_async_send_to_pipeline_icmp(const std::string& data, Pipeline::SentHandler&& sent_handler);
     void session_destroy_in_pipeline(Session& session);
 
     Pipeline* search_default_pipeline();

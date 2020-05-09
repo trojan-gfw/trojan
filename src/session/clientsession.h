@@ -20,8 +20,10 @@
 #ifndef _CLIENTSESSION_H_
 #define _CLIENTSESSION_H_
 
-#include "session.h"
 #include <boost/asio/ssl.hpp>
+
+#include "session.h"
+#include "core/pipeline.h"
 
 class ClientSession : public Session {
 protected:
@@ -39,9 +41,9 @@ protected:
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     boost::asio::ip::udp::endpoint in_udp_endpoint;
-    
+    Pipeline::ReadDataCache pipeline_data_cache;
+
     void in_async_write(const std::string &data);
-    
     void out_async_read();
     void out_async_write(const std::string &data);
     void out_sent();
@@ -49,6 +51,7 @@ protected:
     void udp_async_write(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_recv(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_sent();
+    void out_recv(const std::string &data);
 
     virtual void in_recv(const std::string &data);
     virtual void in_sent();
@@ -63,7 +66,7 @@ public:
     void destroy(bool pipeline_call = false) override;
 
     void in_async_read();
-    void out_recv(const std::string &data);   
+    void pipeline_out_recv(std::string&& data);
 };
 
 #endif // _CLIENTSESSION_H_

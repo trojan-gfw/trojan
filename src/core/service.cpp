@@ -375,7 +375,7 @@ void Service::prepare_pipelines(){
     }
 }
 
-void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forward, std::function<void(boost::system::error_code ec)> started_handler){
+void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forward, Pipeline::SentHandler&& started_handler) {
     if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
         
         prepare_pipelines();
@@ -409,13 +409,13 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
 
         _log_with_date_time("pipeline " + to_string(pipeline->get_pipeline_id()) + " start session_id:" + to_string(session->session_id), Log::INFO);
         session.get()->set_use_pipeline(this, is_udp_forward);
-        pipeline->session_start(*(session.get()), started_handler);        
+        pipeline->session_start(*(session.get()), move(started_handler));
     }else{
         started_handler(boost::system::error_code());
     }
 }
 
-void Service::session_async_send_to_pipeline(Session& session, PipelineRequest::Command cmd, const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
+void Service::session_async_send_to_pipeline(Session &session, PipelineRequest::Command cmd, const std::string &data, Pipeline::SentHandler&& sent_handler) {
     if(config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER){
         
         Pipeline* pipeline = nullptr;
@@ -437,21 +437,21 @@ void Service::session_async_send_to_pipeline(Session& session, PipelineRequest::
             _log_with_date_time("pipeline is broken, destory session", Log::WARN);
             sent_handler(boost::asio::error::broken_pipe);
         }else{
-            pipeline->session_async_send_cmd(cmd, session, data, sent_handler);         
+            pipeline->session_async_send_cmd(cmd, session, data, move(sent_handler));
         }
     }else{
         _log_with_date_time("can't send data via pipeline!", Log::FATAL);
-    }    
+    }
 }
 
-void Service::session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)> sent_handler){
+void Service::session_async_send_to_pipeline_icmp(const std::string& data, std::function<void(boost::system::error_code ec)>&& sent_handler){
     if (config.experimental.pipeline_num > 0 && config.run_type != Config::SERVER) {
         Pipeline *pipeline = search_default_pipeline();
         if (!pipeline) {
             _log_with_date_time("pipeline is broken, destory session", Log::WARN);
             sent_handler(boost::asio::error::broken_pipe);
         } else {
-            pipeline->session_async_send_icmp(data, sent_handler);
+            pipeline->session_async_send_icmp(data, move(sent_handler));
         }
     } else {
         _log_with_date_time("can't send data via pipeline!", Log::FATAL);

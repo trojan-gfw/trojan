@@ -20,9 +20,11 @@
 #ifndef _UDPFORWARDSESSION_H_
 #define _UDPFORWARDSESSION_H_
 
-#include "session.h"
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/steady_timer.hpp>
+
+#include "core/pipeline.h"
+#include "session.h"
 
 class UDPForwardSession : public Session {
 public:
@@ -41,7 +43,9 @@ private:
     boost::asio::ip::udp::socket udp_target_socket;
     boost::asio::ip::udp::endpoint udp_target_endpoint;
 
-    
+    Pipeline::ReadDataCache pipeline_data_cache;
+
+    void out_recv(const std::string &data);
     void in_recv(const std::string &data);
     void out_async_read();
     void out_async_write(const std::string &data);
@@ -58,7 +62,8 @@ public:
     void start_udp(const std::string& data);
     void destroy(bool pipeline_call = false) override;
     bool process(const boost::asio::ip::udp::endpoint &endpoint, const std::string &data);
-    void out_recv(const std::string &data);
+    
+    void pipeline_out_recv(std::string &&data);
 };
 
 #endif // _UDPFORWARDSESSION_H_

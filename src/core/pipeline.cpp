@@ -35,6 +35,24 @@ Pipeline::Pipeline(const Config& config, boost::asio::io_context& io_context, bo
     resolver(io_context),
     config(config){
     pipeline_id = s_pipeline_id_counter++;
+
+    sending_data_cache.set_is_connected_func([this](){ return is_connected();});
+    sending_data_cache.set_async_writer([this](const std::string& data, SentHandler handler) {
+            if (destroyed) {
+                return;
+            }
+
+            auto self = shared_from_this();
+            boost::asio::async_write(out_socket, boost::asio::buffer(data), [this, self, handler](const boost::system::error_code error, size_t) {
+                if (error) {
+                    output_debug_info_ec(error);
+                    destroy();
+                    return;
+                }
+
+                handler(error);
+            });
+        });
 }
 
 void Pipeline::start(){
@@ -45,38 +63,34 @@ void Pipeline::start(){
         
         string data(config.password.cbegin()->first);
         data += "\r\n";
-        sending_data_cache.emplace_front(std::make_shared<SendData>(data, [](boost::system::error_code){}));
+        sending_data_cache.insert_data(move(data));
         
         _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " is going to connect remote server and send password...");
-
-        out_async_send();
         out_async_recv();
     });
 }
 
-void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler sent_handler){
+void Pipeline::session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler&& sent_handler){
     if(destroyed){
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
     _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " session_id: " + to_string(session.session_id) + " --> send to server cmd: " +  PipelineRequest::get_cmd_string(cmd) + " data length:" + to_string(send_data.length()));
-    sending_data_cache.emplace_back(std::make_shared<SendData>(PipelineRequest::generate(cmd, session.session_id, send_data), sent_handler));
-    out_async_send();
+    sending_data_cache.push_data(move(PipelineRequest::generate(cmd, session.session_id, send_data)), move(sent_handler));
 }
 
-void Pipeline::session_async_send_icmp(const std::string& send_data, SentHandler sent_handler) {
+void Pipeline::session_async_send_icmp(const std::string& send_data, SentHandler&& sent_handler) {
     if (destroyed) {
         sent_handler(boost::asio::error::broken_pipe);
         return;
     }
     _log_with_date_time("pipeline " + to_string(get_pipeline_id()) + " --> send to server cmd: ICMP data length:" + to_string(send_data.length()));
-    sending_data_cache.emplace_back(std::make_shared<SendData>(PipelineRequest::generate(PipelineRequest::ICMP, 0, send_data), sent_handler));
-    out_async_send();
+    sending_data_cache.push_data(PipelineRequest::generate(PipelineRequest::ICMP, 0, send_data), move(sent_handler));
 }
 
-void Pipeline::session_start(Session& session, SentHandler started_handler){
+void Pipeline::session_start(Session& session, SentHandler&& started_handler){
     sessions.emplace_back(session.shared_from_this());
-    session_async_send_cmd(PipelineRequest::CONNECT, session, "", started_handler);
+    session_async_send_cmd(PipelineRequest::CONNECT, session, "", move(started_handler));
 }
 
 void Pipeline::session_destroyed(Session& session){
@@ -105,32 +119,6 @@ bool Pipeline::is_in_pipeline(Session& session){
     }
 
     return false;
-}
-
-void Pipeline::out_async_send(){
-    if(sending_data_cache.empty() || !is_connected() || is_async_sending){
-        return;
-    }
-
-    is_async_sending = true;
-
-    auto sending_data = sending_data_cache.front();
-    auto self = shared_from_this();
-    boost::asio::async_write(out_socket, boost::asio::buffer(sending_data->send_data), [this, self, sending_data](const boost::system::error_code error, size_t) {
-
-        is_async_sending = false;
-
-        if (error) {
-            output_debug_info_ec(error);
-            destroy();
-            return;
-        }
-
-        sending_data->sent_handler(error);
-        out_async_send();
-    });
-
-    sending_data_cache.pop_front();
 }
 
 void Pipeline::out_async_recv(){
@@ -183,9 +171,9 @@ void Pipeline::out_async_recv(){
                                 }
                             } else {
                                 if (session->is_udp_forward()) {
-                                    static_cast<UDPForwardSession*>(session)->out_recv(req.packet_data);
+                                    static_cast<UDPForwardSession*>(session)->pipeline_out_recv(move(req.packet_data));
                                 } else {
-                                    static_cast<ClientSession*>(session)->out_recv(req.packet_data);
+                                    static_cast<ClientSession*>(session)->pipeline_out_recv(move(req.packet_data));
                                 }
                             }
                             found = true;
