@@ -18,12 +18,15 @@
  */
 
 #include "udpforwardsession.h"
+
 #include <stdexcept>
 #include <utility>
-#include "ssl/sslsession.h"
+
+#include "core/service.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
-#include "core/service.h"
+#include "ssl/sslsession.h"
+#include "core/utils.h"
 
 using namespace std;
 using namespace boost::asio::ip;
@@ -64,30 +67,14 @@ void UDPForwardSession::start_udp(const std::string& data) {
     auto self = shared_from_this();
     auto cb = [this, self](){
         if(config.run_type == Config::NAT){
-#ifdef _WIN32
-            throw runtime_error("NAT is not supported!" + target.first);
-#else
             udp_target_socket.open(udp_target_endpoint.protocol());
-            bool succ = true;
-            int opt = 1;
-            int fd = udp_target_socket.native_handle();
-            int sol = udp_target_endpoint.protocol().family() == boost::asio::ip::tcp::v6().family() ? SOL_IPV6 : SOL_IP;
-            if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
-                _log_with_endpoint(udp_target_endpoint, "[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
-                succ = false;
-            }
-            
-            if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-                _log_with_endpoint(udp_target_endpoint, "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
-                succ = false;
-            }            
-            if(succ){
-                udp_target_socket.bind(udp_target_endpoint);   
-            }else{
+            bool is_ipv4 = udp_target_endpoint.protocol().family() == boost::asio::ip::tcp::v6().family();
+            if (prepare_nat_udp_target_bind(udp_target_socket.native_handle(), is_ipv4, udp_target_endpoint)) {
+                udp_target_socket.bind(udp_target_endpoint);
+            } else {
                 destroy();
                 return;
             }
-#endif // _WIN32
         }
         
         status = FORWARDING;

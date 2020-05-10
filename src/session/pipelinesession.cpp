@@ -18,11 +18,14 @@
  */
 
 #include "pipelinesession.h"
-#include "serversession.h"
-#include "proto/trojanrequest.h"
+
+#include <boost/asio/ssl.hpp>
+
 #include "core/authenticator.h"
 #include "core/service.h"
-#include <boost/asio/ssl.hpp>
+#include "core/utils.h"
+#include "proto/trojanrequest.h"
+#include "serversession.h"
 
 using namespace std;
 using namespace boost::asio::ip;

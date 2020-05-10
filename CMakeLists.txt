@@ -20,6 +20,7 @@ add_executable(trojan
     src/core/version.cpp
     src/core/pipeline.cpp
     src/core/icmpd.cpp
+    src/core/utils.cpp
     src/main.cpp
     src/proto/socks5address.cpp
     src/proto/trojanrequest.cpp

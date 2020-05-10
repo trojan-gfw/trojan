@@ -18,8 +18,10 @@
  */
 
 #include "pipeline.h"
-#include "proto/pipelinerequest.h"
+
 #include "core/service.h"
+#include "core/utils.h"
+#include "proto/pipelinerequest.h"
 #include "session/clientsession.h"
 
 using namespace std;

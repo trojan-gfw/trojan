@@ -18,126 +18,25 @@
  */
 
 #include "service.h"
-#include <cstring>
+
 #include <cerrno>
-#include <stdexcept>
-#include <fstream>
-#include <thread>
 #include <chrono>
-#include "session/serversession.h"
+#include <cstring>
+#include <fstream>
+#include <stdexcept>
+#include <thread>
+
 #include "session/clientsession.h"
 #include "session/forwardsession.h"
 #include "session/natsession.h"
 #include "session/pipelinesession.h"
+#include "session/serversession.h"
+#include "utils.h"
 
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-#ifndef _WIN32  // nat mode does not support in windows platform
-// copied from shadowsocks-libev udpreplay.c
-static int get_dstaddr(struct msghdr *msg, struct sockaddr_storage *dstaddr)
-{
-    struct cmsghdr *cmsg;
-
-    for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
-        if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_RECVORIGDSTADDR) {
-            memcpy(dstaddr, CMSG_DATA(cmsg), sizeof(struct sockaddr_in));
-            dstaddr->ss_family = AF_INET;
-            return 0;
-        } else if (cmsg->cmsg_level == SOL_IPV6 && cmsg->cmsg_type == IPV6_RECVORIGDSTADDR) {
-            memcpy(dstaddr, CMSG_DATA(cmsg), sizeof(struct sockaddr_in6));
-            dstaddr->ss_family = AF_INET6;
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-static int get_ttl(struct msghdr *msg) {
-    struct cmsghdr *cmsg;
-    for (cmsg = CMSG_FIRSTHDR(msg); cmsg; cmsg = CMSG_NXTHDR(msg, cmsg)) {
-        if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_TTL) {
-            return *(int *)CMSG_DATA(cmsg);
-        } else if (cmsg->cmsg_level == SOL_IPV6 && cmsg->cmsg_type == IPV6_HOPLIMIT) {
-            return *(int *)CMSG_DATA(cmsg);
-        }
-    }
-
-    return -1;
-}
-
-static pair<string, uint16_t> get_addr(struct sockaddr_storage addr){
-    
-    const int buf_size = 256;
-    char buf[256];
-
-    if(addr.ss_family == AF_INET){
-        sockaddr_in *sa = (sockaddr_in*) &addr;
-        if(inet_ntop(AF_INET, &(sa->sin_addr), buf, buf_size)){
-            return make_pair(buf, ntohs(sa->sin_port));
-        }             
-    }else{
-        sockaddr_in6 *sa = (sockaddr_in6*) &addr;
-        if(inet_ntop(AF_INET6, &(sa->sin6_addr), buf, buf_size)){
-            return make_pair(buf, ntohs(sa->sin6_port));
-        }                
-    }
-
-    return make_pair("", 0);
-}
-
-// copied from shadowsocks-libev udpreplay.c
-// it works if in NAT mode
-static pair<string, uint16_t> recv_tproxy_udp_msg(int fd, boost::asio::ip::udp::endpoint& recv_endpoint, char* buf, int& buf_len, int& ttl){
-    struct sockaddr_storage src_addr;
-    memset(&src_addr, 0, sizeof(struct sockaddr_storage));
-
-    char control_buffer[64] = { 0 };
-    struct msghdr msg;
-    memset(&msg, 0, sizeof(struct msghdr));
-    struct iovec iov[1];
-    struct sockaddr_storage dst_addr;
-    memset(&dst_addr, 0, sizeof(struct sockaddr_storage));
-
-    msg.msg_name       = &src_addr;
-    msg.msg_namelen    = sizeof(struct sockaddr_storage);;
-    msg.msg_control    = control_buffer;
-    msg.msg_controllen = sizeof(control_buffer);
-
-    const int packet_size = DEFAULT_PACKET_SIZE;
-    const int buf_size = DEFAULT_PACKET_SIZE * 2;
-
-    iov[0].iov_base = buf;
-    iov[0].iov_len  = buf_size;
-    msg.msg_iov     = iov;
-    msg.msg_iovlen  = 1;
-
-    buf_len = recvmsg(fd, &msg, 0);
-    if (buf_len == -1) {
-        _log_with_date_time("[udp] server_recvmsg failed!", Log::FATAL);
-    } else{
-        if (buf_len > packet_size) {
-            _log_with_date_time(string("[udp] UDP server_recv_recvmsg fragmentation, MTU at least be: ") + to_string(buf_len + PACKET_HEADER_SIZE), Log::INFO);
-        }
-
-        ttl = get_ttl(&msg);
-        if (get_dstaddr(&msg, &dst_addr)) {
-            _log_with_date_time("[udp] unable to get dest addr!", Log::FATAL);
-        }
-        else {
-            auto target_dst = get_addr(dst_addr);       
-            auto src_dst = get_addr(src_addr);
-            recv_endpoint.address(boost::asio::ip::make_address(src_dst.first));
-            recv_endpoint.port(src_dst.second); 
-            return target_dst;
-        }
-    }    
-
-    return make_pair("", 0);
-}
-#endif // _WIN32
 
 Service::Service(Config &config, bool test) :
     config(config),
@@ -177,54 +76,12 @@ Service::Service(Config &config, bool test) :
             udp_socket.open(udp_protocol);
             
             if(config.run_type == Config::NAT){
-#ifdef _WIN32
-                throw runtime_error("NAT is not supported in Windows");
-#else
-                // copy from shadowsocks-libev
-                int opt = 1;
-                int fd = udp_socket.native_handle();
-                int sol;
-                int ip_recv;
-                bool ipv4 = udp_protocol.family() == boost::asio::ip::tcp::v4().family();
-                bool ipv6 = udp_protocol.family() == boost::asio::ip::tcp::v6().family();
-
-                if (ipv4) {
-                    sol = SOL_IP;
-                    ip_recv = IP_RECVORIGDSTADDR;
-                } else if (ipv6) {
-                    sol = SOL_IPV6;
-                    ip_recv = IPV6_RECVORIGDSTADDR;
-                } else {
-                    _log_with_date_time("[udp] protocol can't be recognized", Log::FATAL);
+                bool is_ipv4 = udp_protocol.family() == boost::asio::ip::tcp::v4().family();
+                bool recv_ttl = config.run_type == Config::NAT && config.experimental.pipeline_proxy_icmp;
+                if (!prepare_nat_udp_bind(udp_socket.native_handle(), is_ipv4, recv_ttl)) {
                     stop();
                     return;
                 }
-
-                if (setsockopt(fd, sol, IP_TRANSPARENT, &opt, sizeof(opt))) {
-                    _log_with_date_time("[udp] setsockopt IP_TRANSPARENT failed!", Log::FATAL);
-                    stop();
-                    return;
-                }
-
-                if (setsockopt(fd, sol, ip_recv, &opt, sizeof(opt))) {
-                    _log_with_date_time("[udp] setsockopt IP_RECVORIGDSTADDR failed!", Log::FATAL);
-                    stop();
-                    return;
-                }
-
-                if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-                    _log_with_date_time( "[udp] setsockopt SO_REUSEADDR failed!", Log::FATAL);
-                    stop();
-                    return;
-                }
-
-                if (config.run_type == Config::NAT && config.experimental.pipeline_proxy_icmp) {
-                    if (setsockopt(fd, sol, ipv4 ? IP_RECVTTL : IPV6_RECVHOPLIMIT, &opt, sizeof(opt))) {
-                        _log_with_date_time("[udp] setsockopt IP_RECVOPTS/IPV6_RECVHOPLIMIT failed!", Log::ERROR);
-                    }
-                }
-#endif // _WIN32
-
             }
 
             udp_socket.bind(udp_bind_endpoint);
@@ -655,9 +512,6 @@ void Service::udp_async_read() {
         pair<string,uint16_t> targetdst;
         
         if(config.run_type == Config::NAT){
-#ifdef _WIN32  // windows cannot support nat mode
-            targetdst = make_pair("", 0);
-#else
             int read_length = (int)length;
             int ttl = -1;
             targetdst = recv_tproxy_udp_msg(udp_socket.native_handle(), udp_recv_endpoint, (char *)udp_read_buf, read_length, ttl);
@@ -667,7 +521,6 @@ void Service::udp_async_read() {
             // but now in most of traceroute programs just use icmp to trigger remote server back instead of udp, so we don't need pass TTL to server any more
             // we just keep this codes of retreiving TTL if it will be used for some future features.
             _log_with_date_time("[udp] get ttl:" + to_string(ttl));
-#endif  //_WIN32
         }else{
             targetdst = make_pair(config.target_addr, config.target_port);
         }

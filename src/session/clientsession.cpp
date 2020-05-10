@@ -18,10 +18,12 @@
  */
 
 #include "clientsession.h"
+
+#include "core/service.h"
+#include "core/utils.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
 #include "ssl/sslsession.h"
-#include "core/service.h"
 
 using namespace std;
 using namespace boost::asio::ip;
