@@ -288,7 +288,7 @@ Service::Service(Config &config, bool test) :
 }
 
 void Service::prepare_icmpd(Config& config, bool is_ipv4){
-    
+
     if (config.experimental.pipeline_proxy_icmp) {
 
         // set this icmp false first
@@ -359,40 +359,105 @@ void Service::stop() {
 
 void Service::prepare_pipelines(){
     if(config.run_type != Config::SERVER && config.experimental.pipeline_num > 0){
+
+        bool changed = false;
+
         auto it = pipelines.begin();
         while(it != pipelines.end()){
             if(it->expired()){
                 it = pipelines.erase(it);
+                changed = true;
             }else{
                 ++it;
             }
         }
+       
+        size_t curr_num = 0;
+        for (auto it = pipelines.begin(); it != pipelines.end(); it++) {
+            if (&(it->lock().get()->config) == &config) {
+                curr_num++;
+            }
+        }
 
-        for(size_t i = pipelines.size();i < config.experimental.pipeline_num;i++){
+        for (; curr_num < config.experimental.pipeline_num; curr_num++ ) {
             auto pipeline = make_shared<Pipeline>(config, io_context, ssl_context);
             pipeline->start();
             pipelines.emplace_back(pipeline);
+            changed = true;
 
             if (icmp_processor) {
                 pipeline->set_icmpd(icmp_processor);
             }
+            _log_with_date_time("[pipeline] start new pipeline, total:" + to_string(pipelines.size()), Log::INFO);
+        }
+        
 
-            if(!config.experimental.pipeline_loadbalance_configs.empty()){
-                for(size_t balance_idx = 0;balance_idx < config.experimental._pipeline_loadbalance_configs.size();balance_idx++){
-                    auto config_file = config.experimental.pipeline_loadbalance_configs[balance_idx];
-                    auto balance_config = config.experimental._pipeline_loadbalance_configs[balance_idx];
-                    auto balance_ssl = config.experimental._pipeline_loadbalance_context[balance_idx];
+        if (!config.experimental.pipeline_loadbalance_configs.empty()) {
+            for (size_t i = 0; i < config.experimental._pipeline_loadbalance_configs.size(); i++) {
 
-                    pipeline = make_shared<Pipeline>(*balance_config, io_context, *balance_ssl);
+                auto config_file = config.experimental.pipeline_loadbalance_configs[i];
+                auto balance_config = config.experimental._pipeline_loadbalance_configs[i];
+                auto balance_ssl = config.experimental._pipeline_loadbalance_context[i];
+
+                size_t curr_num = 0;
+                for (auto it = pipelines.begin(); it != pipelines.end();it++){
+                    if (&(it->lock().get()->config) == balance_config.get()) {
+                        curr_num++;
+                    }
+                }
+
+                for (; curr_num < config.experimental.pipeline_num; curr_num++ ) {
+                    auto pipeline = make_shared<Pipeline>(*balance_config, io_context, *balance_ssl);
                     pipeline->start();
                     pipelines.emplace_back(pipeline);
+                    changed = true;
 
-                    _log_with_date_time("Prepare pipelines start a balance one: " + config_file, Log::INFO);
+                    _log_with_date_time("[pipeline] start a balance pipeline: " + config_file + " total:" + to_string(pipelines.size()), Log::INFO);
                 }
             }
 
-            _log_with_date_time("Prepare pipelines start a new one, total:" + to_string(pipelines.size()), Log::INFO);
-        }        
+            if (changed) {
+                // for default polling balance algorithm,
+                // need to arrage the pipeine from 00000011111122222333333... to 012301230123...
+                size_t config_idx = 0;
+                size_t all_configs = config.experimental._pipeline_loadbalance_configs.size() + 1;
+
+                auto curr = pipelines.begin();
+                while (curr != pipelines.end()) {
+                    auto next = curr;
+                    next++;
+
+                    while (next != pipelines.end()) {
+                        bool found = false;
+                        auto config_ptr = &(next->lock()->config);
+                        if (config_idx == 0) {
+                            found = config_ptr == &config;
+                        } else {
+                            found = config_ptr == config.experimental._pipeline_loadbalance_configs[config_idx - 1].get();
+                        }
+
+                        if (found) {
+                            std::iter_swap(curr, next);
+                            if (++config_idx >= all_configs) {
+                                config_idx = 0;
+                            }
+                            break;
+                        }
+
+                        next++;
+                    }
+
+                    curr++;
+                }
+
+                // auto it = pipelines.begin();
+                // while (it != pipelines.end()) {
+                //     _log_with_date_time("after arrage:" + to_string(it->lock()->config.remote_port));
+                //     ++it;
+                // }
+            }
+            
+        }
     }
 }
 
@@ -404,25 +469,33 @@ void Service::start_session(std::shared_ptr<Session> session, bool is_udp_forwar
         if(pipelines.empty()){
             throw logic_error("pipeline is empty after preparing!");
         }
-
-        auto pipeline = shared_ptr<Pipeline>(nullptr);
+        
         auto it = pipelines.begin();
+        auto pipeline = shared_ptr<Pipeline>(nullptr);
+
         if(pipeline_select_idx >= pipelines.size()){
             pipeline_select_idx = 0;
             pipeline = it->lock();
-        }else{            
+        }
+
+        if (!pipeline || !pipeline->is_connected()) {
+            pipeline = it->lock();
             size_t idx = 0;            
             while(it != pipelines.end()){
-                if(idx == pipeline_select_idx){
-                    pipeline = it->lock();
-                    break;
+                auto sel_pp = it->lock();
+                if (idx >= pipeline_select_idx) {
+                    if (sel_pp->is_connected()) {
+                        pipeline = sel_pp;
+                        break;
+                    } else {
+                        pipeline_select_idx++;
+                    }
                 }
                 ++it;
                 ++idx;          
             }
-        }        
-
-        pipeline_select_idx++;
+            pipeline_select_idx++;
+        }
 
         if(!pipeline){
             throw logic_error("pipeline fatal logic!");
