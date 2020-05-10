@@ -169,31 +169,7 @@ Service::Service(Config &config, bool test) :
         
         socket_acceptor.bind(listen_endpoint);
         socket_acceptor.listen();
-
-        // first test the icmpd
-        if (config.experimental.pipeline_proxy_icmp) {
-            if (config.experimental.pipeline_num != 0) {
-                if (icmpd::get_icmpd_lock()) {
-                    _log_with_date_time("Pipeline will proxy ICMP message", Log::WARN);
-                    if (config.run_type == Config::SERVER || config.run_type == Config::NAT) {
-                        if (listen_endpoint.address().is_v4()) {
-                            icmp_processor = make_shared<icmpd>(io_context);
-                            icmp_processor->set_service(this, config.run_type == Config::NAT);
-                            icmp_processor->start_recv();
-                        } else {
-                            _log_with_date_time("Pipeline proxy icmp can only run in ipv4", Log::ERROR);
-                        }
-                    } else {
-                        _log_with_date_time("Pipeline proxy icmp can only run in NAT & SERVER type", Log::ERROR);
-                    }
-                } else {
-                    config.experimental.pipeline_proxy_icmp = false;
-                    _log_with_date_time("Pipeline proxy icmp disabled in this process, cannot get lock, it can only run in one process of host", Log::WARN);
-                }
-            } else {
-                _log_with_date_time("Pipeline proxy ICMP message need to enable pipeline (set pipeline_num as non zero)", Log::ERROR);
-            }
-        }
+        prepare_icmpd(config, listen_endpoint.address().is_v4());
 
         if (config.run_type == Config::FORWARD || config.run_type == Config::NAT) {
             auto udp_bind_endpoint = udp::endpoint(listen_endpoint.address(), listen_endpoint.port());
@@ -253,8 +229,6 @@ Service::Service(Config &config, bool test) :
 
             udp_socket.bind(udp_bind_endpoint);
         }
-
-        
     }
 
     config.prepare_ssl_context(ssl_context, plain_http_response);
@@ -295,9 +269,8 @@ Service::Service(Config &config, bool test) :
             _log_with_date_time("Pipeline will use load balance config:", Log::WARN);
             string tmp;
             for (auto it = config.experimental.pipeline_loadbalance_configs.begin();
-                 it != config.experimental.pipeline_loadbalance_configs.end(); it++) {
-                _log_with_date_time("Loading " + (*it) + " config...", Log::WARN);
-
+             it != config.experimental.pipeline_loadbalance_configs.end(); it++) {
+                
                 auto other = make_shared<Config>();
                 other->load(*it);
 
@@ -306,10 +279,49 @@ Service::Service(Config &config, bool test) :
 
                 config.experimental._pipeline_loadbalance_configs.emplace_back(other);
                 config.experimental._pipeline_loadbalance_context.emplace_back(ssl);
+                _log_with_date_time("Loaded " + (*it) + " config.", Log::WARN);
             }
         }else{
             _log_with_date_time("Pipeline load balance need to enable pipeline (set pipeline_num as non zero)", Log::ERROR);
         }
+    }
+}
+
+void Service::prepare_icmpd(Config& config, bool is_ipv4){
+    
+    if (config.experimental.pipeline_proxy_icmp) {
+
+        // set this icmp false first
+        config.experimental.pipeline_proxy_icmp = false;
+
+        if (!is_ipv4) {
+            _log_with_date_time("Pipeline proxy icmp can only run in ipv4", Log::ERROR);
+            return;
+        }
+
+        if (config.experimental.pipeline_num == 0) {
+            _log_with_date_time("Pipeline proxy ICMP message need to enable pipeline (set pipeline_num as non zero)", Log::ERROR);
+            return;
+        }
+
+        if (config.run_type != Config::SERVER) {
+            if (config.run_type != Config::NAT) {
+                _log_with_date_time("Pipeline proxy icmp can only run in NAT & SERVER type", Log::ERROR);
+                return;
+            }
+
+            if (!icmpd::get_icmpd_lock()) {
+                _log_with_date_time("Pipeline proxy icmp disabled in this process, cannot get lock, it can only run in one process of host", Log::WARN);
+                return;
+            }
+        }
+        
+        config.experimental.pipeline_proxy_icmp = true;
+
+        _log_with_date_time("Pipeline will proxy ICMP message", Log::WARN);
+        icmp_processor = make_shared<icmpd>(io_context);
+        icmp_processor->set_service(this, config.run_type == Config::NAT);
+        icmp_processor->start_recv();
     }
 }
 
@@ -499,6 +511,7 @@ Pipeline* Service::search_default_pipeline() {
         } else {
             auto p = it->lock().get();
             if (&(p->config) == (&config)) {  // find the default pipeline, cannot use load-balance server
+                _log_with_date_time("->>>>>>> search default pipeline: " + p->config.remote_addr + "  p1 " + to_string(uint64_t(&config)) + " p2:" + to_string(uint64_t(&p->config)));
                 pipeline = p;
                 break;
             }

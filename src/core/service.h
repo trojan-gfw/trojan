@@ -109,6 +109,8 @@ private:
     void prepare_pipelines();
     void start_session(std::shared_ptr<Session> session, bool is_udp_forward, Pipeline::SentHandler&& started_handler);
     std::shared_ptr<icmpd> icmp_processor;
+    void prepare_icmpd(Config& config, bool is_ipv4);
+
 public:
     explicit Service(Config &config, bool test = false);
     void run();
