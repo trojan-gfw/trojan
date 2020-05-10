@@ -20,11 +20,13 @@
 #ifndef ICMPD_HPP
 #define ICMPD_HPP
 
+#include <sys/file.h>
+
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <list>
 #include <memory>
 #include <unordered_map>
-#include <list>
 
 #include "proto/icmp_header.h"
 #include "proto/ipv4_header.h"
@@ -78,8 +80,11 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
     void send_data_to_socket(const std::string& data, boost::asio::ip::address_v4 addr);
     void async_out_send();
 
-public:
+    static int s_icmpd_file_lock;
+
+public : 
     icmpd(boost::asio::io_service& io_service);
+    ~icmpd();
     void start_recv();
 
     void set_service(Service* service, bool client_or_server) {
@@ -89,6 +94,8 @@ public:
 
     void server_out_send(const std::string& data, std::weak_ptr<Session> pipeline_session);
     void client_out_send(const std::string& data);
+
+    static bool get_icmpd_lock();
 };
 
 #endif //ICMPD_HPP

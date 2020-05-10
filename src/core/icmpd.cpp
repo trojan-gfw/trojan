@@ -9,6 +9,23 @@
 using namespace std;
 using namespace boost::asio::ip;
 
+int icmpd::s_icmpd_file_lock = 0;
+
+bool icmpd::get_icmpd_lock() {
+
+    if (!(s_icmpd_file_lock = open("./trojan_icmpd_lock", O_WRONLY | O_CREAT | O_APPEND))) {
+        return false;
+    }
+
+    if (flock(s_icmpd_file_lock, LOCK_EX | LOCK_NB) != 0) {
+        close(s_icmpd_file_lock);
+        s_icmpd_file_lock = 0;
+        return false;
+    }
+
+    return true;
+}
+
 icmpd::icmpd(boost::asio::io_service& io_service)
     : m_socket(io_service, icmp::v4()),
       m_is_sending_cache(false) {
@@ -30,6 +47,13 @@ void icmpd::add_transfer_table(std::string&& hash, std::shared_ptr<IcmpSentData>
 
     check_transfer_table_timeout();
     m_transfer_table.emplace(make_pair(hash, data));
+}
+
+icmpd::~icmpd(){
+    if (s_icmpd_file_lock != 0) {
+        close(s_icmpd_file_lock);
+        s_icmpd_file_lock = 0;
+    }
 }
 
 void icmpd::check_transfer_table_timeout() {
