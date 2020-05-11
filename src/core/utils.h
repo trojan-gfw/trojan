@@ -117,7 +117,7 @@ void connect_out_socket(ThisT this_ptr, std::string addr, std::string port, boos
         if (this_ptr->config.tcp.connect_time_out > 0) {
             // out_socket.async_connect will be stuck forever when the host is not reachable
             // we must set a timeout timer
-            timeout_timer = std::make_shared<boost::asio::steady_timer>(out_socket.get_io_context());
+            timeout_timer = std::make_shared<boost::asio::steady_timer>(this_ptr->io_context);
             timeout_timer->expires_after(std::chrono::seconds(this_ptr->config.tcp.connect_time_out));
             timeout_timer->async_wait([=](const boost::system::error_code error) {
                 if (!error) {
@@ -171,7 +171,7 @@ template <typename ThisPtr>
 void shutdown_ssl_socket(ThisPtr this_ptr, boost::asio::ssl::stream<boost::asio::ip::tcp::socket>& socket) {
     if (socket.next_layer().is_open()) {
         auto self = this_ptr->shared_from_this();
-        auto ssl_shutdown_timer = std::make_shared<boost::asio::steady_timer>(socket.next_layer().get_io_context());
+        auto ssl_shutdown_timer = std::make_shared<boost::asio::steady_timer>(this_ptr->io_context);
         auto ssl_shutdown_cb = [self, ssl_shutdown_timer, &socket](const boost::system::error_code error) {
             if (error == boost::asio::error::operation_aborted) {
                 return;

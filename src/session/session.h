@@ -73,6 +73,7 @@ public:
     virtual void destroy(bool pipeline_call = false) = 0;
     const Config &config;
     boost::asio::ip::tcp::endpoint in_endpoint;
+    boost::asio::io_context &io_context;
 
     SessionIdType session_id;
     inline void set_use_pipeline(Service* service, bool is_udp_forward) { 

@@ -40,7 +40,6 @@ PipelineSession::PipelineSession(const Config &config, boost::asio::io_context &
     live_socket(io_context, ssl_context),
     gc_timer(io_context),
     is_async_sending(false),
-    io_context(io_context),
     ssl_context(ssl_context){
 
     sending_data_cache.set_async_writer([this](const std::string& data, Pipeline::SentHandler handler) {

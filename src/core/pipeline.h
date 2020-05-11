@@ -161,7 +161,8 @@ public:
     void start();
     void destroy();
     const Config& config;
-
+    boost::asio::io_context& io_context;
+    
     void session_start(Session& session,  SentHandler&& started_handler);
     void session_async_send_cmd(PipelineRequest::Command cmd, Session& session, const std::string& send_data, SentHandler&& sent_handler);
     void session_async_send_icmp(const std::string& send_data, SentHandler&& sent_handler);

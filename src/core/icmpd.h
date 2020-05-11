@@ -20,10 +20,10 @@
 #ifndef ICMPD_HPP
 #define ICMPD_HPP
 
-#include <sys/file.h>
-
-#include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/icmp.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/asio/streambuf.hpp>
 #include <list>
 #include <memory>
 #include <unordered_map>
@@ -50,7 +50,7 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
         std::weak_ptr<Session> pipeline_session;
         boost::asio::ip::address_v4 source;
         boost::asio::ip::address_v4 destination;
-        int sent_time;
+        time_t sent_time;
         IcmpSentData(std::weak_ptr<Session> sess, boost::asio::ip::address_v4 src, boost::asio::ip::address_v4 dst) : 
             pipeline_session(sess), source(src), destination(dst) {
             sent_time = time(nullptr);
@@ -82,14 +82,14 @@ class icmpd : public std::enable_shared_from_this<icmpd> {
 
     static int s_icmpd_file_lock;
 
-public : 
-    icmpd(boost::asio::io_service& io_service);
-    ~icmpd();
-    void start_recv();
+public :
+ icmpd(boost::asio::io_context& io_context);
+ ~icmpd();
+ void start_recv();
 
-    void set_service(Service* service, bool client_or_server) {
-        m_service = service;
-        m_client_or_server = client_or_server;
+ void set_service(Service* service, bool client_or_server) {
+     m_service = service;
+     m_client_or_server = client_or_server;
     }
 
     void server_out_send(const std::string& data, std::weak_ptr<Session> pipeline_session);

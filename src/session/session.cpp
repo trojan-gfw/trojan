@@ -23,16 +23,16 @@ using namespace std;
 Session::SessionIdType Session::s_session_id_counter = 0;
 set<Session::SessionIdType> Session::s_session_used_ids;
 
-Session::Session(const Config &config, boost::asio::io_context &io_context) : 
-    recv_len(0), 
-    sent_len(0), 
-    resolver(io_context),
-    udp_socket(io_context), 
-    pipeline_client_service(nullptr), 
-    pipeline_wait_for_ack(false),
-    pipeline_first_call_ack(true),
-    config(config),
-    session_id(0){
+Session::Session(const Config &config, boost::asio::io_context &io_context) : recv_len(0),
+                                                                              sent_len(0),
+                                                                              resolver(io_context),
+                                                                              udp_socket(io_context),
+                                                                              pipeline_client_service(nullptr),
+                                                                              pipeline_wait_for_ack(false),
+                                                                              pipeline_first_call_ack(true),
+                                                                              config(config),
+                                                                              io_context(io_context),
+                                                                              session_id(0) {
     pipeline_ack_counter = static_cast<int>(config.experimental.pipeline_ack_window);
 }
 

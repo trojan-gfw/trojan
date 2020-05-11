@@ -29,13 +29,14 @@ using namespace boost::asio::ip;
 
 uint32_t Pipeline::s_pipeline_id_counter = 0;
 
-Pipeline::Pipeline(const Config& config, boost::asio::io_context& io_context, boost::asio::ssl::context &ssl_context):
-    destroyed(false),
-    out_socket(io_context,ssl_context),
-    connected(false),
-    is_async_sending(false),
-    resolver(io_context),
-    config(config){
+Pipeline::Pipeline(const Config& config, boost::asio::io_context& io_context,
+                   boost::asio::ssl::context& ssl_context) : destroyed(false),
+                                                             out_socket(io_context, ssl_context),
+                                                             connected(false),
+                                                             is_async_sending(false),
+                                                             resolver(io_context),
+                                                             config(config),
+                                                             io_context(io_context) {
     pipeline_id = s_pipeline_id_counter++;
 
     sending_data_cache.set_is_connected_func([this](){ return is_connected();});

@@ -53,7 +53,6 @@ class PipelineSession : public Session {
     Pipeline::SendDataCache sending_data_cache;
     bool is_async_sending;
     
-    boost::asio::io_context& io_context;
     boost::asio::ssl::context& ssl_context;
 
     std::shared_ptr<icmpd> icmp_processor;

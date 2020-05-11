@@ -18,10 +18,16 @@
  */
 #include "icmpd.h"
 
+
+#ifndef _WIN32
+#include <sys/file.h>
+#endif //_WIN32
+
 #include <iostream>
 #include <stdexcept>
 
 #include "core/service.h"
+#include "core/utils.h"
 #include "session/pipelinesession.h"
 
 using namespace std;
@@ -30,7 +36,7 @@ using namespace boost::asio::ip;
 int icmpd::s_icmpd_file_lock = 0;
 
 bool icmpd::get_icmpd_lock() {
-
+#ifndef _WIN32
     if (!(s_icmpd_file_lock = open("./trojan_icmpd_lock", O_WRONLY | O_CREAT | O_APPEND))) {
         return false;
     }
@@ -42,10 +48,13 @@ bool icmpd::get_icmpd_lock() {
     }
 
     return true;
+#else
+    return false;
+#endif
 }
 
-icmpd::icmpd(boost::asio::io_service& io_service)
-    : m_socket(io_service, icmp::v4()),
+icmpd::icmpd(boost::asio::io_context& io_context)
+    : m_socket(io_context, icmp::v4()),
       m_is_sending_cache(false) {
 #ifdef _WIN32
     throw runtime_error("[icmp] cannot crate icmpd in windows!");
@@ -68,10 +77,12 @@ void icmpd::add_transfer_table(std::string&& hash, std::shared_ptr<IcmpSentData>
 }
 
 icmpd::~icmpd(){
+#ifndef _WIN32
     if (s_icmpd_file_lock != 0) {
         close(s_icmpd_file_lock);
         s_icmpd_file_lock = 0;
     }
+#endif // _WIN32
 }
 
 void icmpd::check_transfer_table_timeout() {
