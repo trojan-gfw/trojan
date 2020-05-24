@@ -1,6 +1,6 @@
 # Authenticator
 
-Trojan servers can authenticate users according to not only passwords in the config file but also entries in a MySQL (MariaDB) database. To turn this functionality on, set `enabled` field in the MySQL config to `true` and correctly configure the server address, credentials, and etc. If you would like to connect to the database securely, you can to fill the `cafile` field indicating the CA file:
+Trojan servers can authenticate users according to not only passwords in the config file but also entries in a MySQL (MariaDB) database. To turn this functionality on, set `enabled` field in the MySQL config to `true` and correctly configure the server address, credentials, and etc. If you would like to connect to the database securely, you can to fill the `ca` field indicating the mysql server`s CA file and optionally, fill the `key` and `cert` filed indicating the client cert and key:
 
 ```json
 "mysql": {
@@ -10,7 +10,9 @@ Trojan servers can authenticate users according to not only passwords in the con
     "database": "trojan",
     "username": "trojan",
     "password": "",
-    "cafile": ""
+    "key": "",
+    "cert": "",
+    "ca": ""
 }
 ```
 

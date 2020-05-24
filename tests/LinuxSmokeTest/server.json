@@ -37,6 +37,8 @@
         "database": "",
         "username": "",
         "password": "",
-        "cafile": ""
+        "key": "",
+        "cert": "",
+        "ca": ""
     }
 }
