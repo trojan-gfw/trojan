@@ -22,6 +22,8 @@
     - Add Linux smoke test.
 - [LimiQS](https://github.com/LimiQS)
     - Refine the config documentation.
+- [MargaretteMoss](https://github.com/MargaretteMoss)
+    - Add client verification to MySQL SSL connection.
 - [Qv2ray-dev](https://github.com/Qv2ray-dev)
     - Fix Azure Pipelines config.
     - Add log callback.
@@ -41,6 +43,7 @@
     - Fix fd leak.
     - Print OpenSSL compile-time version and build flags.
     - Optimize APIs and other clean-ups.
+    - Update certificate verification API.
 - [xsm1997](https://github.com/xsm1997)
     - Add `SO_REUSEPORT` support.
     - Add TLS1.3 ciphersuites support.
