@@ -34,7 +34,6 @@ Authenticator::Authenticator(const Config &config) {
             mysql_ssl_set(&con, nullptr, nullptr, config.mysql.ca.c_str(), nullptr, nullptr);
         }
     }
-    }
     if (mysql_real_connect(&con, config.mysql.server_addr.c_str(),
                                  config.mysql.username.c_str(),
                                  config.mysql.password.c_str(),
