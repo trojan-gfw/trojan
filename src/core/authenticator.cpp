@@ -27,8 +27,12 @@ using namespace std;
 Authenticator::Authenticator(const Config &config) {
     mysql_init(&con);
     Log::log_with_date_time("connecting to MySQL server " + config.mysql.server_addr + ':' + to_string(config.mysql.server_port), Log::INFO);
-    if (!config.mysql.cafile.empty()) {
-        mysql_ssl_set(&con, nullptr, nullptr, config.mysql.cafile.c_str(), nullptr, nullptr);
+    if (!config.mysql.ca.empty()) {
+        if (!config.mysql.key.empty() && !config.mysql.cert.empty()) {
+            mysql_ssl_set(&con, config.mysql.key.c_str(), config.mysql.cert.c_str(), config.mysql.ca.c_str(), nullptr, nullptr);
+        } else {
+            mysql_ssl_set(&con, nullptr, nullptr, config.mysql.ca.c_str(), nullptr, nullptr);
+        }
     }
     if (mysql_real_connect(&con, config.mysql.server_addr.c_str(),
                                  config.mysql.username.c_str(),
