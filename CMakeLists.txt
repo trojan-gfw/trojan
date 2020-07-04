@@ -126,4 +126,5 @@ else()
              COMMAND bash ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/basic.sh ${CMAKE_BINARY_DIR}/trojan)
     add_test(NAME LinuxSmokeTest-fake-client
              COMMAND bash ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/fake-client.sh ${CMAKE_BINARY_DIR}/trojan)
+    SET_TESTS_PROPERTIES(LinuxSmokeTest-fake-client PROPERTIES DEPENDS "LinuxSmokeTest-basic")
 endif()
