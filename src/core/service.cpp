@@ -291,9 +291,9 @@ void Service::run() {
     } else {
         rt = "client";
     }
-    Log::log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::WARN);
+    Log::log_with_date_time(string("trojan service (") + rt + ") started at " + local_endpoint.address().to_string() + ':' + to_string(local_endpoint.port()), Log::INFO);
     io_context.run();
-    Log::log_with_date_time("trojan service stopped", Log::WARN);
+    Log::log_with_date_time("trojan service stopped", Log::INFO);
 }
 
 void Service::stop() {
