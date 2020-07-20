@@ -12,39 +12,24 @@ else()
     add_definitions(-Wall -Wextra)
 endif()
 
-add_executable(trojan
-    src/core/authenticator.cpp
-    src/core/config.cpp
-    src/core/log.cpp
-    src/core/service.cpp
-    src/core/version.cpp
-    src/main.cpp
-    src/proto/socks5address.cpp
-    src/proto/trojanrequest.cpp
-    src/proto/udppacket.cpp
-    src/session/clientsession.cpp
-    src/session/forwardsession.cpp
-    src/session/natsession.cpp
-    src/session/serversession.cpp
-    src/session/session.cpp
-    src/session/udpforwardsession.cpp
-    src/ssl/ssldefaults.cpp
-    src/ssl/sslsession.cpp)
-include_directories(src)
+file(GLOB_RECURSE CPP_LIST src/*.cpp)
+
+add_executable(trojan ${CPP_LIST})
+target_include_directories(trojan PRIVATE src)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(trojan ${CMAKE_THREAD_LIBS_INIT})
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS system program_options)
-include_directories(${Boost_INCLUDE_DIR})
+target_include_directories(trojan PRIVATE ${Boost_INCLUDE_DIR})
 target_link_libraries(trojan ${Boost_LIBRARIES})
 if(MSVC)
     add_definitions(-DBOOST_DATE_TIME_NO_LIB)
 endif()
 
 find_package(OpenSSL 1.1.0 REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
+target_include_directories(trojan PRIVATE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(trojan ${OPENSSL_LIBRARIES})
 if(OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     option(ENABLE_SSL_KEYLOG "Build with SSL KeyLog support" ON)
@@ -61,7 +46,7 @@ endif()
 option(ENABLE_MYSQL "Build with MySQL support" ON)
 if(ENABLE_MYSQL)
     find_package(MySQL REQUIRED)
-    include_directories(${MYSQL_INCLUDE_DIR})
+    target_include_directories(trojan PRIVATE ${MYSQL_INCLUDE_DIR})
     target_link_libraries(trojan ${MYSQL_LIBRARIES})
     add_definitions(-DENABLE_MYSQL)
 endif()
