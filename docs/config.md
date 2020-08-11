@@ -173,6 +173,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
         "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384",
         "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
         "prefer_server_cipher": true,
+        "sni": "",
         "alpn": [
             "http/1.1"
         ],
@@ -222,6 +223,7 @@ The NAT config is for transparent proxy. You'll need to [setup iptables rules](h
     - `cipher`: a cipher list to use
     - `cipher_tls13`: a cipher list for TLS 1.3 to use
     - `prefer_server_cipher`: whether to prefer server cipher list in a connection
+    - `sni`: the Server Name Indication field in the `SSL` handshake. If set, only requests that have matching sni are checked if they're valid trojan requests
     - `alpn`: a list of `ALPN` protocols to reply
     - `alpn_port_override`: overrides the remote port to the specified value if an `ALPN` is matched. Useful for running NGINX with HTTP/1.1 and HTTP/2 Cleartext on different ports.
     - `reuse_session`: whether to reuse `SSL` session

@@ -135,7 +135,8 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
 void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
         TrojanRequest req;
-        bool valid = req.parse(data) != -1;
+        bool sni_match = config.ssl.sni.empty() || config.ssl.sni == string(SSL_get_servername(in_socket.native_handle(), TLSEXT_NAMETYPE_host_name));
+        bool valid = sni_match && req.parse(data) != -1;
         if (valid) {
             auto password_iterator = config.password.find(req.password);
             if (password_iterator == config.password.end()) {
@@ -178,7 +179,11 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "requested connection to " + req.address.address + ':' + to_string(req.address.port), Log::INFO);
             }
         } else {
-            Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + query_addr + ':' + query_port, Log::WARN);
+            if (sni_match) {
+                Log::log_with_endpoint(in_endpoint, "not trojan request, connecting to " + query_addr + ':' + query_port, Log::WARN);
+            } else {
+                Log::log_with_endpoint(in_endpoint, "sni mismatch, connecting to " + query_addr + ':' + query_port, Log::WARN);
+            }
             out_write_buf = data;
         }
         sent_len += out_write_buf.length();
