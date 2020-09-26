@@ -45,7 +45,7 @@ In this page, we will look at the config file of trojan. Trojan uses [`JSON`](ht
 - `run_type`: running trojan as `client`
 - `local_addr`: a `SOCKS5` server interface will be bound to the specified interface. Feel free to change this to ``0.0.0.0``, ``::1``, ``::`` or other addresses, if you know what you are doing.
 - `local_port`: a `SOCKS5` interface will be bound to this port
-- `remote_addr`: server address (hostname)
+- `remote_addr`: server address (hostname) (Ordinary http server on the Internet will not work. Setup a local server and set it to localhost unless you know what you are doing.)
 - `remote_port`: server port
 - `password`: password used for verification (only the first password in the array will be used)
 - `log_level`: how much log to dump. 0: ALL; 1: INFO; 2: WARN; 3: ERROR; 4: FATAL; 5: OFF.
