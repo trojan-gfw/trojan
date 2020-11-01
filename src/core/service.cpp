@@ -36,6 +36,9 @@
 #include "session/natsession.h"
 #include "ssl/ssldefaults.h"
 #include "ssl/sslsession.h"
+#include <random>
+#include <thread>
+
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -43,6 +46,7 @@ using namespace boost::asio::ssl;
 #ifdef ENABLE_REUSE_PORT
 typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
 #endif // ENABLE_REUSE_PORT
+std::default_random_engine e;
 
 Service::Service(Config &config, bool test) :
     config(config),
@@ -276,6 +280,18 @@ Service::Service(Config &config, bool test) :
 }
 
 void Service::run() {
+    vector<boost::asio::io_context::work> works;
+    if (config.run_type == Config::CLIENT) {
+        for (int i = 0; i < config.works; i++) {
+            boost::asio::io_context *iot = new boost::asio::io_context;
+            work_io_contexts.push_back(iot);
+            boost::asio::io_context::work work(*iot);
+            works.push_back(work);
+            work_threads.emplace_back([=]() {
+                iot->run();
+            });
+        }
+    }
     async_accept();
     if (config.run_type == Config::FORWARD) {
         udp_async_read();
@@ -307,6 +323,7 @@ void Service::stop() {
 }
 
 void Service::async_accept() {
+
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
         session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
@@ -315,7 +332,9 @@ void Service::async_accept() {
     } else if (config.run_type == Config::NAT) {
         session = make_shared<NATSession>(config, io_context, ssl_context);
     } else {
-        session = make_shared<ClientSession>(config, io_context, ssl_context);
+        uniform_int_distribution<unsigned> u(0, config.works - 1);
+        boost::asio::io_context *ctx = work_io_contexts[u(e)];
+        session = make_shared<ClientSession>(config, *ctx, ssl_context);
     }
     socket_acceptor.async_accept(session->accept_socket(), [this, session](const boost::system::error_code error) {
         if (error == boost::asio::error::operation_aborted) {
@@ -396,4 +415,14 @@ Service::~Service() {
         delete auth;
         auth = nullptr;
     }
+    if (!work_io_contexts.empty()) {
+        for (auto ioct:work_io_contexts) {
+            delete ioct;
+        }
+        work_io_contexts.clear();
+        for (auto &th:work_threads) {
+            th.join();
+        }
+    }
+
 }

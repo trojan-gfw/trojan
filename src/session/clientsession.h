@@ -29,6 +29,7 @@ private:
         HANDSHAKE,
         REQUEST,
         CONNECT,
+        WAIT_FIRST,
         FORWARD,
         UDP_FORWARD,
         INVALID,

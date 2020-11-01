@@ -27,7 +27,7 @@
 #include <boost/asio/ip/udp.hpp>
 #include "authenticator.h"
 #include "session/udpforwardsession.h"
-
+#include <thread>
 class Service {
 private:
     enum {
@@ -35,6 +35,8 @@ private:
     };
     const Config &config;
     boost::asio::io_context io_context;
+    std::vector<boost::asio::io_context *> work_io_contexts;
+    std::vector<std::thread> work_threads;
     boost::asio::ip::tcp::acceptor socket_acceptor;
     boost::asio::ssl::context ssl_context;
     Authenticator *auth;

@@ -42,6 +42,7 @@ public:
     std::map<std::string, std::string> password;
     int udp_timeout;
     Log::Level log_level;
+    uint16_t works = 1;
     class SSLConfig {
     public:
         bool verify;

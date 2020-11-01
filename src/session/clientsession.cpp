@@ -64,6 +64,8 @@ void ClientSession::in_async_read() {
             return;
         }
         if (error) {
+            Log::log_with_endpoint(in_endpoint, to_string(status) + " in_async_read error!" + error.message(),
+                                   Log::ALL);
             destroy();
             return;
         }
@@ -76,6 +78,8 @@ void ClientSession::in_async_write(const string &data) {
     auto data_copy = make_shared<string>(data);
     boost::asio::async_write(in_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
+            Log::log_with_endpoint(in_endpoint, "in_async_write error!" + to_string(status), Log::ALL);
+
             destroy();
             return;
         }
@@ -99,6 +103,7 @@ void ClientSession::out_async_write(const string &data) {
     auto data_copy = make_shared<string>(data);
     boost::asio::async_write(out_socket, boost::asio::buffer(*data_copy), [this, self, data_copy](const boost::system::error_code error, size_t) {
         if (error) {
+            Log::log_with_endpoint(in_endpoint, "out_async_write error!" + error.message(), Log::ALL);
             destroy();
             return;
         }
@@ -133,6 +138,7 @@ void ClientSession::udp_async_write(const string &data, const udp::endpoint &end
 }
 
 void ClientSession::in_recv(const string &data) {
+    Log::log_with_endpoint(in_endpoint, "in_recv : " + to_string(status), Log::ALL);
     switch (status) {
         case HANDSHAKE: {
             if (data.length() < 2 || data[0] != 5 || data.length() != (unsigned int)(unsigned char)data[1] + 2) {
@@ -192,6 +198,8 @@ void ClientSession::in_recv(const string &data) {
             sent_len += data.length();
             first_packet_recv = true;
             out_write_buf += data;
+            status = WAIT_FIRST;
+            in_sent();
             break;
         }
         case FORWARD: {
@@ -209,6 +217,7 @@ void ClientSession::in_recv(const string &data) {
 }
 
 void ClientSession::in_sent() {
+    Log::log_with_endpoint(in_endpoint, "in_sent : " + to_string(status), Log::ALL);
     switch (status) {
         case HANDSHAKE: {
             status = REQUEST;
@@ -221,6 +230,10 @@ void ClientSession::in_sent() {
             if (is_udp) {
                 udp_async_read();
             }
+            break;
+
+        }
+        case WAIT_FIRST: {
             auto self = shared_from_this();
             resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, const tcp::resolver::results_type& results) {
                 if (error || results.empty()) {

@@ -90,6 +90,7 @@ void Config::populate(const ptree &tree) {
             ssl.alpn_port_override[item.first] = item.second.get_value<uint16_t>();
         }
     }
+    works = tree.get("works", 1);
     ssl.reuse_session = tree.get("ssl.reuse_session", true);
     ssl.session_ticket = tree.get("ssl.session_ticket", false);
     ssl.session_timeout = tree.get("ssl.session_timeout", long(600));
