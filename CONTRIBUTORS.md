@@ -14,6 +14,8 @@
     - Author of this project.
 - [JonathanHouten](https://github.com/JonathanHouten)
     - Fix a parameter type error in the `CertOpenSystemStore` call.
+- [karuboniru](https://github.com/karuboniru)
+    - Make tests serial to avoid a race condition.
 - [KCCat](https://github.com/KCCat)
     - Fix an ambiguity in the documentation.
 - [keur](https://github.com/keur)
@@ -24,6 +26,8 @@
     - Refine the config documentation.
 - [MargaretteMoss](https://github.com/MargaretteMoss)
     - Add client verification to MySQL SSL connection.
+- [PragmaTwice](https://github.com/PragmaTwice)
+    - List source files automatically in CMakeLists.txt.
 - [Qv2ray-dev](https://github.com/Qv2ray-dev)
     - Fix Azure Pipelines config.
     - Add log callback.
@@ -47,6 +51,8 @@
 - [xsm1997](https://github.com/xsm1997)
     - Add `SO_REUSEPORT` support.
     - Add TLS1.3 ciphersuites support.
+- [yiailake](https://github.com/yiailake)
+    - Add support for gitpod.
 - [zhangsan946](https://github.com/zhangsan946)
     - Add macOS keychain support.
 - [zhyncs](https://github.com/zhyncs)
