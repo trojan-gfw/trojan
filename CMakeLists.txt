@@ -106,6 +106,12 @@ else()
         install(FILES ${CMAKE_BINARY_DIR}/trojan.service ${CMAKE_BINARY_DIR}/trojan@.service DESTINATION ${SYSTEMD_SERVICE_PATH})
     endif()
 
+    include(CheckSymbolExists)
+    check_symbol_exists(daemon "stdlib.h" HAVE_DAEMON)
+    if(HAVE_DAEMON)
+        add_definitions(-DHAVE_DAEMON)
+    endif()
+
     enable_testing()
     add_test(NAME LinuxSmokeTest-basic
              COMMAND bash ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/basic.sh ${CMAKE_BINARY_DIR}/trojan)
