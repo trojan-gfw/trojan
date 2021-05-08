@@ -26,6 +26,9 @@
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
+#ifdef HAVE_DAEMON
+#include <unistd.h>
+#endif // HAVE_DAEMON
 #include "core/service.h"
 #include "core/version.h"
 using namespace std;

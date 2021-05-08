@@ -107,7 +107,7 @@ else()
     endif()
 
     include(CheckSymbolExists)
-    check_symbol_exists(daemon "stdlib.h" HAVE_DAEMON)
+    check_symbol_exists(daemon "stdlib.h;unistd.h" HAVE_DAEMON)
     if(HAVE_DAEMON)
         add_definitions(-DHAVE_DAEMON)
     endif()
