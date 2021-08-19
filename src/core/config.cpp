@@ -40,7 +40,6 @@ void Config::populate(const string &JSON) {
 }
 
 void Config::populate(const ptree &tree) {
-    throw runtime_error("test throw");
     string rt = tree.get("run_type", string("client"));
     if (rt == "server") {
         run_type = SERVER;
@@ -61,16 +60,15 @@ void Config::populate(const ptree &tree) {
     target_port = tree.get("target_port", uint16_t());
     map<string, string>().swap(password);
     if (tree.get_child_optional("password")) {
-                throw runtime_error("password have");
         for (auto& item: tree.get_child("password")) {
             string p = item.second.get_value<string>();
             password[SHA224(p)] = p;
         }
     }
-//    Log::log_with_date_time("try get proxy_pass config", Log::INFO);
+    Log::log_with_date_time("try get proxy_pass config", Log::INFO);
     if (tree.get_child_optional("proxy_pass")) {
-            throw runtime_error("proxy_pass have");
-//        Log::log_with_date_time("have proxy_pass", Log::INFO);
+        throw runtime_error("proxy_pass have");
+        Log::log_with_date_time("have proxy_pass", Log::INFO);
         proxy_pass_enabled = true;
         for (auto& item: tree.get_child("proxy_pass")) {
             string host = item.first;
