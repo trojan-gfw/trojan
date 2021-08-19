@@ -65,14 +65,12 @@ void Config::populate(const ptree &tree) {
             password[SHA224(p)] = p;
         }
     }
-    Log::log_with_date_time("try get proxy_pass config", Log::INFO);
     if (tree.get_child_optional("proxy_pass")) {
-        Log::log_with_date_time("have proxy_pass", Log::INFO);
         proxy_pass_enabled = true;
         for (auto& item: tree.get_child("proxy_pass")) {
             string host = item.first;
             string remote = item.second.get_value<string>();
-            Log::log_with_date_time("proxy_pass host: " + host+" remote: " +remote , Log::INFO);
+            Log::log_with_date_time("proxy_pass: " + host+" ===> " +remote , Log::INFO);
             proxy_pass[host] = remote;
         }
     }
