@@ -69,7 +69,7 @@ void Config::populate(const ptree &tree) {
         proxy_pass_enabled = true;
         for (auto& item: tree.get_child("proxy_pass")) {
             string host = item.first;
-            string remote = item.second;
+            string remote = item.second.get_value<string>();
             proxy_pass[host] = remote;
         }
     }
