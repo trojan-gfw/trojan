@@ -155,7 +155,7 @@ string ServerSession::getRemoteAddr(const string &host) {
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return proxy_pass.substr(0,proxy_pass.find_last_of(delimiter)-1);
+        return proxy_pass.substr(0,proxy_pass.find_last_of(delimiter));
     }
     return config.remote_addr;
 }
@@ -164,7 +164,7 @@ uint16_t ServerSession::getRemotePort(const string &host){
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return (uint16_t)std::stol(proxy_pass.substr(proxy_pass.find_last_of(delimiter)));
+        return (uint16_t)std::stol(proxy_pass.substr(proxy_pass.find_last_of(delimiter)+1));
     }
     return config.remote_port;
 }
