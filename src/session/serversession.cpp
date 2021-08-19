@@ -156,7 +156,7 @@ string ServerSession::getRemoteAddr(const string &host) {
         string proxy_pass = config.proxy_pass.find(host)->second;
         return proxy_pass.substr(0,proxy_pass.find(delimiter));
     }
-    return config.remote_addr
+    return config.remote_addr;
 }
 
 uint16_t ServerSession::getRemotePort(const string &host){
@@ -165,7 +165,7 @@ uint16_t ServerSession::getRemotePort(const string &host){
         string proxy_pass = config.proxy_pass.find(host)->second;
         return uint16_t(proxy_pass.substr(proxy_pass.find(delimiter)+1));
     }
-    return config.remote_port
+    return config.remote_port;
 }
 
 void ServerSession::in_recv(const string &data) {
