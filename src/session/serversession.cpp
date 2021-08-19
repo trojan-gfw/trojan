@@ -188,7 +188,7 @@ void ServerSession::in_recv(const string &data) {
         }else{
             if(config.proxy_pass_enabled){
               //xlz
-              string host = getHost(data)
+              string host = getHost(data);
               Log::log_with_endpoint(in_endpoint, "xlz host:"+getHost(data), Log::WARN);
               Log::log_with_endpoint(in_endpoint, "xlz addr:"+getRemoteAddr(host), Log::WARN);
               Log::log_with_endpoint(in_endpoint, "xlz port:"+getRemotePort(host), Log::WARN);
