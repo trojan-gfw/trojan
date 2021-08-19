@@ -163,7 +163,7 @@ uint16_t ServerSession::getRemotePort(const string &host){
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return uint16_t(proxy_pass.substr(proxy_pass.find(delimiter)+1));
+        return (uint16_t)std::stol(proxy_pass.substr(proxy_pass.find(delimiter)+1));
     }
     return config.remote_port;
 }
