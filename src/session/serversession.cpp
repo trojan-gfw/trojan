@@ -148,6 +148,7 @@ string ServerSession::getHost(const string &data){
             return host;
         }
     }
+    return "default";
 }
 
 string ServerSession::getRemoteAddr(const string &host) {
