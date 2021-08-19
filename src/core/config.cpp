@@ -60,6 +60,7 @@ void Config::populate(const ptree &tree) {
     target_port = tree.get("target_port", uint16_t());
     map<string, string>().swap(password);
     if (tree.get_child_optional("password")) {
+                throw runtime_error("password have");
         for (auto& item: tree.get_child("password")) {
             string p = item.second.get_value<string>();
             password[SHA224(p)] = p;
