@@ -40,6 +40,7 @@ void Config::populate(const string &JSON) {
 }
 
 void Config::populate(const ptree &tree) {
+    throw runtime_error("test throw");
     string rt = tree.get("run_type", string("client"));
     if (rt == "server") {
         run_type = SERVER;
