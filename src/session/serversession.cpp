@@ -171,6 +171,8 @@ string ServerSession::getRemotePort(const string &host){
 void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
         TrojanRequest req;
+        string remote_addr = config.remote_addr;
+        string remote_port = config.remote_port;
         bool valid = req.parse(data) != -1;
         if (valid) {
             auto password_iterator = config.password.find(req.password);
@@ -188,12 +190,10 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "valid trojan request structure but possibly incorrect password (" + req.password + ')', Log::WARN);
             }
         }else{
-            if(config.proxy_pass_enabled){
-              //xlz
+            if( config.proxy_pass_enabled ) {
               string host = getHost(data);
-              Log::log_with_endpoint(in_endpoint, "xlz host:"+getHost(data), Log::WARN);
-              Log::log_with_endpoint(in_endpoint, "xlz addr:"+getRemoteAddr(host), Log::WARN);
-              Log::log_with_endpoint(in_endpoint, "xlz port:"+getRemotePort(host), Log::WARN);
+              remote_addr = getRemoteAddr(host);
+              remote_port = getRemotePort(host);
             }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;
