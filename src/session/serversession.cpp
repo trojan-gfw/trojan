@@ -191,7 +191,7 @@ void ServerSession::in_recv(const string &data) {
               string host = getHost(data)
               Log::log_with_endpoint(in_endpoint, "xlz host:"+getHost(data), Log::WARN);
               Log::log_with_endpoint(in_endpoint, "xlz addr:"+getRemoteAddr(host), Log::WARN);
-              Log::log_with_endpoint(in_endpoint, "xlz port:"+getremotePort(host), Log::WARN);
+              Log::log_with_endpoint(in_endpoint, "xlz port:"+getRemotePort(host), Log::WARN);
             }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;
