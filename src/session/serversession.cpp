@@ -159,11 +159,11 @@ string ServerSession::getRemoteAddr(const string &host) {
     return config.remote_addr
 }
 
-string ServerSession::getRemotePort(const string &host){
+uint16_t ServerSession::getRemotePort(const string &host){
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return proxy_pass.substr(proxy_pass.find(delimiter)+1);
+        return uint16_t(proxy_pass.substr(proxy_pass.find(delimiter)+1));
     }
     return config.remote_port
 }
@@ -172,7 +172,7 @@ void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
         TrojanRequest req;
         string remote_addr = config.remote_addr;
-        string remote_port = config.remote_port;
+        uint16_t remote_port = config.remote_port;
         bool valid = req.parse(data) != -1;
         if (valid) {
             auto password_iterator = config.password.find(req.password);
