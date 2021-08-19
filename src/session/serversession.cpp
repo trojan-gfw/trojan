@@ -155,7 +155,7 @@ string ServerSession::getRemoteAddr(const string &host) {
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return proxy_pass.substr(0,proxy_pass.find(delimiter));
+        return proxy_pass.substr(0,proxy_pass.find_last_of(delimiter)-1);
     }
     return config.remote_addr;
 }
@@ -164,7 +164,7 @@ uint16_t ServerSession::getRemotePort(const string &host){
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return (uint16_t)std::stol(proxy_pass.substr(proxy_pass.find(delimiter)+1));
+        return (uint16_t)std::stol(proxy_pass.substr(proxy_pass.find_last_of(delimiter)));
     }
     return config.remote_port;
 }
@@ -195,6 +195,8 @@ void ServerSession::in_recv(const string &data) {
               string host = getHost(data);
               remote_addr = getRemoteAddr(host);
               remote_port = getRemotePort(host);
+              Log::log_with_endpoint(in_endpoint, "xlz addr" + remote_addr, Log::INFO);
+              Log::log_with_endpoint(in_endpoint, "xlz port" + remote_port, Log::INFO);
             }
         }
         string query_addr = valid ? req.address.address : remote_addr;
