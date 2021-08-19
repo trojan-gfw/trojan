@@ -196,7 +196,7 @@ void ServerSession::in_recv(const string &data) {
               remote_port = getRemotePort(host);
             }
         }
-        string query_addr = valid ? req.address.address : config.remote_addr;
+        string query_addr = valid ? req.address.address : remote_addr;
         string query_port = to_string([&]() {
             if (valid) {
                 return req.address.port;
@@ -205,10 +205,10 @@ void ServerSession::in_recv(const string &data) {
             unsigned int alpn_len;
             SSL_get0_alpn_selected(in_socket.native_handle(), &alpn_out, &alpn_len);
             if (alpn_out == nullptr) {
-                return config.remote_port;
+                return remote_port;
             }
             auto it = config.ssl.alpn_port_override.find(string(alpn_out, alpn_out + alpn_len));
-            return it == config.ssl.alpn_port_override.end() ? config.remote_port : it->second;
+            return it == config.ssl.alpn_port_override.end() ? remote_port : it->second;
         }());
         if (valid) {
             out_write_buf = req.payload;
