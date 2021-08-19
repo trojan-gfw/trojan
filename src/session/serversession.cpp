@@ -186,6 +186,7 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "valid trojan request structure but possibly incorrect password (" + req.password + ')', Log::WARN);
             }
         }else{
+            Log::log_with_date_time("not valid test proxy_pass_enable" , Log::INFO);
             if(config.proxy_pass_enabled){
               //xlz
               string host = getHost(data);
