@@ -20,6 +20,9 @@
 #include "serversession.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
+#include <sstream>
+#include <iostream>
+#include <boost/algorithm/string.hpp>
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
@@ -132,6 +135,37 @@ void ServerSession::udp_async_write(const string &data, const udp::endpoint &end
     });
 }
 
+string ServerSession::getHost(const string &data){
+    std::istringstream f(data);
+    string line;
+    string host = "Host:";
+    string::size_type position;
+    while (std::getline(f, line)) {
+        position = line.find(host);
+        if (position != string::npos) {
+            host = line.substr(5);
+    	    boost::trim(host);
+            return host;
+        }
+    }
+}
+
+string ServerSession::getRemoteAddr(const string &host) {
+    string delimiter = ":";
+    if( config.proxy_pass.count(host) > 0 ) {
+        string proxy_pass = config.proxy_pass.count[host]
+        return proxy_pass.substr(0,proxy_pass.find(delimiter));
+    }
+}
+
+string ServerSession::getRemotePort(const string &host){
+    string delimiter = ":";
+    if( config.proxy_pass.count(host) > 0 ) {
+        string proxy_pass = config.proxy_pass.count[host]
+        return proxy_pass.substr(proxy_pass.find(delimiter));
+    }
+}
+
 void ServerSession::in_recv(const string &data) {
     if (status == HANDSHAKE) {
         TrojanRequest req;
@@ -150,6 +184,14 @@ void ServerSession::in_recv(const string &data) {
             }
             if (!valid) {
                 Log::log_with_endpoint(in_endpoint, "valid trojan request structure but possibly incorrect password (" + req.password + ')', Log::WARN);
+            }
+        }else{
+            if(config.proxy_pass_enabled){
+              //xlz
+              string host = getHost(data)
+              Log::log_with_endpoint(in_endpoint, "xlz host:"+getHost(data), Log::WARN);
+              Log::log_with_endpoint(in_endpoint, "xlz addr:"+getRemoteAddr(host), Log::WARN);
+              Log::log_with_endpoint(in_endpoint, "xlz port:"+getremotePort(host), Log::WARN);
             }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;

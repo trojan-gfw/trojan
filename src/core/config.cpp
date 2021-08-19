@@ -65,6 +65,14 @@ void Config::populate(const ptree &tree) {
             password[SHA224(p)] = p;
         }
     }
+    if (tree.get_child_optional("proxy_pass")) {
+        proxy_pass_enabled = true;
+        for (auto& item: tree.get_child("proxy_pass")) {
+            string host = item.first;
+            string remote = item.second;
+            proxy_pass[host] = remote;
+        }
+    }
     udp_timeout = tree.get("udp_timeout", 60);
     log_level = static_cast<Log::Level>(tree.get("log_level", 1));
     ssl.verify = tree.get("ssl.verify", true);
