@@ -51,6 +51,9 @@ private:
     void udp_async_write(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_recv(const std::string &data, const boost::asio::ip::udp::endpoint &endpoint);
     void udp_sent();
+    string getHost(const string &data);
+    string getRemoteAddr(const string &host);
+    string getRemotePort(const string &host);
 public:
     ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
     boost::asio::ip::tcp::socket& accept_socket() override;
