@@ -53,7 +53,7 @@ private:
     void udp_sent();
     std::string getHost(const std::string &data);
     std::string getRemoteAddr(const std::string &host);
-    std::string getRemotePort(const std::string &host);
+    uint16_t getRemotePort(const std::string &host);
 public:
     ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
     boost::asio::ip::tcp::socket& accept_socket() override;
