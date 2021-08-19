@@ -156,14 +156,16 @@ string ServerSession::getRemoteAddr(const string &host) {
         string proxy_pass = config.proxy_pass.find(host)->second;
         return proxy_pass.substr(0,proxy_pass.find(delimiter));
     }
+    return config.remote_addr
 }
 
 string ServerSession::getRemotePort(const string &host){
     string delimiter = ":";
     if( config.proxy_pass.count(host) > 0 ) {
         string proxy_pass = config.proxy_pass.find(host)->second;
-        return proxy_pass.substr(proxy_pass.find(delimiter));
+        return proxy_pass.substr(proxy_pass.find(delimiter)+1);
     }
+    return config.remote_port
 }
 
 void ServerSession::in_recv(const string &data) {
@@ -186,7 +188,6 @@ void ServerSession::in_recv(const string &data) {
                 Log::log_with_endpoint(in_endpoint, "valid trojan request structure but possibly incorrect password (" + req.password + ')', Log::WARN);
             }
         }else{
-            Log::log_with_date_time("not valid test proxy_pass_enable" , Log::INFO);
             if(config.proxy_pass_enabled){
               //xlz
               string host = getHost(data);
