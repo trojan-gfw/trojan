@@ -231,7 +231,7 @@ void ServerSession::in_recv(const string &data) {
         sent_len += out_write_buf.length();
         auto self = shared_from_this();
         if(valid) {
-            Log::log_with_endpoint(in_endpoint, "requested connection to " + query_addr + ':' + to_string(query_port), Log::INFO);
+            Log::log_with_endpoint(in_endpoint, "requested connection to " + query_addr + ':' + query_port, Log::INFO);
         }
         resolver.async_resolve(query_addr, query_port, [this, self, query_addr, query_port](const boost::system::error_code error, const tcp::resolver::results_type& results) {
             if (error || results.empty()) {
