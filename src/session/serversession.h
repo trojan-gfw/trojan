@@ -30,7 +30,8 @@ private:
         HANDSHAKE,
         FORWARD,
         UDP_FORWARD,
-        DESTROY
+        DESTROY,
+        ACTIVE_DISCONNECT
     } status;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>in_socket;
     boost::asio::ip::tcp::socket out_socket;
