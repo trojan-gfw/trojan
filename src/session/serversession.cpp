@@ -67,6 +67,14 @@ void ServerSession::in_async_read() {
     auto self = shared_from_this();
     in_socket.async_read_some(boost::asio::buffer(in_read_buf, MAX_LENGTH), [this, self](const boost::system::error_code error, size_t length) {
         if (error) {
+            if ((boost::asio::error::eof == error) ||
+                (boost::asio::error::connection_reset == error) ||
+                (boost::asio::error::operation_aborted == error))
+            {
+                Log::log_with_endpoint(in_endpoint, "remote server actively closed the connection", Log::INFO);
+                status = ACTIVE_DISCONNECT;
+            }
+
             destroy();
             return;
         }
@@ -330,6 +338,7 @@ void ServerSession::destroy() {
     if (status == DESTROY) {
         return;
     }
+    auto previous_status = status;
     status = DESTROY;
     Log::log_with_endpoint(in_endpoint, "disconnected, " + to_string(recv_len) + " bytes received, " + to_string(sent_len) + " bytes sent, lasted for " + to_string(time(nullptr) - start_time) + " seconds", Log::INFO);
     if (auth && !auth_password.empty()) {
@@ -346,6 +355,11 @@ void ServerSession::destroy() {
     if (udp_socket.is_open()) {
         udp_socket.cancel(ec);
         udp_socket.close(ec);
+    }
+    if (previous_status == ACTIVE_DISCONNECT) {
+        in_socket.next_layer().cancel(ec);
+        in_socket.next_layer().shutdown(tcp::socket::shutdown_both, ec);
+        in_socket.next_layer().close(ec);
     }
     if (in_socket.next_layer().is_open()) {
         auto self = shared_from_this();
