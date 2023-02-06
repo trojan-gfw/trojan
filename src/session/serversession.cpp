@@ -145,19 +145,27 @@ void ServerSession::in_recv(const string &data) {
         TrojanRequest req;
         bool valid = req.parse(data) != -1;
         if (valid) {
-            auto password_iterator = config.password.find(req.password);
-            if (password_iterator == config.password.end()) {
-                valid = false;
-                if (auth && auth->auth(req.password)) {
-                    valid = true;
-                    auth_password = req.password;
-                    Log::log_with_endpoint(in_endpoint, "authenticated by authenticator (" + req.password.substr(0, 7) + ')', Log::INFO);
+            if (config.no_auth()) {
+                Log::log_with_endpoint(in_endpoint, "authentication is disabled", Log::INFO);
+            }else{
+                auto password_iterator = config.password.find(req.password);
+                if (password_iterator == config.password.end()) {
+                    valid = false;
+                    if (auth && auth->auth(req.password)) {
+                        valid = true;
+                        auth_password = req.password;
+                        Log::log_with_endpoint(in_endpoint,
+                                               "authenticated by authenticator (" + req.password.substr(0, 7) + ')',
+                                               Log::INFO);
+                    }
+                } else {
+                    Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
                 }
-            } else {
-                Log::log_with_endpoint(in_endpoint, "authenticated as " + password_iterator->second, Log::INFO);
-            }
-            if (!valid) {
-                Log::log_with_endpoint(in_endpoint, "valid trojan request structure but possibly incorrect password (" + req.password + ')', Log::WARN);
+                if (!valid) {
+                    Log::log_with_endpoint(in_endpoint,
+                                           "valid trojan request structure but possibly incorrect password (" +
+                                           req.password + ')', Log::WARN);
+                }
             }
         }
         string query_addr = valid ? req.address.address : config.remote_addr;

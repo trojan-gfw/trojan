@@ -87,6 +87,7 @@ public:
     void populate(const std::string &JSON);
     bool sip003();
     static std::string SHA224(const std::string &message);
+    bool no_auth() const;
 private:
     void populate(const boost::property_tree::ptree &tree);
 };
