@@ -162,7 +162,10 @@ void ClientSession::in_recv(const string &data) {
                 destroy();
                 return;
             }
-            out_write_buf = config.password.cbegin()->first + "\r\n" + data[1] + data.substr(3) + "\r\n";
+            out_write_buf = string().append(config.password.cbegin()->first)
+                    .append("\r\n").append(1, data[1])
+                    .append(data.substr(3))
+                    .append("\r\n");
             TrojanRequest req;
             if (req.parse(out_write_buf) == -1) {
                 Log::log_with_endpoint(in_endpoint, "unsupported command", Log::ERROR);

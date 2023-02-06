@@ -146,6 +146,9 @@ int main(int argc, const char *argv[]) {
             } else {
                 config.load(config_file);
             }
+            if (config.no_auth()){
+                Log::log_with_date_time("no authentication method", Log::WARN);
+            }
             Service service(config, test);
             if (test) {
                 Log::log("The config file looks good.", Log::OFF);

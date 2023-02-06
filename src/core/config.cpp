@@ -165,3 +165,7 @@ string Config::SHA224(const string &message) {
     EVP_MD_CTX_free(ctx);
     return string(mdString);
 }
+
+bool Config::no_auth() const {
+    return !mysql.enabled && password.empty();
+}
