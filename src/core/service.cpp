@@ -232,16 +232,16 @@ Service::Service(Config &config, bool test) :
             SSL_CTX_set_options(native_context, SSL_OP_NO_TICKET);
         }
     }
-    if (!config.ssl.cipher.empty()) {
-        SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
-    }
-    if (!config.ssl.cipher_tls13.empty()) {
+    SSL_CTX_set_cipher_list(native_context, config.ssl.cipher.c_str());
 #ifdef ENABLE_TLS13_CIPHERSUITES
+    if (config.ssl.cipher_tls13.empty()) {
+        SSL_CTX_set_max_proto_version(native_context, TLS1_2_VERSION);
+    } else {
         SSL_CTX_set_ciphersuites(native_context, config.ssl.cipher_tls13.c_str());
-#else  // ENABLE_TLS13_CIPHERSUITES
-        Log::log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
-#endif // ENABLE_TLS13_CIPHERSUITES
     }
+#else
+    Log::log_with_date_time("TLS1.3 ciphersuites are not supported", Log::WARN);
+#endif // ENABLE_TLS13_CIPHERSUITES
 
     if (!test) {
         if (config.tcp.no_delay) {
