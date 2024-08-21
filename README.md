@@ -22,7 +22,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 - [CMake](https://cmake.org/) >= 3.7.2
 - [Boost](http://www.boost.org/) >= 1.66.0
 - [OpenSSL](https://www.openssl.org/) >= 1.1.0
-- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/)
+- [libmysqlclient](https://dev.mysql.com/downloads/connector/c/), MariaDB and MySQL supported
 
 ## License
 
