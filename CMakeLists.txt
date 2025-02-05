@@ -66,6 +66,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     if(ENABLE_REUSE_PORT)
         add_definitions(-DENABLE_REUSE_PORT)
     endif()
+
+    option(DISABLE_EPOLL "Disable epoll() support" OFF)
+    if(DISABLE_EPOLL)
+    	add_definitions(-DBOOST_ASIO_DISABLE_EPOLL)
+    endif()
 endif()
 
 if(APPLE)
